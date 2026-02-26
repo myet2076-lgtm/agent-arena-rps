@@ -1,0 +1,257 @@
+import {
+  type CommitRecord,
+  type EloRating,
+  type GameEvent,
+  type MarketSnapshot,
+  type Match,
+  MatchStatus,
+  type RevealRecord,
+  type Round,
+  RULES,
+  type ShareCard,
+  type ShareEvent,
+  type ViewerRanking,
+  type Vote,
+} from "@/types";
+import { verifyCommit } from "@/lib/fairness/commit-reveal";
+import { randomUUID } from "node:crypto";
+
+const now = () => new Date();
+
+const matches = new Map<string, Match>();
+const roundsByMatch = new Map<string, Round[]>();
+const commits = new Map<string, CommitRecord>();
+const reveals = new Map<string, RevealRecord>();
+const marketByMatch = new Map<string, MarketSnapshot>();
+const votesByMatch = new Map<string, Vote[]>();
+const shareCardByMatch = new Map<string, ShareCard>();
+const shareEventsByCard = new Map<string, ShareEvent[]>();
+const viewerRankings = new Map<string, ViewerRanking>();
+const eloRatingsByAgent = new Map<string, EloRating[]>();
+const usedRevealNoncesByMatch = new Map<string, Set<string>>();
+const eventsByMatch = new Map<string, Array<{ seq: number; event: GameEvent }>>();
+
+let eventSeq = 0;
+
+function commitKey(matchId: string, roundNo: number, agentId: string): string {
+  return `${matchId}:${roundNo}:${agentId}`;
+}
+
+function revealKey(matchId: string, roundNo: number, agentId: string): string {
+  return `${matchId}:${roundNo}:${agentId}`;
+}
+
+function pushEvent(matchId: string, event: GameEvent): void {
+  const list = eventsByMatch.get(matchId) ?? [];
+  list.push({ seq: ++eventSeq, event });
+  eventsByMatch.set(matchId, list);
+}
+
+function seedMatch(matchId: string): Match {
+  const started = now();
+  return {
+    id: matchId,
+    seasonId: "season-1",
+    agentA: "agent-a",
+    agentB: "agent-b",
+    status: MatchStatus.RUNNING,
+    format: "BO7",
+    scoreA: 0,
+    scoreB: 0,
+    winsA: 0,
+    winsB: 0,
+    currentRound: 0,
+    maxRounds: RULES.MAX_ROUNDS,
+    winnerId: null,
+    startedAt: started,
+    finishedAt: null,
+    createdAt: started,
+  };
+}
+
+function initDevData(): void {
+  const match = seedMatch("match-1");
+  matches.set(match.id, match);
+  roundsByMatch.set(match.id, []);
+  votesByMatch.set(match.id, []);
+  marketByMatch.set(match.id, {
+    id: randomUUID(),
+    marketMappingId: `mapping-${match.id}`,
+    impliedProbA: 0.5,
+    impliedProbB: 0.5,
+    volume: 0,
+    capturedAt: now(),
+  });
+}
+
+export const db = {
+  initDevData,
+  getMatch(matchId: string): Match | null {
+    return matches.get(matchId) ?? null;
+  },
+  updateMatch(match: Match): Match {
+    matches.set(match.id, match);
+    return match;
+  },
+  getRounds(matchId: string): Round[] {
+    return [...(roundsByMatch.get(matchId) ?? [])].sort((a, b) => a.roundNo - b.roundNo);
+  },
+  addRound(round: Round): Round {
+    const rounds = roundsByMatch.get(round.matchId) ?? [];
+    const next = rounds.filter((r) => r.roundNo !== round.roundNo);
+    next.push(round);
+    roundsByMatch.set(round.matchId, next.sort((a, b) => a.roundNo - b.roundNo));
+    return round;
+  },
+  getRound(matchId: string, roundNo: number): Round | null {
+    return (roundsByMatch.get(matchId) ?? []).find((r) => r.roundNo === roundNo) ?? null;
+  },
+  getMarket(matchId: string): MarketSnapshot | null {
+    return marketByMatch.get(matchId) ?? null;
+  },
+  getVotes(matchId: string): Vote[] {
+    return [...(votesByMatch.get(matchId) ?? [])];
+  },
+  getVotesForMatch(matchId: string): Vote[] {
+    return [...(votesByMatch.get(matchId) ?? [])];
+  },
+  addEloRating(rating: EloRating): EloRating {
+    const current = eloRatingsByAgent.get(rating.agentId) ?? [];
+    current.push(rating);
+    eloRatingsByAgent.set(rating.agentId, current);
+    return rating;
+  },
+  getCurrentEloRating(agentId: string): EloRating | null {
+    const ratings = eloRatingsByAgent.get(agentId) ?? [];
+    if (ratings.length === 0) return null;
+
+    return ratings.slice().sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0] ?? null;
+  },
+  getEloMatchCount(agentId: string): number {
+    return (eloRatingsByAgent.get(agentId) ?? []).length;
+  },
+  listEloRatingsBySeason(seasonId: string): EloRating[] {
+    const all = [...eloRatingsByAgent.values()].flat();
+    return all.filter((rating) => {
+      const match = matches.get(rating.matchId);
+      return match?.seasonId === seasonId;
+    });
+  },
+  upsertCommit(matchId: string, roundNo: number, agentId: string, commitHash: string): CommitRecord {
+    const record: CommitRecord = {
+      id: randomUUID(),
+      matchId,
+      roundNo,
+      agentId,
+      commitHash,
+      committedAt: now(),
+      expiresAt: new Date(Date.now() + RULES.COMMIT_TIMEOUT_MS),
+    };
+    commits.set(commitKey(matchId, roundNo, agentId), record);
+
+    pushEvent(matchId, { type: "ROUND_COMMIT", matchId, roundNo, agentId });
+    return record;
+  },
+  getCommit(matchId: string, roundNo: number, agentId: string): CommitRecord | null {
+    return commits.get(commitKey(matchId, roundNo, agentId)) ?? null;
+  },
+  upsertReveal(matchId: string, roundNo: number, agentId: string, move: Round["moveA"], salt: string): RevealRecord {
+    const rec: RevealRecord = {
+      id: randomUUID(),
+      matchId,
+      roundNo,
+      agentId,
+      move: move!,
+      salt,
+      verified: false,
+      revealedAt: now(),
+    };
+    reveals.set(revealKey(matchId, roundNo, agentId), rec);
+    return rec;
+  },
+  getReveal(matchId: string, roundNo: number, agentId: string): RevealRecord | null {
+    return reveals.get(revealKey(matchId, roundNo, agentId)) ?? null;
+  },
+  verifyReveal(matchId: string, roundNo: number, agentId: string): boolean {
+    const reveal = reveals.get(revealKey(matchId, roundNo, agentId));
+    const commit = commits.get(commitKey(matchId, roundNo, agentId));
+    if (!reveal || !commit) return false;
+
+    const roundId = `${matchId}:${roundNo}`;
+    reveal.verified = verifyCommit(commit.commitHash, reveal.move, reveal.salt, roundId, agentId);
+    return reveal.verified;
+  },
+  getOrCreateRevealNonceSet(matchId: string): Set<string> {
+    const set = usedRevealNoncesByMatch.get(matchId) ?? new Set<string>();
+    usedRevealNoncesByMatch.set(matchId, set);
+    return set;
+  },
+  appendEvents(matchId: string, events: GameEvent[]): void {
+    for (const event of events) pushEvent(matchId, event);
+  },
+  getEventsSince(matchId: string, sinceSeq: number): Array<{ seq: number; event: GameEvent }> {
+    return (eventsByMatch.get(matchId) ?? []).filter((entry) => entry.seq > sinceSeq);
+  },
+  addVote(matchId: string, vote: Vote): Vote {
+    const votes = votesByMatch.get(matchId) ?? [];
+    const withoutCurrent = votes.filter((v) => !(v.viewerId === vote.viewerId && v.roundNo === vote.roundNo));
+    withoutCurrent.push(vote);
+    votesByMatch.set(matchId, withoutCurrent);
+
+    const tally = {
+      votesA: withoutCurrent.filter((v) => v.side === "A").length,
+      votesB: withoutCurrent.filter((v) => v.side === "B").length,
+    };
+    pushEvent(matchId, { type: "VOTE_UPDATE", matchId, ...tally });
+    return vote;
+  },
+  getVoteTally(matchId: string): { a: number; b: number } {
+    const votes = votesByMatch.get(matchId) ?? [];
+    return {
+      a: votes.filter((v) => v.side === "A").length,
+      b: votes.filter((v) => v.side === "B").length,
+    };
+  },
+  setShareCard(matchId: string, card: ShareCard): ShareCard {
+    shareCardByMatch.set(matchId, card);
+    return card;
+  },
+  getShareCard(matchId: string): ShareCard | null {
+    return shareCardByMatch.get(matchId) ?? null;
+  },
+  addShareEvent(event: ShareEvent): ShareEvent {
+    const events = shareEventsByCard.get(event.shareCardId) ?? [];
+    events.push(event);
+    shareEventsByCard.set(event.shareCardId, events);
+    return event;
+  },
+  getViewerRankings(period: "weekly" | "season"): ViewerRanking[] {
+    const source = [...viewerRankings.values()];
+    if (source.length > 0) return source;
+
+    return [
+      {
+        id: randomUUID(),
+        viewerId: "viewer-1",
+        seasonId: period === "season" ? "season-1" : "week-current",
+        totalVotes: 10,
+        correctVotes: 7,
+        hitRate: 0.7,
+        currentStreak: 2,
+        bestStreak: 4,
+        badges: ["reader"],
+        votedMatchIds: ["match-1"],
+        updatedAt: now(),
+      },
+    ];
+  },
+  getViewerRanking(viewerId: string, seasonId: string): ViewerRanking | null {
+    return viewerRankings.get(`${seasonId}:${viewerId}`) ?? null;
+  },
+  upsertViewerRanking(ranking: ViewerRanking): ViewerRanking {
+    viewerRankings.set(`${ranking.seasonId}:${ranking.viewerId}`, ranking);
+    return ranking;
+  },
+};
+
+initDevData();
