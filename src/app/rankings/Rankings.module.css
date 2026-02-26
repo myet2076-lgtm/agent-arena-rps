@@ -1,0 +1,129 @@
+.page {
+  display: grid;
+  gap: 1rem;
+}
+
+.header {
+  padding: 1rem 1.1rem;
+}
+
+.title {
+  font-size: clamp(1.25rem, 3.2vw, 1.9rem);
+}
+
+.subtitle {
+  color: var(--text-dim);
+  margin-top: 0.35rem;
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tabActive {
+  color: var(--bg);
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+}
+
+.podium {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.podiumCard {
+  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(20, 20, 31, 0.9);
+}
+
+.podiumCard strong {
+  display: block;
+}
+
+.gold {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 45%, transparent), 0 0 22px color-mix(in srgb, var(--gold) 15%, transparent);
+}
+
+.cyan {
+  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.4), 0 0 20px rgba(0, 240, 255, 0.14);
+}
+
+.magenta {
+  box-shadow: 0 0 0 1px rgba(255, 0, 170, 0.4), 0 0 20px rgba(255, 0, 170, 0.12);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.table th {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.center {
+  text-align: center;
+}
+
+.badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.74rem;
+}
+
+.state {
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.error {
+  color: var(--danger);
+}
+
+@media (min-width: 768px) {
+  .podium {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

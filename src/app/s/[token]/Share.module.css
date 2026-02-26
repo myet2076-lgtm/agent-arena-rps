@@ -1,0 +1,60 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--text);
+  padding: 1rem;
+}
+
+.card {
+  width: min(680px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 1.2rem;
+  display: grid;
+  gap: 0.85rem;
+  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.08), 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+.pill {
+  width: fit-content;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.card h1 { margin: 0; }
+
+.score {
+  font-size: clamp(2.2rem, 8vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.dim { color: var(--text-dim); margin: 0; }
+
+.highlights {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.highlight {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+
+.cta {
+  justify-self: start;
+  margin-top: 0.3rem;
+  text-decoration: none;
+  color: var(--bg);
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  font-weight: 800;
+}

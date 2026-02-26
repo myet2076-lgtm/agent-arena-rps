@@ -1,0 +1,86 @@
+.timeline {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  animation: slideIn 420ms ease both;
+}
+
+.roundNo {
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+.content {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.moves {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.versus {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.outcome {
+  font-weight: 700;
+}
+
+.points {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.flag {
+  font-size: 0.88rem;
+}
+
+.readBonus {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 45%, transparent);
+}
+
+.aWin {
+  border-left: 3px solid var(--accent);
+}
+
+.bWin {
+  border-left: 3px solid var(--accent2);
+}
+
+.draw {
+  border-left: 3px solid var(--muted);
+}
+
+.empty {
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-dim);
+  background: var(--card);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

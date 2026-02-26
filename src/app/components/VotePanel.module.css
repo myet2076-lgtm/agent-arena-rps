@@ -1,0 +1,77 @@
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+.actions button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem;
+  font-weight: 800;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.aButton {
+  background: rgba(0, 240, 255, 0.12);
+}
+
+.bButton {
+  background: rgba(255, 0, 170, 0.12);
+}
+
+.actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.actions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.voteBar {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.aFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 260ms ease;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.dim {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 680px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.82rem;
+}

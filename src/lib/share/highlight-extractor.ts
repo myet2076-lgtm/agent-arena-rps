@@ -1,11 +1,11 @@
-import { type HighlightRound, type Match, type MatchSummary, type Round, RoundOutcome, RULES } from "@/types";
+import { type HighlightRound, type Match, type MatchDTO, type MatchSummary, type Round, type RoundDTO, RoundOutcome, RULES } from "@/types";
 
 function leader(scoreA: number, scoreB: number): "A" | "B" | "TIE" {
   if (scoreA === scoreB) return "TIE";
   return scoreA > scoreB ? "A" : "B";
 }
 
-export function extractHighlights(match: Match, rounds: Round[]): HighlightRound[] {
+export function extractHighlights(match: Match | MatchDTO, rounds: Array<Round | RoundDTO>): HighlightRound[] {
   let scoreA = 0;
   let scoreB = 0;
   let previousLeader: "A" | "B" | "TIE" = "TIE";
@@ -88,7 +88,7 @@ export function extractHighlights(match: Match, rounds: Round[]): HighlightRound
   return highlights.sort((a, b) => b.dramaScore - a.dramaScore || a.roundNo - b.roundNo);
 }
 
-export function generateMatchSummary(match: Match, rounds: Round[], highlights: HighlightRound[]): MatchSummary {
+export function generateMatchSummary(match: Match | MatchDTO, rounds: Array<Round | RoundDTO>, highlights: HighlightRound[]): MatchSummary {
   let maxLeadA = 0;
   let maxLeadB = 0;
   let scoreA = 0;

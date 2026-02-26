@@ -25,6 +25,7 @@ const reveals = new Map<string, RevealRecord>();
 const marketByMatch = new Map<string, MarketSnapshot>();
 const votesByMatch = new Map<string, Vote[]>();
 const shareCardByMatch = new Map<string, ShareCard>();
+const shareCardByToken = new Map<string, ShareCard>();
 const shareEventsByCard = new Map<string, ShareEvent[]>();
 const viewerRankings = new Map<string, ViewerRanking>();
 const eloRatingsByAgent = new Map<string, EloRating[]>();
@@ -82,6 +83,17 @@ function initDevData(): void {
     volume: 0,
     capturedAt: now(),
   });
+
+  const devShareCard: ShareCard = {
+    id: randomUUID(),
+    matchId: match.id,
+    imageUrl: "/og/match-result.png",
+    highlightRounds: [],
+    shareToken: "dev-share-match-1",
+    createdAt: now(),
+  };
+  shareCardByMatch.set(match.id, devShareCard);
+  shareCardByToken.set(devShareCard.shareToken, devShareCard);
 }
 
 export const db = {
@@ -214,10 +226,14 @@ export const db = {
   },
   setShareCard(matchId: string, card: ShareCard): ShareCard {
     shareCardByMatch.set(matchId, card);
+    shareCardByToken.set(card.shareToken, card);
     return card;
   },
   getShareCard(matchId: string): ShareCard | null {
     return shareCardByMatch.get(matchId) ?? null;
+  },
+  getShareCardByToken(token: string): ShareCard | null {
+    return shareCardByToken.get(token) ?? null;
   },
   addShareEvent(event: ShareEvent): ShareEvent {
     const events = shareEventsByCard.get(event.shareCardId) ?? [];

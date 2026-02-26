@@ -1,0 +1,97 @@
+.page {
+  min-height: 100dvh;
+  padding: 1.1rem;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  gap: 1rem;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.headerRow h1 {
+  font-size: clamp(1.05rem, 3vw, 1.45rem);
+  margin: 0;
+}
+
+.connection {
+  font-size: 0.86rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.online { color: var(--success); }
+.offline { color: var(--warning); }
+
+.liveRound {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 0.9rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label { color: var(--text-dim); font-size: 0.85rem; }
+.roundNo { font-size: 1.3rem; font-weight: 800; }
+
+.countdownPulse {
+  color: var(--text-dim);
+  animation: breathe 1.6s infinite;
+}
+
+.cardSection {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 1rem;
+}
+
+.cardSection h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1rem;
+}
+
+.interactionGrid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 0.9rem;
+}
+
+.state,
+.stateError {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--card);
+}
+
+.stateError { color: var(--danger); }
+
+@keyframes breathe {
+  50% {
+    opacity: 0.5;
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 760px) {
+  .interactionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .liveRound {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+}

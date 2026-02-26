@@ -1,0 +1,67 @@
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.stats > div {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.stats span {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.stats strong {
+  font-size: 1.1rem;
+}
+
+.list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.round { color: var(--text-dim); font-size: 0.88rem; }
+
+.badge {
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.76rem;
+}
+
+.reason { margin: 0; }
+
+.reversal { background: rgba(0, 240, 255, 0.14); color: var(--accent); }
+.readBonus { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); }
+.matchPoint { background: rgba(255, 0, 170, 0.18); color: var(--accent2); }
+.clutch { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+
+@media (max-width: 760px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .item { grid-template-columns: 1fr; }
+}
