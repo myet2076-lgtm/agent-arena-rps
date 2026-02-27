@@ -75,7 +75,7 @@
 .reason { margin: 0; font-size: 0.9rem; }
 
 .reversal { background: var(--accent-light); color: var(--accent); }
-.readBonus { background: var(--warning-light); color: var(--warning); }
+.predictionBonus { background: var(--warning-light); color: var(--warning); }
 .matchPoint { background: #fce7f3; color: #db2777; }
 .clutch { background: var(--danger-light); color: var(--danger); }
 

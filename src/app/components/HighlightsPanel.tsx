@@ -10,7 +10,7 @@ function typeClass(type: HighlightRound["type"]): string {
   if (type === "CLUTCH") return styles.clutch;
   if (type === "MATCH_POINT") return styles.matchPoint;
   if (type === "REVERSAL") return styles.reversal;
-  return styles.readBonus;
+  return styles.predictionBonus;
 }
 
 export function HighlightsPanel({ summary, highlights }: HighlightsPanelProps) {

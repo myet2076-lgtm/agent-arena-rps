@@ -68,13 +68,15 @@ export function tryMatch(): MatchResult | null {
     type: "MATCH_ASSIGNED",
     agentId: entryA.agentId,
     matchId,
-    opponentId: entryB.agentId,
+    opponent: { id: entryB.agentId, name: agentB?.name ?? "Unknown", elo: agentB?.elo ?? 1500 },
+    readyDeadline: readyDeadline.toISOString(),
   });
   emitQueueEvent(entryB.agentId, {
     type: "MATCH_ASSIGNED",
     agentId: entryB.agentId,
     matchId,
-    opponentId: entryA.agentId,
+    opponent: { id: entryA.agentId, name: agentA?.name ?? "Unknown", elo: agentA?.elo ?? 1500 },
+    readyDeadline: readyDeadline.toISOString(),
   });
 
   // Then REMOVED with reason MATCHED

@@ -37,9 +37,9 @@ export class ApiError extends Error {
  * Never leaks stack traces. 500 errors are logged internally.
  */
 export function handleApiError(
-  handler: (req: Request, ...args: any[]) => Promise<NextResponse>,
-): (req: Request, ...args: any[]) => Promise<NextResponse> {
-  return async (req: Request, ...args: any[]) => {
+  handler: (req: any, ...args: any[]) => Promise<NextResponse | Response>,
+): (req: any, ...args: any[]) => Promise<NextResponse | Response> {
+  return async (req: any, ...args: any[]) => {
     try {
       return await handler(req, ...args);
     } catch (err: unknown) {

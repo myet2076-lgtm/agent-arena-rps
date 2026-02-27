@@ -51,12 +51,12 @@
   font-size: 0.85rem;
 }
 
-.readBonus {
+.predictionBonus {
   background: var(--warning-light);
   border-left: 3px solid var(--gold);
 }
 
-.readBonus .flag {
+.predictionBonus .flag {
   color: var(--gold);
   font-weight: 600;
 }

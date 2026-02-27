@@ -3,8 +3,8 @@
  */
 
 export type QueueEvent =
-  | { type: "POSITION_UPDATE"; agentId: string; position: number }
-  | { type: "MATCH_ASSIGNED"; agentId: string; matchId: string; opponentId: string }
+  | { type: "POSITION_UPDATE"; agentId: string; position: number; estimatedWaitSec: number }
+  | { type: "MATCH_ASSIGNED"; agentId: string; matchId: string; opponent: { id: string; name: string; elo: number }; readyDeadline: string }
   | { type: "REMOVED"; agentId: string; reason: "TIMEOUT" | "BANNED" | "MATCHED" | "MANUAL" };
 
 type Listener = (event: QueueEvent) => void;

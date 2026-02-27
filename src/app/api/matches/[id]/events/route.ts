@@ -1,4 +1,5 @@
 import { authenticateByKey } from "@/lib/server/auth";
+import { ApiError, handleApiError } from "@/lib/server/api-error";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { db } from "@/lib/server/in-memory-db";
 import { type GameEvent, MatchStatus } from "@/types";
@@ -25,7 +26,6 @@ function formatEventForPerspective(
       const yourMove = isA ? event.moveA : event.moveB;
       const opponentMove = isA ? event.moveB : event.moveA;
       const yourPredictionBonus = isA ? event.predictionBonusA : event.predictionBonusB;
-      const opponentPredictionBonus = isA ? event.predictionBonusB : event.predictionBonusA;
       return {
         type: event.type,
         round: event.roundNo,
@@ -60,7 +60,7 @@ function formatEventForPerspective(
           you: isA ? event.finalScoreA : event.finalScoreB,
           opponent: isA ? event.finalScoreB : event.finalScoreA,
         },
-        eloChange: isA ? event.eloChangeA : event.eloChangeB,
+        eloChange: isA ? (event.eloChangeA ?? 0) : (event.eloChangeB ?? 0),
       };
     }
     return {
@@ -75,62 +75,95 @@ function formatEventForPerspective(
   return event as unknown as Record<string, unknown>;
 }
 
-function encodeSse(seq: number, event: Record<string, unknown>): string {
+function encodeSse(matchId: string, seq: number, event: Record<string, unknown>): string {
   const type = event.type as string;
-  return `id: ${seq}\nevent: ${type}\ndata: ${JSON.stringify(event)}\n\n`;
+  return `id: ${matchId}-${seq}\nevent: ${type}\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
-export async function GET(request: NextRequest, { params }: Params): Promise<Response> {
-  try {
+function buildResyncSnapshot(
+  matchId: string,
+  perspective: Perspective,
+  agentId: string | null,
+  matchAgentA: string,
+  matchAgentB: string,
+): Record<string, unknown> {
+  const currentMatch = db.getMatch(matchId);
+  if (!currentMatch) {
+    return { type: "RESYNC", matchId, snapshot: {} };
+  }
+
+  const baseSnapshot: Record<string, unknown> = {
+    status: currentMatch.status,
+    phase: currentMatch.currentPhase,
+    currentRound: currentMatch.currentRound,
+  };
+
+  if (perspective === "agent" && agentId) {
+    const isA = agentId === matchAgentA;
+    baseSnapshot.score = {
+      you: isA ? currentMatch.scoreA : currentMatch.scoreB,
+      opponent: isA ? currentMatch.scoreB : currentMatch.scoreA,
+    };
+  } else {
+    baseSnapshot.scoreA = currentMatch.scoreA;
+    baseSnapshot.scoreB = currentMatch.scoreB;
+  }
+
+  return { type: "RESYNC", matchId, snapshot: baseSnapshot };
+}
+
+export const GET = handleApiError(async (request: NextRequest, { params }: Params) => {
   const { id: matchId } = await params;
 
   // Rate limit: authenticated by key if present, otherwise by IP
   const apiKey = request.headers.get("x-agent-key");
   const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  let authedAgentId: string | null = null;
+
   if (apiKey) {
     const auth = authenticateByKey(request);
     if (!auth.valid) {
-      return new Response(JSON.stringify({ error: "INVALID_KEY", message: "Invalid API key", details: {} }), {
-        status: 401,
-        headers: { "content-type": "application/json" },
-      });
+      throw new ApiError(401, "INVALID_KEY", "Invalid API key");
     }
     const rl = checkRateLimit(auth.agentId, ip);
-    if (!rl.allowed) return new Response(rl.response!.body, { status: 429, headers: Object.fromEntries(rl.response!.headers.entries()) });
+    if (!rl.allowed) return rl.response!;
+    authedAgentId = auth.agentId;
   } else {
     const rl = checkRateLimit(null, ip);
-    if (!rl.allowed) return new Response(rl.response!.body, { status: 429, headers: Object.fromEntries(rl.response!.headers.entries()) });
+    if (!rl.allowed) return rl.response!;
   }
 
   const match = db.getMatch(matchId);
   if (!match) {
-    return new Response(JSON.stringify({ error: "NOT_FOUND", message: "Match not found", details: {} }), {
-      status: 404,
-      headers: { "content-type": "application/json" },
-    });
+    throw new ApiError(404, "NOT_FOUND", "Match not found");
   }
 
   // Auth-based perspective
   let perspective: Perspective = "viewer";
   let agentId: string | null = null;
 
-  if (apiKey) {
-    const auth = authenticateByKey(request);
-    if (auth.valid && (auth.agentId === match.agentA || auth.agentId === match.agentB)) {
-      perspective = "agent";
-      agentId = auth.agentId;
-    }
+  if (authedAgentId && (authedAgentId === match.agentA || authedAgentId === match.agentB)) {
+    perspective = "agent";
+    agentId = authedAgentId;
   }
 
-  // Parse Last-Event-ID — plain sequence number
+  // Parse Last-Event-ID — format: {matchId}-{seq}
   const lastEventId = request.headers.get("last-event-id");
   let startSeq = 0;
   let needsResyncCheck = false;
   if (lastEventId) {
-    const seq = parseInt(lastEventId, 10);
-    if (!isNaN(seq) && seq > 0) {
-      startSeq = seq;
-      needsResyncCheck = true;
+    // Validate format: must belong to this match
+    const prefix = `${matchId}-`;
+    if (lastEventId.startsWith(prefix)) {
+      const seq = parseInt(lastEventId.slice(prefix.length), 10);
+      if (!isNaN(seq) && seq > 0) {
+        startSeq = seq;
+        needsResyncCheck = true;
+      }
+    }
+    // If format doesn't match this matchId, ignore and send full snapshot (RESYNC path)
+    if (!needsResyncCheck && lastEventId.length > 0) {
+      needsResyncCheck = true; // will trigger RESYNC since startSeq=0 < oldestSeq
     }
   }
 
@@ -151,22 +184,9 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
       if (needsResyncCheck) {
         const oldestSeq = db.getOldestSeq(matchId);
         if (startSeq < oldestSeq) {
-          // Client is too far behind — send RESYNC with full snapshot
-          const currentMatch = db.getMatch(matchId);
-          if (currentMatch) {
-            const snapshot: Record<string, unknown> = {
-              type: "RESYNC",
-              matchId,
-              snapshot: {
-                status: currentMatch.status,
-                phase: currentMatch.currentPhase,
-                scoreA: currentMatch.scoreA,
-                scoreB: currentMatch.scoreB,
-                currentRound: currentMatch.currentRound,
-              },
-            };
-            controller.enqueue(encoder.encode(encodeSse(0, snapshot)));
-          }
+          // Client is too far behind — send RESYNC with perspective-aware snapshot
+          const snapshot = buildResyncSnapshot(matchId, perspective, agentId, match.agentA, match.agentB);
+          controller.enqueue(encoder.encode(encodeSse(matchId, 0, snapshot)));
           // Update lastSeq to current oldest so polling picks up from there
           const allBuffered = db.getEventsSince(matchId, 0);
           if (allBuffered.length > 0) lastSeq = allBuffered[allBuffered.length - 1].seq;
@@ -175,7 +195,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
           const buffered = db.getEventsSince(matchId, startSeq);
           for (const item of buffered) {
             const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-            controller.enqueue(encoder.encode(encodeSse(item.seq, formatted)));
+            controller.enqueue(encoder.encode(encodeSse(matchId, item.seq, formatted)));
             lastSeq = item.seq;
           }
         }
@@ -194,13 +214,13 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
               currentRound: currentMatch.currentRound,
             },
           };
-          controller.enqueue(encoder.encode(encodeSse(0, snapshot)));
+          controller.enqueue(encoder.encode(encodeSse(matchId, 0, snapshot)));
         }
         // Also replay any existing buffered events
         const buffered = db.getEventsSince(matchId, 0);
         for (const item of buffered) {
           const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-          controller.enqueue(encoder.encode(encodeSse(item.seq, formatted)));
+          controller.enqueue(encoder.encode(encodeSse(matchId, item.seq, formatted)));
           lastSeq = item.seq;
         }
       }
@@ -211,7 +231,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
         const next = db.getEventsSince(matchId, lastSeq);
         for (const item of next) {
           const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-          controller.enqueue(encoder.encode(encodeSse(item.seq, formatted)));
+          controller.enqueue(encoder.encode(encodeSse(matchId, item.seq, formatted)));
           lastSeq = item.seq;
         }
 
@@ -247,12 +267,5 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
     },
-  });
-  } catch (err: unknown) {
-    console.error("[Match SSE Error]", err);
-    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: "An unexpected error occurred", details: {} }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-}
+  }) as any; // SSE Response compatible with handleApiError wrapper
+});

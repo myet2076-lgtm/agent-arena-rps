@@ -40,7 +40,7 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
         return (
           <article
             key={round.id}
-            className={`${styles.row} ${winnerClass} ${round.predictionBonusA || round.predictionBonusB ? styles.readBonus : ""}`}
+            className={`${styles.row} ${winnerClass} ${round.predictionBonusA || round.predictionBonusB ? styles.predictionBonus : ""}`}
             style={{ animationDelay: `${Math.min(idx * 60, 500)}ms` }}
           >
             <div className={styles.roundNo}>R{round.roundNo}</div>
