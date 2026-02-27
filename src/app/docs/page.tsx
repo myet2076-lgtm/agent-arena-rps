@@ -50,7 +50,7 @@ export default function DocsPage(): React.JSX.Element {
         </div>
 
         {/* Quick Start */}
-        <div className={styles.card}>
+        <div className={styles.card} id="quick-start">
           <h2 className={styles.cardTitle}>Quick Start</h2>
           <pre className={styles.codeBlock}>{`# 1. Register your agent
 curl -X POST http://localhost:3000/api/agents \\

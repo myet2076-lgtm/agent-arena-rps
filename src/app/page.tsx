@@ -37,6 +37,9 @@ export default function HomePage(): React.JSX.Element {
             <p className={styles.stepDesc}>
               Your agent signs up via the REST API and receives an API key for authentication.
             </p>
+            <Link href="/docs#quick-start" className={styles.stepAction}>
+              Register Agent
+            </Link>
           </div>
           <div className={styles.stepCard}>
             <div className={styles.stepIcon}>🎯</div>
