@@ -1,10 +1,14 @@
 import {
+  type AgentRecord,
+  type AgentStatus,
   type CommitRecord,
   type EloRating,
   type GameEvent,
   type MarketSnapshot,
   type Match,
   MatchStatus,
+  type QualificationMatch,
+  type QueueEntry,
   type RevealRecord,
   type Round,
   RULES,
@@ -17,6 +21,13 @@ import { verifyCommit } from "@/lib/fairness/commit-reveal";
 import { randomUUID } from "node:crypto";
 
 const now = () => new Date();
+
+// ─── New Collections (PRD §3) ───────────────────────────
+const agents = new Map<string, AgentRecord>();
+const agentsByKeyHash = new Map<string, AgentRecord>();
+const agentsByName = new Map<string, AgentRecord>();
+const queueEntries = new Map<string, QueueEntry>();
+const qualificationMatches = new Map<string, QualificationMatch>();
 
 const matches = new Map<string, Match>();
 const roundsByMatch = new Map<string, Round[]>();
@@ -42,9 +53,15 @@ function revealKey(matchId: string, roundNo: number, agentId: string): string {
   return `${matchId}:${roundNo}:${agentId}`;
 }
 
+const MAX_EVENT_BUFFER = 50;
+
 function pushEvent(matchId: string, event: GameEvent): void {
   const list = eventsByMatch.get(matchId) ?? [];
   list.push({ seq: ++eventSeq, event });
+  // Enforce max buffer size (PRD contract)
+  if (list.length > MAX_EVENT_BUFFER) {
+    list.splice(0, list.length - MAX_EVENT_BUFFER);
+  }
   eventsByMatch.set(matchId, list);
 }
 
@@ -67,6 +84,14 @@ function seedMatch(matchId: string): Match {
     startedAt: started,
     finishedAt: null,
     createdAt: started,
+    readyA: false,
+    readyB: false,
+    readyDeadline: null,
+    currentPhase: "COMMIT" as Match["currentPhase"],
+    phaseDeadline: null,
+    eloChangeA: null,
+    eloChangeB: null,
+    eloUpdatedAt: null,
   };
 }
 
@@ -112,6 +137,11 @@ export const db = {
     eloRatingsByAgent.clear();
     usedRevealNoncesByMatch.clear();
     eventsByMatch.clear();
+    agents.clear();
+    agentsByKeyHash.clear();
+    agentsByName.clear();
+    queueEntries.clear();
+    qualificationMatches.clear();
     eventSeq = 0;
     initDevData();
   },
@@ -175,6 +205,7 @@ export const db = {
       commitHash,
       committedAt: now(),
       expiresAt: new Date(Date.now() + RULES.COMMIT_TIMEOUT_MS),
+      prediction: null,
     };
     commits.set(commitKey(matchId, roundNo, agentId), record);
 
@@ -201,13 +232,17 @@ export const db = {
   getReveal(matchId: string, roundNo: number, agentId: string): RevealRecord | null {
     return reveals.get(revealKey(matchId, roundNo, agentId)) ?? null;
   },
+  /** Directly mark a reveal as verified (called after hash check in reveal route) */
+  verifyRevealDirect(matchId: string, roundNo: number, agentId: string): void {
+    const reveal = reveals.get(revealKey(matchId, roundNo, agentId));
+    if (reveal) reveal.verified = true;
+  },
   verifyReveal(matchId: string, roundNo: number, agentId: string): boolean {
     const reveal = reveals.get(revealKey(matchId, roundNo, agentId));
     const commit = commits.get(commitKey(matchId, roundNo, agentId));
     if (!reveal || !commit) return false;
 
-    const roundId = `${matchId}:${roundNo}`;
-    reveal.verified = verifyCommit(commit.commitHash, reveal.move, reveal.salt, roundId, agentId);
+    reveal.verified = verifyCommit(commit.commitHash, reveal.move, reveal.salt);
     return reveal.verified;
   },
   getOrCreateRevealNonceSet(matchId: string): Set<string> {
@@ -220,6 +255,10 @@ export const db = {
   },
   getEventsSince(matchId: string, sinceSeq: number): Array<{ seq: number; event: GameEvent }> {
     return (eventsByMatch.get(matchId) ?? []).filter((entry) => entry.seq > sinceSeq);
+  },
+  getOldestSeq(matchId: string): number {
+    const list = eventsByMatch.get(matchId) ?? [];
+    return list.length > 0 ? list[0].seq : 0;
   },
   addVote(matchId: string, vote: Vote): Vote {
     const votes = votesByMatch.get(matchId) ?? [];
@@ -287,6 +326,74 @@ export const db = {
   upsertViewerRanking(ranking: ViewerRanking): ViewerRanking {
     viewerRankings.set(`${ranking.seasonId}:${ranking.viewerId}`, ranking);
     return ranking;
+  },
+  // ─── Agent CRUD ──────────────────────────────────────
+  createAgent(agent: AgentRecord): AgentRecord {
+    agents.set(agent.id, agent);
+    agentsByKeyHash.set(agent.keyHash, agent);
+    agentsByName.set(agent.name.toLowerCase(), agent);
+    return agent;
+  },
+  getAgent(id: string): AgentRecord | null {
+    return agents.get(id) ?? null;
+  },
+  getAgentByKeyHash(keyHash: string): AgentRecord | null {
+    return agentsByKeyHash.get(keyHash) ?? null;
+  },
+  getAgentByName(name: string): AgentRecord | null {
+    return agentsByName.get(name.toLowerCase()) ?? null;
+  },
+  updateAgent(agent: AgentRecord): AgentRecord {
+    agents.set(agent.id, agent);
+    agentsByKeyHash.set(agent.keyHash, agent);
+    agentsByName.set(agent.name.toLowerCase(), agent);
+    return agent;
+  },
+  listAgents(): AgentRecord[] {
+    return [...agents.values()];
+  },
+  agentCount(): number {
+    return agents.size;
+  },
+
+  // ─── Queue CRUD ─────────────────────────────────────
+  createQueueEntry(entry: QueueEntry): QueueEntry {
+    queueEntries.set(entry.id, entry);
+    return entry;
+  },
+  getQueueEntry(id: string): QueueEntry | null {
+    return queueEntries.get(id) ?? null;
+  },
+  getQueueEntryByAgent(agentId: string): QueueEntry | null {
+    for (const entry of queueEntries.values()) {
+      if (entry.agentId === agentId && entry.status === "WAITING") return entry;
+    }
+    return null;
+  },
+  updateQueueEntry(entry: QueueEntry): QueueEntry {
+    queueEntries.set(entry.id, entry);
+    return entry;
+  },
+  listQueueEntries(status?: QueueEntry["status"]): QueueEntry[] {
+    const all = [...queueEntries.values()];
+    if (!status) return all;
+    return all.filter((e) => e.status === status).sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime());
+  },
+
+  // ─── Qualification CRUD ─────────────────────────────
+  createQualificationMatch(match: QualificationMatch): QualificationMatch {
+    qualificationMatches.set(match.id, match);
+    return match;
+  },
+  getQualificationMatch(id: string): QualificationMatch | null {
+    return qualificationMatches.get(id) ?? null;
+  },
+  updateQualificationMatch(match: QualificationMatch): QualificationMatch {
+    qualificationMatches.set(match.id, match);
+    return match;
+  },
+  listQualificationMatchesByAgent(agentId: string): QualificationMatch[] {
+    return [...qualificationMatches.values()].filter((m) => m.agentId === agentId);
   },
 };
 

@@ -32,12 +32,12 @@ export function extractHighlights(match: Match | MatchDTO, rounds: Array<Round |
       });
     }
 
-    if (round.readBonusA || round.readBonusB) {
-      if (round.readBonusA) {
+    if (round.predictionBonusA || round.predictionBonusB) {
+      if (round.predictionBonusA) {
         consecutiveReadA += 1;
         consecutiveReadB = 0;
       }
-      if (round.readBonusB) {
+      if (round.predictionBonusB) {
         consecutiveReadB += 1;
         consecutiveReadA = 0;
       }
@@ -107,7 +107,7 @@ export function generateMatchSummary(match: Match | MatchDTO, rounds: Array<Roun
     prevLeader = currLeader;
   }
 
-  const readBonusCount = rounds.filter((r) => r.readBonusA || r.readBonusB).length;
+  const predictionBonusCount = rounds.filter((r) => r.predictionBonusA || r.predictionBonusB).length;
 
   return {
     matchId: match.id,
@@ -115,7 +115,7 @@ export function generateMatchSummary(match: Match | MatchDTO, rounds: Array<Roun
     finalScoreA: match.scoreA,
     finalScoreB: match.scoreB,
     roundsPlayed: rounds.length,
-    readBonusCount,
+    predictionBonusCount,
     largestComeback: Math.max(maxLeadA, maxLeadB),
     momentumSwings: swings,
     topHighlights: highlights.slice(0, 5),

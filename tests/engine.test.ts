@@ -53,7 +53,7 @@ describe("game engine", () => {
     const second = processRound(match, rounds, Move.SCISSORS, Move.PAPER);
 
     expect(second.round.outcome).toBe(RoundOutcome.WIN_A);
-    expect(second.round.readBonusA).toBe(true);
+    expect(second.round.predictionBonusA).toBe(true);
     expect(second.round.pointsA).toBe(2);
     expect(second.updatedMatch.scoreA).toBe(2);
   });
@@ -141,7 +141,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("agent-A");
@@ -164,7 +164,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("agent-A");
@@ -187,7 +187,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("agent-A");
@@ -210,7 +210,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("DRAW");
@@ -220,14 +220,12 @@ describe("game engine", () => {
 describe("commit-reveal fairness", () => {
   it("verifies commit hash correctly", () => {
     const salt = generateSalt();
-    const roundId = "round-1";
-    const agentId = "agent-A";
     const move = Move.ROCK;
 
-    const commit = generateCommit(move, salt, roundId, agentId);
+    const commit = generateCommit(move, salt);
 
-    expect(verifyCommit(commit, move, salt, roundId, agentId)).toBe(true);
-    expect(verifyCommit(commit, Move.PAPER, salt, roundId, agentId)).toBe(false);
+    expect(verifyCommit(commit, move, salt)).toBe(true);
+    expect(verifyCommit(commit, Move.PAPER, salt)).toBe(false);
   });
 
   it("blocks nonce replay", () => {

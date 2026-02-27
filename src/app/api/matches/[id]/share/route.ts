@@ -1,41 +1,53 @@
-// TODO: Replace direct db access with ShareService when available
 import { db } from "@/lib/server/in-memory-db";
+import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { extractHighlights } from "@/lib/share/highlight-extractor";
 import { generateShareCard, recordShareEvent, resolveShareUrl, type ShareEventStore } from "@/lib/share/share-card";
-import { NextRequest, NextResponse } from "next/server";
+import { ApiError, handleApiError } from "@/lib/server/api-error";
+import { NextResponse } from "next/server";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+export const GET = handleApiError(async (
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) => {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(null, ip);
+  if (!rl.allowed) return rl.response!;
 
-export async function GET(request: NextRequest, { params }: Params): Promise<NextResponse> {
   const { id } = await params;
   const card = db.getShareCard(id);
-  if (!card) return NextResponse.json({ error: "Share card not found" }, { status: 404 });
+  if (!card) throw new ApiError(404, "NOT_FOUND", "Share card not found");
 
-  const viewerId = request.nextUrl.searchParams.get("viewerId");
-  const platform = request.nextUrl.searchParams.get("platform");
+  const url = new URL(req.url);
+  const viewerId = url.searchParams.get("viewerId");
+  const platform = url.searchParams.get("platform");
   if (platform) {
     recordShareEvent(db as ShareEventStore, card.id, viewerId, platform);
   }
 
   return NextResponse.json({ card, url: resolveShareUrl(card.shareToken) }, { status: 200 });
-}
+});
 
-export async function POST(request: NextRequest, { params }: Params): Promise<NextResponse> {
+export const POST = handleApiError(async (
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) => {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(null, ip);
+  if (!rl.allowed) return rl.response!;
+
   const { id } = await params;
 
-  const hasBody = (request.headers.get("content-length") ?? "0") !== "0";
+  const hasBody = (req.headers.get("content-length") ?? "0") !== "0";
   if (hasBody) {
     try {
-      await request.json();
+      await req.json();
     } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      throw new ApiError(400, "BAD_REQUEST", "Invalid JSON body");
     }
   }
 
   const match = db.getMatch(id);
-  if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 });
+  if (!match) throw new ApiError(404, "NOT_FOUND", "Match not found");
 
   const rounds = db.getRounds(id);
   const highlights = extractHighlights(match, rounds);
@@ -43,4 +55,4 @@ export async function POST(request: NextRequest, { params }: Params): Promise<Ne
   db.setShareCard(id, card);
 
   return NextResponse.json({ card, url: resolveShareUrl(card.shareToken) }, { status: 201 });
-}
+});

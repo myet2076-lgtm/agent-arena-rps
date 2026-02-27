@@ -39,7 +39,7 @@ function buildMatch(scoreA: number, scoreB: number): Match {
     winnerId: scoreA === scoreB ? null : scoreA > scoreB ? "agent-a" : "agent-b",
     startedAt: now,
     finishedAt: now,
-    createdAt: now,
+    createdAt: now, readyA: false, readyB: false, readyDeadline: null, currentPhase: "FINISHED" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
   };
 }
 

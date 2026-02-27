@@ -40,7 +40,7 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
         return (
           <article
             key={round.id}
-            className={`${styles.row} ${winnerClass} ${round.readBonusA || round.readBonusB ? styles.readBonus : ""}`}
+            className={`${styles.row} ${winnerClass} ${round.predictionBonusA || round.predictionBonusB ? styles.readBonus : ""}`}
             style={{ animationDelay: `${Math.min(idx * 60, 500)}ms` }}
           >
             <div className={styles.roundNo}>R{round.roundNo}</div>
@@ -54,8 +54,8 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
               <div className={styles.outcome}>{outcomeLabel(round.outcome)}</div>
               <div className={styles.points}>+{round.pointsA} / +{round.pointsB} points</div>
 
-              {(round.readBonusA || round.readBonusB) && (
-                <div className={styles.flag}>⚡ Read bonus: {round.readBonusA ? "A" : "B"}</div>
+              {(round.predictionBonusA || round.predictionBonusB) && (
+                <div className={styles.flag}>⚡ Read bonus: {round.predictionBonusA ? "A" : "B"}</div>
               )}
 
               {(round.violationA || round.violationB) && (

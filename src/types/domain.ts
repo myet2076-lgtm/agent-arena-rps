@@ -4,6 +4,92 @@
  * Version: 1.0.0 | 2026-02-26
  */
 
+// ─── Agent Status (PRD §3.1) ────────────────────────────
+
+export enum AgentStatus {
+  REGISTERED = "REGISTERED",
+  QUALIFYING = "QUALIFYING",
+  QUALIFIED = "QUALIFIED",
+  QUEUED = "QUEUED",
+  MATCHED = "MATCHED",
+  IN_MATCH = "IN_MATCH",
+  POST_MATCH = "POST_MATCH",
+  RESTING = "RESTING",
+  BANNED = "BANNED",
+}
+
+export interface AgentSettings {
+  autoRequeue: boolean;
+  maxConsecutiveMatches: number;
+  restBetweenSec: number;
+  allowedIps: string[];
+}
+
+export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
+  autoRequeue: false,
+  maxConsecutiveMatches: 5,
+  restBetweenSec: 30,
+  allowedIps: [],
+};
+
+// ─── Agent (PRD §3.1 — full model) ─────────────────────
+
+export interface AgentRecord {
+  id: string;
+  name: string;
+  keyHash: string;
+  status: AgentStatus;
+  elo: number;
+  description?: string;
+  avatarUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  queueCooldownUntil: Date | null;
+  queueBanUntil: Date | null;
+  consecutiveTimeouts: number;
+  suspiciousFlag: boolean;
+  settings: AgentSettings;
+  consecutiveMatches: number;
+  /** Consecutive qualification failures (for escalating cooldown) */
+  consecutiveQualFails: number;
+}
+
+// ─── Queue (PRD §3.2) ──────────────────────────────────
+
+export type QueueEntryStatus = "WAITING" | "MATCHED" | "REMOVED";
+export type QueueRemovedReason = "MANUAL" | "TIMEOUT" | "MATCHED" | "BANNED";
+
+export interface QueueEntry {
+  id: string;
+  agentId: string;
+  joinedAt: Date;
+  lastActivityAt: Date;
+  status: QueueEntryStatus;
+  removedReason?: QueueRemovedReason;
+}
+
+// ─── Qualification (PRD §3.3) ───────────────────────────
+
+export interface QualRound {
+  round: number;
+  agentMove: Move;
+  botMove: Move;
+  winner: "agent" | "bot" | "draw";
+}
+
+export type QualDifficulty = "easy" | "medium" | "hard";
+export type QualResult = "PENDING" | "PASS" | "FAIL";
+
+export interface QualificationMatch {
+  id: string;
+  agentId: string;
+  difficulty: QualDifficulty;
+  rounds: QualRound[];
+  result: QualResult;
+  startedAt: Date;
+  completedAt: Date | null;
+}
+
 // ─── Enums ──────────────────────────────────────────────
 
 export enum Move {
@@ -45,6 +131,14 @@ export interface Agent {
   createdAt: Date;
 }
 
+export type MatchPhase =
+  | "READY_CHECK"
+  | "COMMIT"
+  | "REVEAL"
+  | "RESULT"
+  | "INTERVAL"
+  | "FINISHED";
+
 export interface Match {
   id: string;
   seasonId: string;
@@ -63,6 +157,20 @@ export interface Match {
   startedAt: Date;
   finishedAt: Date | null;
   createdAt: Date;
+
+  // Ready check
+  readyA: boolean;
+  readyB: boolean;
+  readyDeadline: Date | null;
+
+  // Phase management
+  currentPhase: MatchPhase;
+  phaseDeadline: Date | null;
+
+  // ELO tracking
+  eloChangeA: number | null;
+  eloChangeB: number | null;
+  eloUpdatedAt: Date | null;
 }
 
 export interface Round {
@@ -76,8 +184,8 @@ export interface Round {
   /** Points awarded this round (1 = normal win, 2 = read-bonus win, 0 = draw/loss) */
   pointsA: number;
   pointsB: number;
-  readBonusA: boolean; // true if A triggered read-bonus
-  readBonusB: boolean;
+  predictionBonusA: boolean; // true if A triggered read-bonus
+  predictionBonusB: boolean;
   /** Rule violation flags */
   violationA: string | null; // e.g., "CONSECUTIVE_LIMIT"
   violationB: string | null;
@@ -96,6 +204,8 @@ export interface CommitRecord {
   commitHash: string;
   committedAt: Date;
   expiresAt: Date;  // TTL for timeout enforcement
+  /** Optional prediction of opponent's move (read-bonus) */
+  prediction: Move | null;
 }
 
 export interface RevealRecord {
@@ -230,7 +340,7 @@ export interface MatchSummary {
   finalScoreA: number;
   finalScoreB: number;
   roundsPlayed: number;
-  readBonusCount: number;
+  predictionBonusCount: number;
   largestComeback: number;
   momentumSwings: number;
   topHighlights: HighlightRound[];
@@ -240,11 +350,16 @@ export interface MatchSummary {
 
 export type GameEvent =
   | { type: "MATCH_STARTED"; matchId: string; agentA: string; agentB: string }
+  | { type: "MATCH_START"; matchId: string; round: number; commitDeadline: string }
+  | { type: "ROUND_START"; matchId: string; round: number; commitDeadline: string }
+  | { type: "BOTH_COMMITTED"; matchId: string; round: number; revealDeadline: string }
   | { type: "ROUND_COMMIT"; matchId: string; roundNo: number; agentId: string }
-  | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; readBonusA: boolean; readBonusB: boolean; scoreA: number; scoreB: number }
-  | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; finalScoreA: number; finalScoreB: number }
+  | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; predictionBonusA: boolean; predictionBonusB: boolean; scoreA: number; scoreB: number; moveA?: Move | null; moveB?: Move | null; winner?: string | null }
+  | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; finalScoreA: number; finalScoreB: number; eloChangeA?: number | null; eloChangeB?: number | null }
   | { type: "MARKET_UPDATE"; matchId: string; impliedProbA: number; impliedProbB: number; volume: number }
-  | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number };
+  | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number }
+  | { type: "RESYNC"; matchId: string; snapshot: Record<string, unknown> }
+  | { type: "READY_TIMEOUT"; matchId: string; readyA: boolean; readyB: boolean };
 
 // ─── API Contracts ──────────────────────────────────────
 

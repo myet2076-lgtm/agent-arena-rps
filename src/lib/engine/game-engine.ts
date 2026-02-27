@@ -41,6 +41,14 @@ export function createMatch(agentA: string, agentB: string, seasonId: string): M
     startedAt: now,
     finishedAt: null,
     createdAt: now,
+    readyA: false,
+    readyB: false,
+    readyDeadline: null,
+    currentPhase: "READY_CHECK" as Match["currentPhase"],
+    phaseDeadline: null,
+    eloChangeA: null,
+    eloChangeB: null,
+    eloUpdatedAt: null,
   };
 }
 
@@ -86,8 +94,8 @@ export function processRound(
   const validationB = validateMove(moveB, moveHistoryB, RULES);
 
   let outcome: RoundOutcome;
-  let readBonusA = false;
-  let readBonusB = false;
+  let predictionBonusA = false;
+  let predictionBonusB = false;
   let pointsA = 0;
   let pointsB = 0;
 
@@ -107,13 +115,13 @@ export function processRound(
     const prevMoveB = prevRound?.moveB ?? null;
 
     if (outcome === RoundOutcome.WIN_A) {
-      readBonusA = isReadBonus(moveA, prevMoveB);
-      pointsA = readBonusA ? RULES.READ_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
+      predictionBonusA = isReadBonus(moveA, prevMoveB);
+      pointsA = predictionBonusA ? RULES.READ_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
     }
 
     if (outcome === RoundOutcome.WIN_B) {
-      readBonusB = isReadBonus(moveB, prevMoveA);
-      pointsB = readBonusB ? RULES.READ_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
+      predictionBonusB = isReadBonus(moveB, prevMoveA);
+      pointsB = predictionBonusB ? RULES.READ_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
     }
   }
 
@@ -127,8 +135,8 @@ export function processRound(
     outcome,
     pointsA,
     pointsB,
-    readBonusA,
-    readBonusB,
+    predictionBonusA,
+    predictionBonusB,
     violationA: validationA.violation,
     violationB: validationB.violation,
     judgedAt: now,
@@ -166,8 +174,8 @@ export function processRound(
     outcome,
     pointsA,
     pointsB,
-    readBonusA,
-    readBonusB,
+    predictionBonusA,
+    predictionBonusB,
     scoreA: updatedMatch.scoreA,
     scoreB: updatedMatch.scoreB,
   });
