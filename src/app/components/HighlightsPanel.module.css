@@ -2,64 +2,82 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
-  padding: 1rem;
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
   display: grid;
-  gap: 0.9rem;
+  gap: 1rem;
+}
+
+.panel h3 {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 
 .stats > div {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.6rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 0.75rem;
   display: grid;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .stats span {
-  color: var(--text-dim);
-  font-size: 0.82rem;
+  color: var(--text-caption);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 .stats strong {
+  font-family: var(--font-serif);
   font-size: 1.1rem;
 }
 
 .list {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .item {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.7rem;
+  border-radius: 8px;
+  padding: 0.75rem;
   display: grid;
   grid-template-columns: auto auto 1fr;
   gap: 0.6rem;
   align-items: center;
+  background: var(--bg-secondary);
 }
 
-.round { color: var(--text-dim); font-size: 0.88rem; }
+.round {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
 
 .badge {
-  padding: 0.2rem 0.45rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.76rem;
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-.reason { margin: 0; }
+.reason { margin: 0; font-size: 0.9rem; }
 
-.reversal { background: var(--accent-alpha-14); color: var(--accent); }
-.readBonus { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); }
-.matchPoint { background: var(--accent2-alpha-18); color: var(--accent2); }
-.clutch { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+.reversal { background: var(--accent-light); color: var(--accent); }
+.readBonus { background: var(--warning-light); color: var(--warning); }
+.matchPoint { background: #fce7f3; color: #db2777; }
+.clutch { background: var(--danger-light); color: var(--danger); }
 
 @media (max-width: 760px) {
   .stats { grid-template-columns: 1fr 1fr; }

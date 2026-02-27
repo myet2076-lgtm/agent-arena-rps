@@ -1,26 +1,29 @@
 .badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.6rem;
+  display: inline-block;
 }
 
 .CREATED {
-  color: var(--muted);
+  color: var(--tag-text);
+  background: var(--tag-bg);
 }
 
 .RUNNING {
   color: var(--success);
-  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: var(--success-light);
 }
 
 .FINISHED {
   color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  background: var(--warning-light);
 }
 
 .ARCHIVED {
-  color: var(--muted-2);
+  color: var(--tag-text);
+  background: var(--tag-bg);
 }

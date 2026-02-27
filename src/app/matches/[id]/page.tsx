@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { MatchStatus, type MarketSnapshotDTO, type MatchResponseDTO, type RoundDTO } from "@/types";
 import { extractHighlights, generateMatchSummary } from "@/lib/share/highlight-extractor";
 import { useMatchSSE } from "@/app/hooks/useMatchSSE";
+import { NavBar } from "@/app/components/NavBar";
 import { ScoreBoard } from "@/app/components/ScoreBoard";
 import { RoundTimeline } from "@/app/components/RoundTimeline";
 import { VotePanel } from "@/app/components/VotePanel";
@@ -101,56 +102,71 @@ export default function MatchPage() {
   }, [highlights, match, rounds]);
 
   if (state.loading) {
-    return <main className={styles.page}><div className={styles.state}>Loading match feed…</div></main>;
+    return <main className={styles.page}><div className={styles.content}><div className={styles.state}>Loading match feed…</div></div></main>;
   }
 
   if (state.error || !match) {
-    return <main className={styles.page}><div className={styles.stateError}>Error: {state.error ?? "Match not found"}</div></main>;
+    return <main className={styles.page}><div className={styles.content}><div className={styles.stateError}>Error: {state.error ?? "Match not found"}</div></div></main>;
   }
 
   const liveRound = Math.min(Math.max(match.currentRound, rounds.length + 1), match.maxRounds);
 
   return (
     <main className={styles.page}>
-      <section className={styles.headerRow}>
-        <h1>Agent Arena • Match {match.id}</h1>
-        <div className={`${styles.connection} ${connected ? styles.online : styles.offline}`} role="status" aria-live="polite">
-          {connected ? "● Live" : "○ Reconnecting"}
-        </div>
-      </section>
-
-      <ScoreBoard match={match} />
-
-      <section className={styles.liveRound}>
-        <div>
-          <div className={styles.label}>Live Round</div>
-          <div className={styles.roundNo}>Round {liveRound}</div>
-        </div>
-        <div className={styles.countdownPulse}>⏱️ commits resolving...</div>
-      </section>
-
-      <section className={styles.cardSection}>
-        <h2>Round History</h2>
-        <RoundTimeline rounds={rounds} />
-      </section>
-
-      <section className={styles.interactionGrid}>
-        <VotePanel
-          matchId={match.id}
-          currentRound={liveRound}
-          status={match.status}
-          votesA={votes.a}
-          votesB={votes.b}
-          onVoteUpdate={(next) => {
-            setState((prev) => (prev.data ? { ...prev, data: { ...prev.data, votes: next } } : prev));
-          }}
+      <section className={styles.heroSection}>
+        <NavBar />
+        <img
+          src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=2400&q=95&fit=crop&auto=format&dpr=2"
+          alt="Battle Arena"
+          className={styles.heroImage}
         />
-        <MarketCard market={liveMarket ?? baseMarket} />
+        <div className={styles.heroOverlay}>
+          <div className={styles.heroText}>
+            <h1 className={styles.heroTitle}>{match.agentA} vs {match.agentB}</h1>
+            <div className={styles.heroSub}>
+              <span>Match {match.id}</span>
+              <span className={`${styles.connection} ${connected ? styles.online : styles.offline}`} role="status" aria-live="polite">
+                {connected ? "● Live" : "○ Reconnecting"}
+              </span>
+            </div>
+          </div>
+        </div>
       </section>
 
-      {match.status === MatchStatus.FINISHED && summary && (
-        <HighlightsPanel summary={summary} highlights={highlights} />
-      )}
+      <div className={styles.content}>
+        <ScoreBoard match={match} />
+
+        <section className={styles.liveRound}>
+          <div>
+            <div className={styles.label}>Live Round</div>
+            <div className={styles.roundNo}>Round {liveRound}</div>
+          </div>
+          <div className={styles.countdownPulse}>⏱️ commits resolving...</div>
+        </section>
+
+        <section className={styles.cardSection}>
+          <h2>Round History</h2>
+          <RoundTimeline rounds={rounds} />
+        </section>
+
+        <section className={styles.interactionGrid}>
+          <VotePanel
+            matchId={match.id}
+            currentRound={liveRound}
+            status={match.status}
+            votesA={votes.a}
+            votesB={votes.b}
+            onVoteUpdate={(next) => {
+              setState((prev) => (prev.data ? { ...prev, data: { ...prev.data, votes: next } } : prev));
+            }}
+          />
+          <MarketCard market={liveMarket ?? baseMarket} />
+        </section>
+
+        {match.status === MatchStatus.FINISHED && summary && (
+          <HighlightsPanel summary={summary} highlights={highlights} />
+        )}
+      </div>
     </main>
   );
 }

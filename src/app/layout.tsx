@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import { NavBar } from "@/app/components/NavBar";
 import "./globals.css";
 
@@ -8,14 +8,15 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const geistMono = Geist_Mono({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-geist-mono",
+  variable: "--font-playfair",
+  weight: ["400", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
   title: "Agent Arena RPS",
-  description: "AI vs AI — Stone Cold Strategy",
+  description: "AI vs AI — Where Strategy Meets Spectacle",
 };
 
 export default function RootLayout({
@@ -25,9 +26,8 @@ export default function RootLayout({
 }>): React.JSX.Element {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${geistMono.variable}`}>
+      <body className={`${inter.variable} ${playfair.variable}`}>
         <div className="appShell">
-          <NavBar />
           <main className="appMain">{children}</main>
         </div>
       </body>

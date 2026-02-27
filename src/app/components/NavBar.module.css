@@ -1,14 +1,16 @@
 .header {
-  position: sticky;
+  position: absolute;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
-  backdrop-filter: blur(14px);
-  background: var(--bg-overlay);
-  border-bottom: 1px solid var(--border);
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .inner {
-  width: min(1120px, 100% - 2rem);
+  width: min(1120px, 100% - 3rem);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -17,38 +19,46 @@
 }
 
 .logo {
+  font-family: var(--font-serif);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.logo:hover {
+  color: #ffffff;
 }
 
 .nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .link {
-  color: var(--text-dim);
-  border: 1px solid transparent;
-  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.75);
   padding: 0.45rem 0.9rem;
-  transition: all 180ms ease;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 150ms ease, background 150ms ease;
 }
 
 .link:hover {
-  color: var(--text);
-  border-color: var(--border);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .active {
-  color: var(--accent);
-  border-color: var(--accent-alpha-40);
-  box-shadow: inset 0 0 18px var(--accent-alpha-15), 0 0 16px var(--accent-alpha-15);
+  color: #ffffff;
+  font-weight: 600;
 }
 
+.active:hover {
+  color: #ffffff;
+}
 
 .link:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: 2px;
-  color: var(--text);
-  border-color: var(--accent);
 }

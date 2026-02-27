@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { NavBar } from "@/app/components/NavBar";
 import styles from "./Rankings.module.css";
 
 type TabType = "agents" | "viewers";
@@ -111,124 +112,136 @@ export default function RankingsPage(): React.JSX.Element {
 
   return (
     <section className={styles.page}>
-      <header className={`${styles.header} card cardGlow`}>
-        <h1 className={styles.title}>Arena Rankings</h1>
-        <p className={styles.subtitle}>Track elite ELO climbs and the sharpest viewer predictions.</p>
-      </header>
-
-      <div className={styles.tabs}>
-        <button
-          type="button"
-          className={`${styles.tab} ${tab === "agents" ? styles.tabActive : ""}`}
-          onClick={() => setTab("agents")}
-        >
-          Agent ELO
-        </button>
-        <button
-          type="button"
-          className={`${styles.tab} ${tab === "viewers" ? styles.tabActive : ""}`}
-          onClick={() => setTab("viewers")}
-        >
-          Viewer Accuracy
-        </button>
+      <div className={styles.heroSection}>
+        <NavBar />
+        <img
+          src="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=2400&q=95&fit=crop&auto=format&dpr=2"
+          alt="Gaming Arena Leaderboard"
+          className={styles.heroImage}
+        />
+        <div className={styles.heroOverlay}>
+          <div className={styles.heroText}>
+            <h1 className={styles.heroTitle}>Arena Rankings</h1>
+            <p className={styles.heroSub}>Track elite ELO climbs and the sharpest viewer predictions.</p>
+          </div>
+        </div>
       </div>
 
-      {loading ? <div className={styles.state}>Loading rankings…</div> : null}
-      {error ? <div className={`${styles.state} ${styles.error}`}>{error}</div> : null}
+      <div className={styles.content}>
+        <div className={styles.tabs}>
+          <button
+            type="button"
+            className={`${styles.tab} ${tab === "agents" ? styles.tabActive : ""}`}
+            onClick={() => setTab("agents")}
+          >
+            Agent ELO
+          </button>
+          <button
+            type="button"
+            className={`${styles.tab} ${tab === "viewers" ? styles.tabActive : ""}`}
+            onClick={() => setTab("viewers")}
+          >
+            Viewer Accuracy
+          </button>
+        </div>
 
-      {!loading && !error ? (
-        <>
-          <div className={styles.podium}>
-            {tab === "agents"
-              ? topThreeAgents.map((row, index) => {
-                const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
-                const label = `${displayName(row.agentId)} · ${row.rating} ELO`;
+        {loading ? <div className={styles.state}>Loading rankings…</div> : null}
+        {error ? <div className={`${styles.state} ${styles.error}`}>{error}</div> : null}
 
-                return (
-                  <article key={row.agentId} className={`${styles.podiumCard} ${glow}`}>
-                    <strong>#{index + 1}</strong>
-                    <span>{label}</span>
-                  </article>
-                );
-              })
-              : topThreeViewers.map((row, index) => {
-                const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
-                const label = `${displayName(row.viewerId)} · ${Math.round(row.hitRate * 100)}%`;
+        {!loading && !error ? (
+          <>
+            <div className={styles.podium}>
+              {tab === "agents"
+                ? topThreeAgents.map((row, index) => {
+                  const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
+                  const label = `${displayName(row.agentId)} · ${row.rating} ELO`;
 
-                return (
-                  <article key={row.viewerId} className={`${styles.podiumCard} ${glow}`}>
-                    <strong>#{index + 1}</strong>
-                    <span>{label}</span>
-                  </article>
-                );
-              })}
-          </div>
+                  return (
+                    <article key={row.agentId} className={`${styles.podiumCard} ${glow}`}>
+                      <strong>#{index + 1}</strong>
+                      <span>{label}</span>
+                    </article>
+                  );
+                })
+                : topThreeViewers.map((row, index) => {
+                  const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
+                  const label = `${displayName(row.viewerId)} · ${Math.round(row.hitRate * 100)}%`;
 
-          {tab === "agents" ? (
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Name</th>
-                    <th>ELO</th>
-                    <th>W/L</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agents.map((entry) => (
-                    <tr key={entry.agentId}>
-                      <td>#{entry.rank}</td>
-                      <td>{displayName(entry.agentId)}</td>
-                      <td>{entry.rating}</td>
-                      <td>{deriveRecord(entry)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  return (
+                    <article key={row.viewerId} className={`${styles.podiumCard} ${glow}`}>
+                      <strong>#{index + 1}</strong>
+                      <span>{label}</span>
+                    </article>
+                  );
+                })}
             </div>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>ID</th>
-                    <th>Hit Rate</th>
-                    <th>Current Streak</th>
-                    <th>Best Streak</th>
-                    <th>Badges</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {viewers.map((entry) => (
-                    <tr key={entry.viewerId}>
-                      <td>#{entry.rank}</td>
-                      <td>{entry.viewerId}</td>
-                      <td>{Math.round(entry.hitRate * 100)}%</td>
-                      <td>{entry.currentStreak}</td>
-                      <td>{entry.bestStreak}</td>
-                      <td>
-                        <div className={styles.badges}>
-                          {entry.badges.length > 0 ? (
-                            entry.badges.map((badge) => (
-                              <span className={styles.badge} key={badge}>
-                                {badge}
-                              </span>
-                            ))
-                          ) : (
-                            <span className={styles.badge}>None</span>
-                          )}
-                        </div>
-                      </td>
+
+            {tab === "agents" ? (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Name</th>
+                      <th>ELO</th>
+                      <th>W/L</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      ) : null}
+                  </thead>
+                  <tbody>
+                    {agents.map((entry) => (
+                      <tr key={entry.agentId}>
+                        <td>#{entry.rank}</td>
+                        <td>{displayName(entry.agentId)}</td>
+                        <td>{entry.rating}</td>
+                        <td>{deriveRecord(entry)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>ID</th>
+                      <th>Hit Rate</th>
+                      <th>Current Streak</th>
+                      <th>Best Streak</th>
+                      <th>Badges</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewers.map((entry) => (
+                      <tr key={entry.viewerId}>
+                        <td>#{entry.rank}</td>
+                        <td>{entry.viewerId}</td>
+                        <td>{Math.round(entry.hitRate * 100)}%</td>
+                        <td>{entry.currentStreak}</td>
+                        <td>{entry.bestStreak}</td>
+                        <td>
+                          <div className={styles.badges}>
+                            {entry.badges.length > 0 ? (
+                              entry.badges.map((badge) => (
+                                <span className={styles.badge} key={badge}>
+                                  {badge}
+                                </span>
+                              ))
+                            ) : (
+                              <span className={styles.badge}>None</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        ) : null}
+      </div>
     </section>
   );
 }

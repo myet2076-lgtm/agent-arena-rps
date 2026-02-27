@@ -1,7 +1,7 @@
 .score {
   font-weight: 700;
   font-size: 1.1rem;
-  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-serif);
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -12,9 +12,9 @@
 }
 
 .b {
-  color: var(--accent2);
+  color: var(--text);
 }
 
 .sep {
-  color: var(--text-dim);
+  color: var(--text-caption);
 }

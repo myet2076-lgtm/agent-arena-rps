@@ -1,43 +1,56 @@
 .card {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--card);
-  padding: 1rem;
+  background: var(--bg-secondary);
+  padding: 1.5rem;
   display: grid;
   gap: 0.65rem;
+}
+
+.card h3 {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .a { color: var(--accent); }
-.b { color: var(--accent2); }
+.b { color: var(--text); }
 
 .bar {
-  height: 10px;
-  background: var(--border-light-08);
+  height: 6px;
+  background: var(--tag-bg);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .aFill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent));
+  background: var(--accent);
+  border-radius: 999px;
   transition: width 280ms ease;
 }
 
 .dim {
-  color: var(--text-dim);
-  font-size: 0.9rem;
+  color: var(--text-caption);
+  font-size: 0.85rem;
 }
 
 .link {
-  color: var(--text);
+  color: var(--accent);
   text-decoration: none;
-  border-bottom: 1px dotted var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
   width: fit-content;
+}
+
+.link:hover {
+  text-decoration: underline;
 }
