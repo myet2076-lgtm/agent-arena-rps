@@ -45,9 +45,9 @@ export function extractHighlights(match: Match | MatchDTO, rounds: Array<Round |
       const streak = Math.max(consecutiveReadA, consecutiveReadB);
       highlights.push({
         roundNo: round.roundNo,
-        type: "READ_BONUS",
+        type: "PREDICTION_BONUS",
         dramaScore: 65 + Math.min(30, streak * 10),
-        reason: streak > 1 ? `Consecutive read-bonus streak x${streak}` : "Read-bonus triggered",
+        reason: streak > 1 ? `Consecutive prediction-bonus streak x${streak}` : "Prediction-bonus triggered",
       });
     } else {
       consecutiveReadA = 0;

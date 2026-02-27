@@ -154,7 +154,7 @@ export interface Match {
   status: MatchStatus;
   format: "BO7";
   /** Scoring priority: total points first, then round wins as tiebreaker */
-  scoreA: number;  // total points (wins count as 1pt, read-bonus wins as 2pt)
+  scoreA: number;  // total points (wins count as 1pt, prediction-bonus wins as 2pt)
   scoreB: number;
   winsA: number;   // round win count
   winsB: number;
@@ -188,10 +188,10 @@ export interface Round {
   moveA: Move | null;
   moveB: Move | null;
   outcome: RoundOutcome | null;
-  /** Points awarded this round (1 = normal win, 2 = read-bonus win, 0 = draw/loss) */
+  /** Points awarded this round (1 = normal win, 2 = prediction-bonus win, 0 = draw/loss) */
   pointsA: number;
   pointsB: number;
-  predictionBonusA: boolean; // true if A triggered read-bonus
+  predictionBonusA: boolean; // true if A triggered prediction-bonus
   predictionBonusB: boolean;
   /** Rule violation flags */
   violationA: string | null; // e.g., "CONSECUTIVE_LIMIT"
@@ -211,7 +211,7 @@ export interface CommitRecord {
   commitHash: string;
   committedAt: Date;
   expiresAt: Date;  // TTL for timeout enforcement
-  /** Optional prediction of opponent's move (read-bonus) */
+  /** Optional prediction of opponent's move (prediction-bonus) */
   prediction: Move | null;
 }
 
@@ -240,8 +240,8 @@ export const RULES = {
   CONSECUTIVE_LIMIT: 3,
   /** Normal win points */
   NORMAL_WIN_POINTS: 1,
-  /** Read-bonus win points: beat what opponent played LAST round */
-  READ_BONUS_POINTS: 2,
+  /** Prediction-bonus win points: beat what opponent played LAST round */
+  PREDICTION_BONUS_POINTS: 2,
   /** Commit timeout in ms */
   COMMIT_TIMEOUT_MS: 3000,
   /** Reveal timeout in ms */
@@ -332,7 +332,7 @@ export interface ShareEvent {
   createdAt: Date;
 }
 
-export type HighlightType = "REVERSAL" | "READ_BONUS" | "MATCH_POINT" | "CLUTCH";
+export type HighlightType = "REVERSAL" | "PREDICTION_BONUS" | "MATCH_POINT" | "CLUTCH";
 
 export interface HighlightRound {
   roundNo: number;

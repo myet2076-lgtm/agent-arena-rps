@@ -17,7 +17,7 @@ export function getWinner(moveA: Move, moveB: Move): RoundOutcome {
 /**
  * Returns true if currentMove beats opponent's previous move.
  */
-export function isReadBonus(currentMove: Move, opponentPreviousMove: Move | null): boolean {
+export function isPredictionBonusHit(currentMove: Move, opponentPreviousMove: Move | null): boolean {
   if (!opponentPreviousMove) return false;
 
   return (

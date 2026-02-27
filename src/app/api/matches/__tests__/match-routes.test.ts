@@ -72,6 +72,25 @@ function sha256(input: string): string {
   return createHash("sha256").update(input, "utf-8").digest("hex");
 }
 
+async function readSseChunk(res: Response): Promise<string> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let all = "";
+
+  for (let i = 0; i < 8; i++) {
+    const next = await Promise.race([
+      reader.read(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 20)),
+    ]);
+    if (next === null) break;
+    all += decoder.decode(next.value ?? new Uint8Array());
+    if (next.done) break;
+  }
+
+  reader.releaseLock();
+  return all;
+}
+
 beforeEach(() => {
   db.reset();
   resetScheduler();
@@ -303,6 +322,69 @@ describe("SSE perspective", () => {
     });
     const res = await sseGET(r as any, { params: Promise.resolve({ id: "m1" }) });
     expect(res.status).toBe(401);
+  });
+});
+
+describe("SSE Last-Event-ID replay and RESYNC", () => {
+  it("replays only events after Last-Event-ID for same match", async () => {
+    const match = makeMatch("m1", "a1", "a2", "COMMIT");
+    db.updateMatch(match);
+
+    db.appendEvents("m1", [
+      { type: "MATCH_START", matchId: "m1", round: 1, commitDeadline: new Date().toISOString() },
+      { type: "ROUND_START", matchId: "m1", round: 1, commitDeadline: new Date().toISOString() },
+      { type: "BOTH_COMMITTED", matchId: "m1", round: 1, revealDeadline: new Date().toISOString() },
+    ]);
+
+    const ids = db.getEventsSince("m1", 0).map((e) => e.seq);
+    const r = new Request("http://x/api/matches/m1/events", {
+      method: "GET",
+      headers: { "last-event-id": `m1-${ids[0]}` },
+    });
+
+    const res = await sseGET(r as any, { params: Promise.resolve({ id: "m1" }) });
+    const chunk = await readSseChunk(res);
+    expect(chunk).toContain(`id: m1-${ids[1]}`);
+    expect(chunk).toContain(`id: m1-${ids[2]}`);
+    expect(chunk).not.toContain(`id: m1-${ids[0]}`);
+  });
+
+  it("returns deterministic RESYNC when Last-Event-ID is stale", async () => {
+    const match = makeMatch("m1", "a1", "a2", "COMMIT");
+    db.updateMatch(match);
+
+    for (let i = 0; i < 55; i++) {
+      db.appendEvents("m1", [
+        { type: "ROUND_START", matchId: "m1", round: i + 1, commitDeadline: new Date().toISOString() },
+      ]);
+    }
+
+    const oldest = db.getOldestSeq("m1");
+    const r = new Request("http://x/api/matches/m1/events", {
+      method: "GET",
+      headers: { "last-event-id": `m1-${Math.max(1, oldest - 1)}` },
+    });
+
+    const res = await sseGET(r as any, { params: Promise.resolve({ id: "m1" }) });
+    const chunk = await readSseChunk(res);
+    expect(chunk).toContain("event: RESYNC");
+    expect(chunk).toContain('"matchId":"m1"');
+    expect(chunk).toContain('"snapshot"');
+  });
+
+  it("treats malformed cross-match Last-Event-ID as RESYNC path", async () => {
+    const match = makeMatch("m1", "a1", "a2", "COMMIT");
+    db.updateMatch(match);
+    db.appendEvents("m1", [{ type: "ROUND_START", matchId: "m1", round: 1, commitDeadline: new Date().toISOString() }]);
+
+    const r = new Request("http://x/api/matches/m1/events", {
+      method: "GET",
+      headers: { "last-event-id": "other-match-999" },
+    });
+
+    const res = await sseGET(r as any, { params: Promise.resolve({ id: "m1" }) });
+    const chunk = await readSseChunk(res);
+    expect(chunk).toContain("event: RESYNC");
   });
 });
 

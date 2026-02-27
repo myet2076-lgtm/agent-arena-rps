@@ -42,7 +42,7 @@ describe("game engine", () => {
     expect(match.currentRound).toBe(4);
   });
 
-  it("applies read-bonus scoring (+2 points) when winner beats opponent previous move", () => {
+  it("applies prediction-bonus scoring (+2 points) when winner beats opponent previous move", () => {
     let match = createMatch("agent-A", "agent-B", "season-1");
     const rounds = [] as ReturnType<typeof processRound>["round"][];
 

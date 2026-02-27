@@ -40,6 +40,22 @@ function authReq(method: string, url: string = "http://localhost/api/queue", api
   });
 }
 
+async function readSseChunk(res: Response): Promise<string> {
+  const reader = res.body!.getReader();
+  const { value } = await reader.read();
+  reader.releaseLock();
+  return new TextDecoder().decode(value ?? new Uint8Array());
+}
+
+function extractFirstEventPayload(chunk: string): { eventType: string; payload: any } {
+  const eventMatch = chunk.match(/event: ([^\n]+)/);
+  const dataMatch = chunk.match(/data: (\{.*\})/);
+  return {
+    eventType: eventMatch?.[1] ?? "",
+    payload: dataMatch ? JSON.parse(dataMatch[1]) : null,
+  };
+}
+
 describe("Queue API", () => {
   beforeEach(() => {
     db.reset();
@@ -149,10 +165,16 @@ describe("Queue API", () => {
       const res = await getMe(authReq("GET", "http://localhost/api/queue/me"));
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.status).toBe("MATCHED");
-      expect(body.matchId).toBe("match-ready-1");
-      expect(body.opponent?.id).toBe("agent-b");
-      expect(body.readyDeadline).toBe(readyDeadline.toISOString());
+      expect(body).toEqual({
+        status: "MATCHED",
+        matchId: "match-ready-1",
+        opponent: {
+          id: "agent-b",
+          name: "QBot-agent-b",
+          elo: 1500,
+        },
+        readyDeadline: readyDeadline.toISOString(),
+      });
     });
 
     it("returns NOT_IN_QUEUE when not in queue", async () => {
@@ -257,6 +279,87 @@ describe("Queue API", () => {
       }));
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toBe("text/event-stream");
+    });
+
+    it("emits exact POSITION_UPDATE payload schema", async () => {
+      setupAgent("agent-queued", AgentStatus.QUALIFIED);
+      await POST(authReq("POST"));
+      const res = await getEvents(new Request("http://localhost/api/queue/events", {
+        headers: { "x-agent-key": TEST_KEY },
+      }));
+      const chunk = await readSseChunk(res);
+      const { eventType, payload } = extractFirstEventPayload(chunk);
+      expect(eventType).toBe("POSITION_UPDATE");
+      expect(payload).toEqual({ position: 1, estimatedWaitSec: 30 });
+      expect(Object.keys(payload).sort()).toEqual(["estimatedWaitSec", "position"]);
+    });
+
+    it("emits exact MATCH_ASSIGNED payload schema", async () => {
+      setupAgent("agent-m", AgentStatus.MATCHED, TEST_KEY);
+      setupAgent("agent-o", AgentStatus.MATCHED, "ak_live_other_agent_key_for_events01");
+      const now = new Date();
+      const readyDeadline = new Date(now.getTime() + 30_000);
+      db.createQueueEntry({
+        id: "qe-agent-m",
+        agentId: "agent-m",
+        joinedAt: now,
+        lastActivityAt: now,
+        lastSSEPing: null,
+        lastPollTimestamp: null,
+        sseDisconnectedAt: null,
+        status: "MATCHED",
+      });
+      db.updateMatch({
+        id: "m-events-2",
+        seasonId: "season-1",
+        agentA: "agent-m",
+        agentB: "agent-o",
+        status: MatchStatus.CREATED,
+        format: "BO7",
+        scoreA: 0,
+        scoreB: 0,
+        winsA: 0,
+        winsB: 0,
+        currentRound: 0,
+        maxRounds: 12,
+        winnerId: null,
+        startedAt: now,
+        finishedAt: null,
+        createdAt: now,
+        readyA: false,
+        readyB: false,
+        readyDeadline,
+        currentPhase: "READY_CHECK",
+        phaseDeadline: readyDeadline,
+        eloChangeA: null,
+        eloChangeB: null,
+        eloUpdatedAt: null,
+      });
+
+      const res = await getEvents(new Request("http://localhost/api/queue/events", {
+        headers: { "x-agent-key": TEST_KEY },
+      }));
+      const chunk = await readSseChunk(res);
+      const { eventType, payload } = extractFirstEventPayload(chunk);
+      expect(eventType).toBe("MATCH_ASSIGNED");
+      expect(payload).toEqual({
+        matchId: "m-events-2",
+        opponent: { id: "agent-o", name: "QBot-agent-o", elo: 1500 },
+        readyDeadline: readyDeadline.toISOString(),
+      });
+      expect(Object.keys(payload).sort()).toEqual(["matchId", "opponent", "readyDeadline"]);
+    });
+
+    it("emits exact REMOVED payload schema for QUALIFIED snapshot", async () => {
+      setupAgent("agent-q", AgentStatus.QUALIFIED, TEST_KEY);
+      const res = await getEvents(new Request("http://localhost/api/queue/events", {
+        headers: { "x-agent-key": TEST_KEY },
+      }));
+      const chunk = await readSseChunk(res);
+      const { eventType, payload } = extractFirstEventPayload(chunk);
+      expect(eventType).toBe("REMOVED");
+      expect(payload).toEqual({ reason: "MANUAL" });
+      expect(Object.keys(payload)).toEqual(["reason"]);
     });
   });
 });

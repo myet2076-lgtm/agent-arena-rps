@@ -127,6 +127,30 @@ export function leaveQueue(agentId: string): {
   return { status: "LEFT", removedAt: removedAt.toISOString(), reason: "MANUAL" };
 }
 
+function resolveMatchedPayload(agentId: string): {
+  matchId: string;
+  opponent: { id: string; name: string; elo: number };
+  readyDeadline?: string;
+} | null {
+  const matches = db.listMatches();
+  const match = matches.find(
+    (m) => (m.agentA === agentId || m.agentB === agentId) && m.currentPhase === "READY_CHECK",
+  );
+  if (!match) return null;
+
+  const opponentId = match.agentA === agentId ? match.agentB : match.agentA;
+  const opponent = db.getAgent(opponentId);
+  return {
+    matchId: match.id,
+    opponent: {
+      id: opponentId,
+      name: opponent?.name ?? "Unknown",
+      elo: opponent?.elo ?? 1500,
+    },
+    readyDeadline: match.readyDeadline?.toISOString(),
+  };
+}
+
 export function checkPosition(agentId: string): {
   status: string;
   position?: number;
@@ -137,8 +161,16 @@ export function checkPosition(agentId: string): {
 } {
   const entry = db.getActiveQueueEntryByAgent(agentId);
 
+  // Boundary hardening: if assignment happened but queue row has not atomically reflected it,
+  // trust READY_CHECK match assignment and avoid false NOT_IN_QUEUE.
+  const agent = db.getAgent(agentId);
   if (!entry) {
-    // PRD F03c: NOT_IN_QUEUE response
+    if (agent?.status === AgentStatus.MATCHED) {
+      const matched = resolveMatchedPayload(agentId);
+      if (matched) {
+        return { status: "MATCHED", ...matched };
+      }
+    }
     return { status: "NOT_IN_QUEUE" };
   }
 
@@ -148,29 +180,13 @@ export function checkPosition(agentId: string): {
   entry.lastActivityAt = now;
   db.updateQueueEntry(entry);
 
-  if (entry.status === "MATCHED") {
-    // Check if there's a match for this agent
-    const agent = db.getAgent(agentId);
-    if (agent && agent.status === AgentStatus.MATCHED) {
-      // Find the match
-      const matches = db.listMatches();
-      const match = matches.find(
-        (m) => (m.agentA === agentId || m.agentB === agentId) && m.currentPhase === "READY_CHECK",
-      );
-      if (match) {
-        const opponentId = match.agentA === agentId ? match.agentB : match.agentA;
-        const opponent = db.getAgent(opponentId);
-        return {
-          status: "MATCHED",
-          matchId: match.id,
-          opponent: {
-            id: opponentId,
-            name: opponent?.name ?? "Unknown",
-            elo: opponent?.elo ?? 1500,
-          },
-          readyDeadline: match.readyDeadline?.toISOString(),
-        };
-      }
+  if (entry.status === "MATCHED" || agent?.status === AgentStatus.MATCHED) {
+    const matched = resolveMatchedPayload(agentId);
+    if (matched) {
+      return {
+        status: "MATCHED",
+        ...matched,
+      };
     }
   }
 

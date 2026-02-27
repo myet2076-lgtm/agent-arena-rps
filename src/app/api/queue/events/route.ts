@@ -5,7 +5,7 @@
 import { authenticateByKey } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/api-error";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
-import { subscribeQueueEvents } from "@/lib/services/queue-events";
+import { subscribeQueueEvents, toQueueSsePayload } from "@/lib/services/queue-events";
 import { db } from "@/lib/server/in-memory-db";
 import { AgentStatus } from "@/types";
 
@@ -38,6 +38,10 @@ export const GET = handleApiError(async (req: Request) => {
         }
       };
 
+      const sendEvent = (eventType: "POSITION_UPDATE" | "MATCH_ASSIGNED" | "REMOVED", payload: object) => {
+        send(`event: ${eventType}\ndata: ${JSON.stringify(payload)}\n\n`);
+      };
+
       const touchHeartbeat = () => {
         const e = db.getActiveQueueEntryByAgent(agentId);
         if (e) {
@@ -54,29 +58,27 @@ export const GET = handleApiError(async (req: Request) => {
         const waiting = db.listQueueEntries("WAITING");
         const idx = waiting.findIndex((e) => e.id === activeEntry.id);
         const position = idx >= 0 ? idx + 1 : waiting.length + 1;
-        send(`event: POSITION_UPDATE\ndata: ${JSON.stringify({ type: "POSITION_UPDATE", agentId, position, estimatedWaitSec: position * 30 })}\n\n`);
+        sendEvent("POSITION_UPDATE", { position, estimatedWaitSec: position * 30 });
       } else if (activeEntry?.status === "MATCHED") {
         const matches = db.listMatches();
         const match = matches.find((m) => (m.agentA === agentId || m.agentB === agentId) && m.currentPhase === "READY_CHECK");
         if (match) {
           const opponentId = match.agentA === agentId ? match.agentB : match.agentA;
           const opponent = db.getAgent(opponentId);
-          send(`event: MATCH_ASSIGNED\ndata: ${JSON.stringify({
-            type: "MATCH_ASSIGNED",
-            agentId,
+          sendEvent("MATCH_ASSIGNED", {
             matchId: match.id,
             opponent: { id: opponentId, name: opponent?.name ?? "Unknown", elo: opponent?.elo ?? 1500 },
             readyDeadline: match.readyDeadline?.toISOString() ?? new Date().toISOString(),
-          })}\n\n`);
+          });
         }
       } else if (agent.status === AgentStatus.QUALIFIED) {
-        send(`event: REMOVED\ndata: ${JSON.stringify({ type: "REMOVED", agentId, reason: "MANUAL" })}\n\n`);
+        sendEvent("REMOVED", { reason: "MANUAL" });
       }
       touchHeartbeat();
 
       // Subscribe to events
       const unsubscribe = subscribeQueueEvents(agentId, (event) => {
-        send(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+        sendEvent(event.type, toQueueSsePayload(event));
         touchHeartbeat();
       });
 

@@ -55,7 +55,7 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
               <div className={styles.points}>+{round.pointsA} / +{round.pointsB} points</div>
 
               {(round.predictionBonusA || round.predictionBonusB) && (
-                <div className={styles.flag}>⚡ Read bonus: {round.predictionBonusA ? "A" : "B"}</div>
+                <div className={styles.flag}>⚡ Prediction bonus: {round.predictionBonusA ? "A" : "B"}</div>
               )}
 
               {(round.violationA || round.violationB) && (

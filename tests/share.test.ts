@@ -93,7 +93,7 @@ function baseRound(roundNo: number): Round {
 }
 
 describe("share/highlight extraction", () => {
-  it("detects reversal and read-bonus highlights", () => {
+  it("detects reversal and prediction-bonus highlights", () => {
     const rounds: Round[] = [
       { ...baseRound(1), pointsA: 0, pointsB: 1, outcome: RoundOutcome.WIN_B, moveA: Move.ROCK, moveB: Move.PAPER },
       { ...baseRound(2), pointsA: 0, pointsB: 1, outcome: RoundOutcome.WIN_B, moveA: Move.SCISSORS, moveB: Move.ROCK },
@@ -103,7 +103,7 @@ describe("share/highlight extraction", () => {
 
     const highlights = extractHighlights(fixtureMatch(), rounds);
     expect(highlights.some((h) => h.type === "REVERSAL")).toBe(true);
-    expect(highlights.some((h) => h.type === "READ_BONUS")).toBe(true);
+    expect(highlights.some((h) => h.type === "PREDICTION_BONUS")).toBe(true);
   });
 
   it("generates unique share tokens", () => {

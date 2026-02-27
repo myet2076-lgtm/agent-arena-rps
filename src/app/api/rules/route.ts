@@ -19,7 +19,7 @@ export const GET = handleApiError(async (req: Request): Promise<NextResponse> =>
     maxRounds: RULES.MAX_ROUNDS,
     scoring: {
       normalWin: RULES.NORMAL_WIN_POINTS,
-      predictionBonus: RULES.READ_BONUS_POINTS,
+      predictionBonus: RULES.PREDICTION_BONUS_POINTS,
       draw: 0,
       timeout: 0,
     },

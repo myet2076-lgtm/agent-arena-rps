@@ -8,7 +8,7 @@ import {
   RoundPhase,
   RULES,
 } from "@/types";
-import { checkMatchWinner, getMoveHistory, getWinner, isReadBonus, validateMove } from "./rules";
+import { checkMatchWinner, getMoveHistory, getWinner, isPredictionBonusHit, validateMove } from "./rules";
 
 function createId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
@@ -115,13 +115,13 @@ export function processRound(
     const prevMoveB = prevRound?.moveB ?? null;
 
     if (outcome === RoundOutcome.WIN_A) {
-      predictionBonusA = isReadBonus(moveA, prevMoveB);
-      pointsA = predictionBonusA ? RULES.READ_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
+      predictionBonusA = isPredictionBonusHit(moveA, prevMoveB);
+      pointsA = predictionBonusA ? RULES.PREDICTION_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
     }
 
     if (outcome === RoundOutcome.WIN_B) {
-      predictionBonusB = isReadBonus(moveB, prevMoveA);
-      pointsB = predictionBonusB ? RULES.READ_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
+      predictionBonusB = isPredictionBonusHit(moveB, prevMoveA);
+      pointsB = predictionBonusB ? RULES.PREDICTION_BONUS_POINTS : RULES.NORMAL_WIN_POINTS;
     }
   }
 

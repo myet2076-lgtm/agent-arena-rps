@@ -153,9 +153,97 @@ describe("QueueService", () => {
     expect(result.readyDeadline).toBe(readyDeadline.toISOString());
   });
 
-  it("returns NOT_IN_QUEUE for checkPosition when not queued", () => {
-    createAgent("a12");
+  it("returns MATCHED during WAITING->MATCHED transition when agent already MATCHED", () => {
+    createAgent("a12", AgentStatus.MATCHED);
+    createAgent("a13", AgentStatus.MATCHED);
+
+    const now = new Date();
+    const readyDeadline = new Date(now.getTime() + 30_000);
+    db.createQueueEntry({
+      id: "qe-a12",
+      agentId: "a12",
+      joinedAt: now,
+      lastActivityAt: now,
+      lastSSEPing: null,
+      lastPollTimestamp: null,
+      sseDisconnectedAt: null,
+      status: "WAITING",
+    });
+
+    db.updateMatch({
+      id: "m-transition-1",
+      seasonId: "season-1",
+      agentA: "a12",
+      agentB: "a13",
+      status: MatchStatus.CREATED,
+      format: "BO7",
+      scoreA: 0,
+      scoreB: 0,
+      winsA: 0,
+      winsB: 0,
+      currentRound: 0,
+      maxRounds: 12,
+      winnerId: null,
+      startedAt: now,
+      finishedAt: null,
+      createdAt: now,
+      readyA: false,
+      readyB: false,
+      readyDeadline,
+      currentPhase: "READY_CHECK",
+      phaseDeadline: readyDeadline,
+      eloChangeA: null,
+      eloChangeB: null,
+      eloUpdatedAt: null,
+    });
+
     const result = checkPosition("a12");
+    expect(result.status).toBe("MATCHED");
+    expect(result.matchId).toBe("m-transition-1");
+  });
+
+  it("does not return NOT_IN_QUEUE if active entry is absent but READY_CHECK assignment exists", () => {
+    createAgent("a14", AgentStatus.MATCHED);
+    createAgent("a15", AgentStatus.MATCHED);
+
+    const now = new Date();
+    const readyDeadline = new Date(now.getTime() + 30_000);
+    db.updateMatch({
+      id: "m-transition-2",
+      seasonId: "season-1",
+      agentA: "a14",
+      agentB: "a15",
+      status: MatchStatus.CREATED,
+      format: "BO7",
+      scoreA: 0,
+      scoreB: 0,
+      winsA: 0,
+      winsB: 0,
+      currentRound: 0,
+      maxRounds: 12,
+      winnerId: null,
+      startedAt: now,
+      finishedAt: null,
+      createdAt: now,
+      readyA: false,
+      readyB: false,
+      readyDeadline,
+      currentPhase: "READY_CHECK",
+      phaseDeadline: readyDeadline,
+      eloChangeA: null,
+      eloChangeB: null,
+      eloUpdatedAt: null,
+    });
+
+    const result = checkPosition("a14");
+    expect(result.status).toBe("MATCHED");
+    expect(result.matchId).toBe("m-transition-2");
+    expect(result.opponent?.id).toBe("a15");
+  });
+
+  it("returns NOT_IN_QUEUE for checkPosition when not queued", () => {
+    createAgent("a16");
+    const result = checkPosition("a16");
     expect(result.status).toBe("NOT_IN_QUEUE");
   });
 });

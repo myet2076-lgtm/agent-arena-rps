@@ -112,7 +112,7 @@ export async function updateEloRatings(
 
 /**
  * Convert points-based match result to ELO score in [0,1].
- * Uses total points to support read-bonus weighting.
+ * Uses total points to support prediction-bonus weighting.
  */
 export function deriveScoreFromMatch(match: Match): number {
   const total = match.scoreA + match.scoreB;

@@ -22,7 +22,7 @@ export function HighlightsPanel({ summary, highlights }: HighlightsPanelProps) {
 
       <div className={styles.stats}>
         <div><span>Rounds</span><strong>{summary.roundsPlayed}</strong></div>
-        <div><span>Read bonuses</span><strong>{summary.predictionBonusCount}</strong></div>
+        <div><span>Prediction bonuses</span><strong>{summary.predictionBonusCount}</strong></div>
         <div><span>Momentum swings</span><strong>{summary.momentumSwings}</strong></div>
         <div><span>Biggest comeback</span><strong>{summary.largestComeback}</strong></div>
       </div>
