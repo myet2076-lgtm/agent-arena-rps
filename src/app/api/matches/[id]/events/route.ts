@@ -1,3 +1,4 @@
+// TODO: Replace direct db access with EventStreamService when available
 import { db } from "@/lib/server/in-memory-db";
 import { type GameEvent, MatchStatus } from "@/types";
 import { NextRequest } from "next/server";

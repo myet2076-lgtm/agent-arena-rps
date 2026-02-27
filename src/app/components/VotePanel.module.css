@@ -23,11 +23,11 @@
 }
 
 .aButton {
-  background: rgba(0, 240, 255, 0.12);
+  background: var(--accent-alpha-12);
 }
 
 .bButton {
-  background: rgba(255, 0, 170, 0.12);
+  background: var(--accent2-alpha-12);
 }
 
 .actions button:disabled {
@@ -44,7 +44,7 @@
   height: 10px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border-light-08);
 }
 
 .aFill {

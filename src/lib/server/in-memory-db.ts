@@ -98,6 +98,23 @@ function initDevData(): void {
 
 export const db = {
   initDevData,
+  reset(): void {
+    matches.clear();
+    roundsByMatch.clear();
+    commits.clear();
+    reveals.clear();
+    marketByMatch.clear();
+    votesByMatch.clear();
+    shareCardByMatch.clear();
+    shareCardByToken.clear();
+    shareEventsByCard.clear();
+    viewerRankings.clear();
+    eloRatingsByAgent.clear();
+    usedRevealNoncesByMatch.clear();
+    eventsByMatch.clear();
+    eventSeq = 0;
+    initDevData();
+  },
   getMatch(matchId: string): Match | null {
     return matches.get(matchId) ?? null;
   },
@@ -142,7 +159,7 @@ export const db = {
   getEloMatchCount(agentId: string): number {
     return (eloRatingsByAgent.get(agentId) ?? []).length;
   },
-  listEloRatingsBySeason(seasonId: string): EloRating[] {
+  listEloRatingsBySeason(seasonId: string, _period?: "weekly" | "seasonal" | "all"): EloRating[] {
     const all = [...eloRatingsByAgent.values()].flat();
     return all.filter((rating) => {
       const match = matches.get(rating.matchId);
@@ -241,15 +258,18 @@ export const db = {
     shareEventsByCard.set(event.shareCardId, events);
     return event;
   },
-  getViewerRankings(period: "weekly" | "season"): ViewerRanking[] {
-    const source = [...viewerRankings.values()];
+  getViewerRankings(period: "weekly" | "season", seasonId?: string): ViewerRanking[] {
+    const source = [...viewerRankings.values()].filter((ranking) => {
+      if (!seasonId) return true;
+      return ranking.seasonId === seasonId;
+    });
     if (source.length > 0) return source;
 
     return [
       {
         id: randomUUID(),
         viewerId: "viewer-1",
-        seasonId: period === "season" ? "season-1" : "week-current",
+        seasonId: period === "season" ? (seasonId ?? "season-1") : "week-current",
         totalVotes: 10,
         correctVotes: 7,
         hitRate: 0.7,

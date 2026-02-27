@@ -1,3 +1,4 @@
+// TODO: Replace direct db access with ShareService when available
 import { db } from "@/lib/server/in-memory-db";
 import { extractHighlights } from "@/lib/share/highlight-extractor";
 import { generateShareCard, recordShareEvent, resolveShareUrl, type ShareEventStore } from "@/lib/share/share-card";
@@ -21,8 +22,18 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Nex
   return NextResponse.json({ card, url: resolveShareUrl(card.shareToken) }, { status: 200 });
 }
 
-export async function POST(_request: NextRequest, { params }: Params): Promise<NextResponse> {
+export async function POST(request: NextRequest, { params }: Params): Promise<NextResponse> {
   const { id } = await params;
+
+  const hasBody = (request.headers.get("content-length") ?? "0") !== "0";
+  if (hasBody) {
+    try {
+      await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+  }
+
   const match = db.getMatch(id);
   if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 });
 

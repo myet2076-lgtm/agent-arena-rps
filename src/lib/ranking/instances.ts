@@ -14,11 +14,11 @@ const eloProvider: EloDataProvider = {
 };
 
 const rankingRepository: RankingRepository = {
-  async listEloRatingsBySeason(seasonId: string) {
-    return db.listEloRatingsBySeason(seasonId);
+  async listEloRatingsBySeason(seasonId: string, period) {
+    return db.listEloRatingsBySeason(seasonId, period);
   },
-  async listViewerRankingsBySeason(_seasonId: string) {
-    return db.getViewerRankings("season");
+  async listViewerRankingsBySeason(seasonId: string, period) {
+    return db.getViewerRankings(period === "weekly" ? "weekly" : "season", seasonId);
   },
   async getViewerRanking(viewerId: string, seasonId: string) {
     return db.getViewerRanking(viewerId, seasonId);

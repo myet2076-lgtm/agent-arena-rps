@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { createMatch, processRound } from "@/lib/engine";
-import { checkMatchWinner } from "@/lib/engine";
+import { checkMatchWinner, checkRoundTimeouts, createMatch, processRound } from "@/lib/engine";
 import {
   buildRevealNonce,
   generateCommit,
@@ -10,7 +10,12 @@ import {
   verifyCommit,
 } from "@/lib/fairness";
 import { handleTimeout } from "@/lib/fairness";
+import { db } from "@/lib/server/in-memory-db";
 import { Match, MatchStatus, Move, RoundOutcome, RULES } from "@/types";
+
+beforeEach(() => {
+  db.reset();
+});
 
 describe("game engine", () => {
   it("runs a normal Bo7-style flow and finishes on points threshold", () => {
@@ -231,5 +236,49 @@ describe("commit-reveal fairness", () => {
 
     expect(verifyAndRegisterNonce(nonce, usedNonces)).toBe(true);
     expect(verifyAndRegisterNonce(nonce, usedNonces)).toBe(false);
+  });
+});
+
+describe("timeout enforcement", () => {
+  it("returns commit-timeout forfeit for missing second commit", () => {
+    const matchId = `match-timeout-commit-${randomUUID()}`;
+    const match = createMatch("agent-A", "agent-B", "season-1");
+    db.updateMatch({ ...match, id: matchId });
+
+    const commitA = db.upsertCommit(matchId, 1, "agent-A", "a".repeat(64));
+    commitA.expiresAt = new Date(Date.now() - 1);
+
+    const check = checkRoundTimeouts(matchId, 1, { ...match, id: matchId });
+    expect(check).toEqual({ timedOut: true, forfeitAgentId: "agent-B" });
+  });
+
+  it("returns reveal-timeout forfeit when one reveal is late", () => {
+    const matchId = `match-timeout-reveal-${randomUUID()}`;
+    const match = createMatch("agent-A", "agent-B", "season-1");
+    db.updateMatch({ ...match, id: matchId });
+
+    const commitA = db.upsertCommit(matchId, 1, "agent-A", "b".repeat(64));
+    const commitB = db.upsertCommit(matchId, 1, "agent-B", "c".repeat(64));
+
+    const stale = new Date(Date.now() - RULES.REVEAL_TIMEOUT_MS - 50);
+    commitA.committedAt = stale;
+    commitB.committedAt = stale;
+
+    db.upsertReveal(matchId, 1, "agent-A", Move.ROCK, "salt-a");
+
+    const check = checkRoundTimeouts(matchId, 1, { ...match, id: matchId });
+    expect(check).toEqual({ timedOut: true, forfeitAgentId: "agent-B" });
+  });
+
+  it("does not timeout when both commits exist and no reveal is late yet", () => {
+    const matchId = `match-timeout-none-${randomUUID()}`;
+    const match = createMatch("agent-A", "agent-B", "season-1");
+    db.updateMatch({ ...match, id: matchId });
+
+    db.upsertCommit(matchId, 1, "agent-A", "d".repeat(64));
+    db.upsertCommit(matchId, 1, "agent-B", "e".repeat(64));
+
+    const check = checkRoundTimeouts(matchId, 1, { ...match, id: matchId });
+    expect(check).toEqual({ timedOut: false, forfeitAgentId: null });
   });
 });

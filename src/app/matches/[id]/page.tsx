@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { MatchStatus, type MarketSnapshotDTO, type MatchDTO, type MatchResponseDTO, type RoundDTO } from "@/types";
+import { MatchStatus, type MarketSnapshotDTO, type MatchResponseDTO, type RoundDTO } from "@/types";
 import { extractHighlights, generateMatchSummary } from "@/lib/share/highlight-extractor";
 import { useMatchSSE } from "@/app/hooks/useMatchSSE";
 import { ScoreBoard } from "@/app/components/ScoreBoard";
@@ -92,12 +92,12 @@ export default function MatchPage() {
 
   const highlights = useMemo(() => {
     if (!match || match.status !== MatchStatus.FINISHED) return [];
-    return extractHighlights(match as MatchDTO, rounds);
+    return extractHighlights(match, rounds);
   }, [match, rounds]);
 
   const summary = useMemo(() => {
     if (!match || match.status !== MatchStatus.FINISHED) return null;
-    return generateMatchSummary(match as MatchDTO, rounds, highlights);
+    return generateMatchSummary(match, rounds, highlights);
   }, [highlights, match, rounds]);
 
   if (state.loading) {

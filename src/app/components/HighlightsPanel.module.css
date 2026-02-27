@@ -56,9 +56,9 @@
 
 .reason { margin: 0; }
 
-.reversal { background: rgba(0, 240, 255, 0.14); color: var(--accent); }
+.reversal { background: var(--accent-alpha-14); color: var(--accent); }
 .readBonus { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); }
-.matchPoint { background: rgba(255, 0, 170, 0.18); color: var(--accent2); }
+.matchPoint { background: var(--accent2-alpha-18); color: var(--accent2); }
 .clutch { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
 
 @media (max-width: 760px) {

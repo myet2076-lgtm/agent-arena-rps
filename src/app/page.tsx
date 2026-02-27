@@ -1,6 +1,5 @@
 import { db } from "@/lib/server/in-memory-db";
 import { MatchCard } from "@/app/components/MatchCard";
-import type { MatchDTO } from "@/types";
 import styles from "./page.module.css";
 
 export default async function HomePage(): Promise<React.JSX.Element> {
@@ -19,7 +18,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
       <h2 className={styles.sectionTitle}>Featured Match</h2>
       <div className={styles.grid}>
         {match ? (
-          <MatchCard match={match as unknown as MatchDTO} />
+          <MatchCard match={match} />
         ) : (
           <div className={`${styles.comingSoon} ${styles.error}`}>
             Could not load current match feed.

@@ -5,6 +5,6 @@
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--border-light-03);
   border: 1px solid var(--border);
 }

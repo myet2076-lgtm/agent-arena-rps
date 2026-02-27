@@ -8,8 +8,11 @@ type TabType = "agents" | "viewers";
 interface AgentEntry {
   rank: number;
   agentId: string;
+  name?: string;
   rating: number;
   matches: number;
+  wins?: number;
+  losses?: number;
 }
 
 interface ViewerEntry {
@@ -19,6 +22,20 @@ interface ViewerEntry {
   currentStreak: number;
   bestStreak: number;
   badges: string[];
+  totalVotes?: number;
+  correctVotes?: number;
+}
+
+function isAgentEntry(obj: unknown): obj is AgentEntry {
+  if (typeof obj !== "object" || obj === null) return false;
+  const row = obj as Record<string, unknown>;
+  return typeof row.agentId === "string" && typeof row.rating === "number";
+}
+
+function isViewerEntry(obj: unknown): obj is ViewerEntry {
+  if (typeof obj !== "object" || obj === null) return false;
+  const row = obj as Record<string, unknown>;
+  return typeof row.viewerId === "string" && typeof row.hitRate === "number";
 }
 
 function displayName(raw: string): string {
@@ -74,8 +91,11 @@ export default function RankingsPage(): React.JSX.Element {
           return;
         }
 
-        setAgents((agentData as { rankings: AgentEntry[] }).rankings);
-        setViewers((viewerData as { rankings: ViewerEntry[] }).rankings);
+        const validatedAgents = ((agentData as { rankings: unknown[] }).rankings).filter(isAgentEntry);
+        const validatedViewers = ((viewerData as { rankings: unknown[] }).rankings).filter(isViewerEntry);
+
+        setAgents(validatedAgents);
+        setViewers(validatedViewers);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -86,9 +106,8 @@ export default function RankingsPage(): React.JSX.Element {
     void load();
   }, []);
 
-  const topThree = useMemo(() => {
-    return (tab === "agents" ? agents : viewers).slice(0, 3);
-  }, [agents, viewers, tab]);
+  const topThreeAgents = useMemo(() => agents.slice(0, 3), [agents]);
+  const topThreeViewers = useMemo(() => viewers.slice(0, 3), [viewers]);
 
   return (
     <section className={styles.page}>
@@ -120,19 +139,29 @@ export default function RankingsPage(): React.JSX.Element {
       {!loading && !error ? (
         <>
           <div className={styles.podium}>
-            {topThree.map((row, index) => {
-              const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
-              const label = tab === "agents"
-                ? `${displayName((row as AgentEntry).agentId)} · ${(row as AgentEntry).rating} ELO`
-                : `${displayName((row as ViewerEntry).viewerId)} · ${Math.round((row as ViewerEntry).hitRate * 100)}%`;
+            {tab === "agents"
+              ? topThreeAgents.map((row, index) => {
+                const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
+                const label = `${displayName(row.agentId)} · ${row.rating} ELO`;
 
-              return (
-                <article key={tab === "agents" ? (row as AgentEntry).agentId : (row as ViewerEntry).viewerId} className={`${styles.podiumCard} ${glow}`}>
-                  <strong>#{index + 1}</strong>
-                  <span>{label}</span>
-                </article>
-              );
-            })}
+                return (
+                  <article key={row.agentId} className={`${styles.podiumCard} ${glow}`}>
+                    <strong>#{index + 1}</strong>
+                    <span>{label}</span>
+                  </article>
+                );
+              })
+              : topThreeViewers.map((row, index) => {
+                const glow = index === 0 ? styles.gold : index === 1 ? styles.cyan : styles.magenta;
+                const label = `${displayName(row.viewerId)} · ${Math.round(row.hitRate * 100)}%`;
+
+                return (
+                  <article key={row.viewerId} className={`${styles.podiumCard} ${glow}`}>
+                    <strong>#{index + 1}</strong>
+                    <span>{label}</span>
+                  </article>
+                );
+              })}
           </div>
 
           {tab === "agents" ? (

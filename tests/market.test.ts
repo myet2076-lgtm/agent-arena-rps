@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { db } from "../src/lib/server/in-memory-db";
 import { MatchStatus } from "../src/types";
 import type { EloRating, MarketMapping, Match } from "../src/types";
 import {
@@ -14,6 +15,10 @@ import {
   InMemoryRankingRepository,
   LeaderboardService,
 } from "../src/lib/ranking";
+
+beforeEach(() => {
+  db.reset();
+});
 
 function buildMatch(scoreA: number, scoreB: number): Match {
   const now = new Date("2026-02-26T00:00:00.000Z");

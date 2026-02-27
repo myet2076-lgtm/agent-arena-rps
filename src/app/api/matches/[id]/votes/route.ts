@@ -25,18 +25,25 @@ export async function POST(request: NextRequest, { params }: Params): Promise<Ne
     return NextResponse.json({ error: "Match already finished" }, { status: 400 });
   }
 
-  const body = (await request.json()) as Partial<Pick<Vote, "viewerId" | "side" | "roundNo">>;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
-  if (!body.viewerId || (body.side !== "A" && body.side !== "B")) {
+  const parsedBody = body as Partial<Pick<Vote, "viewerId" | "side" | "roundNo">>;
+
+  if (!parsedBody.viewerId || (parsedBody.side !== "A" && parsedBody.side !== "B")) {
     return NextResponse.json({ error: "viewerId and side(A|B) are required" }, { status: 400 });
   }
 
   try {
     const vote = await voteService.castVote(
       id,
-      body.viewerId,
-      body.side,
-      typeof body.roundNo === "number" ? body.roundNo : null,
+      parsedBody.viewerId,
+      parsedBody.side,
+      typeof parsedBody.roundNo === "number" ? parsedBody.roundNo : null,
     );
     const tally = await voteService.getVoteTally(id);
 

@@ -19,7 +19,7 @@
 .tabs {
   display: inline-flex;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--border-light-02);
   padding: 0.3rem;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -37,7 +37,7 @@
 .tabActive {
   color: var(--bg);
   background: linear-gradient(90deg, var(--accent), var(--accent2));
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 18px var(--accent-alpha-30);
 }
 
 .podium {
@@ -50,7 +50,7 @@
   padding: 0.9rem;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: rgba(20, 20, 31, 0.9);
+  background: var(--card-alpha-90);
 }
 
 .podiumCard strong {
@@ -62,11 +62,11 @@
 }
 
 .cyan {
-  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.4), 0 0 20px rgba(0, 240, 255, 0.14);
+  box-shadow: 0 0 0 1px var(--accent-alpha-40), 0 0 20px var(--accent-alpha-14);
 }
 
 .magenta {
-  box-shadow: 0 0 0 1px rgba(255, 0, 170, 0.4), 0 0 20px rgba(255, 0, 170, 0.12);
+  box-shadow: 0 0 0 1px var(--accent2-alpha-40), 0 0 20px var(--accent2-alpha-12);
 }
 
 .tableWrap {
@@ -91,7 +91,7 @@
 
 .table th {
   color: var(--text-dim);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--border-light-02);
 }
 
 .center {
@@ -105,7 +105,7 @@
 }
 
 .badge {
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--border-light-18);
   border-radius: 999px;
   padding: 0.15rem 0.5rem;
   font-size: 0.74rem;

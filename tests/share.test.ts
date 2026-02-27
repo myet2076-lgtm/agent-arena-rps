@@ -1,6 +1,7 @@
 // NOTE: These tests intentionally import route handlers directly as lightweight integration tests.
 // This is acceptable for MVP; full end-to-end coverage should replace this pattern over time.
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { db } from "@/lib/server/in-memory-db";
 import { MatchStatus, Move, RoundPhase, RoundOutcome, type Match, type Round } from "@/types";
 import { extractHighlights } from "@/lib/share/highlight-extractor";
 import { generateShareToken } from "@/lib/share/share-card";
@@ -9,6 +10,10 @@ import { POST as commitPOST } from "@/app/api/matches/[id]/rounds/[no]/commit/ro
 import { POST as revealPOST } from "@/app/api/matches/[id]/rounds/[no]/reveal/route";
 import { GET as voteGET, POST as votePOST } from "@/app/api/matches/[id]/votes/route";
 import { NextRequest } from "next/server";
+
+beforeEach(() => {
+  db.reset();
+});
 
 function fixtureMatch(): Match {
   return {
@@ -77,7 +82,7 @@ describe("api request/response validation", () => {
     const badRequest = new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
       method: "POST",
       body: JSON.stringify({ agentId: "agent-a", commitHash: "bad" }),
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
     });
 
     const badRes = await commitPOST(badRequest, { params: Promise.resolve({ id: matchId, no: "1" }) });
@@ -92,7 +97,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
         method: "POST",
         body: JSON.stringify({ agentId: "agent-a", commitHash: hashA }),
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
@@ -105,7 +110,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
         method: "POST",
         body: JSON.stringify({ agentId: "agent-b", commitHash: hashB }),
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-agent-key": "dev-key-b" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
@@ -115,7 +120,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/reveal`, {
         method: "POST",
         body: JSON.stringify({ agentId: "agent-a", move: moveA, salt: saltA }),
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
@@ -125,7 +130,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/reveal`, {
         method: "POST",
         body: JSON.stringify({ agentId: "agent-b", move: moveB, salt: saltB }),
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-agent-key": "dev-key-b" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
