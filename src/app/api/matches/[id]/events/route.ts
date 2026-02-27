@@ -75,12 +75,13 @@ function formatEventForPerspective(
   return event as unknown as Record<string, unknown>;
 }
 
-function encodeSse(id: string, event: Record<string, unknown>): string {
+function encodeSse(seq: number, event: Record<string, unknown>): string {
   const type = event.type as string;
-  return `id: ${id}\nevent: ${type}\ndata: ${JSON.stringify(event)}\n\n`;
+  return `id: ${seq}\nevent: ${type}\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
 export async function GET(request: NextRequest, { params }: Params): Promise<Response> {
+  try {
   const { id: matchId } = await params;
 
   // Rate limit: authenticated by key if present, otherwise by IP
@@ -121,18 +122,15 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
     }
   }
 
-  // Parse Last-Event-ID — format is "seq:{number}" or legacy "{matchId}:{seq}"
+  // Parse Last-Event-ID — plain sequence number
   const lastEventId = request.headers.get("last-event-id");
   let startSeq = 0;
   let needsResyncCheck = false;
   if (lastEventId) {
-    const colonIdx = lastEventId.lastIndexOf(":");
-    if (colonIdx >= 0) {
-      const seq = parseInt(lastEventId.slice(colonIdx + 1), 10);
-      if (!isNaN(seq)) {
-        startSeq = seq;
-        needsResyncCheck = true;
-      }
+    const seq = parseInt(lastEventId, 10);
+    if (!isNaN(seq) && seq > 0) {
+      startSeq = seq;
+      needsResyncCheck = true;
     }
   }
 
@@ -167,7 +165,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
                 currentRound: currentMatch.currentRound,
               },
             };
-            controller.enqueue(encoder.encode(encodeSse(`seq:0`, snapshot)));
+            controller.enqueue(encoder.encode(encodeSse(0, snapshot)));
           }
           // Update lastSeq to current oldest so polling picks up from there
           const allBuffered = db.getEventsSince(matchId, 0);
@@ -177,7 +175,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
           const buffered = db.getEventsSince(matchId, startSeq);
           for (const item of buffered) {
             const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-            controller.enqueue(encoder.encode(encodeSse(`seq:${item.seq}`, formatted)));
+            controller.enqueue(encoder.encode(encodeSse(item.seq, formatted)));
             lastSeq = item.seq;
           }
         }
@@ -196,13 +194,13 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
               currentRound: currentMatch.currentRound,
             },
           };
-          controller.enqueue(encoder.encode(encodeSse(`seq:0`, snapshot)));
+          controller.enqueue(encoder.encode(encodeSse(0, snapshot)));
         }
         // Also replay any existing buffered events
         const buffered = db.getEventsSince(matchId, 0);
         for (const item of buffered) {
           const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-          controller.enqueue(encoder.encode(encodeSse(`seq:${item.seq}`, formatted)));
+          controller.enqueue(encoder.encode(encodeSse(item.seq, formatted)));
           lastSeq = item.seq;
         }
       }
@@ -213,7 +211,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
         const next = db.getEventsSince(matchId, lastSeq);
         for (const item of next) {
           const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-          controller.enqueue(encoder.encode(encodeSse(`seq:${item.seq}`, formatted)));
+          controller.enqueue(encoder.encode(encodeSse(item.seq, formatted)));
           lastSeq = item.seq;
         }
 
@@ -250,4 +248,11 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
       Connection: "keep-alive",
     },
   });
+  } catch (err: unknown) {
+    console.error("[Match SSE Error]", err);
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: "An unexpected error occurred", details: {} }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }

@@ -41,6 +41,7 @@ export interface AgentRecord {
   status: AgentStatus;
   elo: number;
   description?: string;
+  authorEmail?: string;
   avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +53,8 @@ export interface AgentRecord {
   consecutiveMatches: number;
   /** Consecutive qualification failures (for escalating cooldown) */
   consecutiveQualFails: number;
+  qualifiedAt: Date | null;
+  lastQualFailAt: Date | null;
 }
 
 // ─── Queue (PRD §3.2) ──────────────────────────────────
@@ -64,8 +67,12 @@ export interface QueueEntry {
   agentId: string;
   joinedAt: Date;
   lastActivityAt: Date;
+  lastSSEPing: Date | null;
+  lastPollTimestamp: Date | null;
   status: QueueEntryStatus;
   removedReason?: QueueRemovedReason;
+  /** Timestamp when SSE disconnected (for grace period) */
+  sseDisconnectedAt: Date | null;
 }
 
 // ─── Qualification (PRD §3.3) ───────────────────────────

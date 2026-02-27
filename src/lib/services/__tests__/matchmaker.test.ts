@@ -20,7 +20,7 @@ function createQueuedAgent(id: string, joinedAt?: Date) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   });
 
   const now = joinedAt ?? new Date();
@@ -29,6 +29,9 @@ function createQueuedAgent(id: string, joinedAt?: Date) {
     agentId: id,
     joinedAt: now,
     lastActivityAt: now,
+    lastSSEPing: null,
+    lastPollTimestamp: null,
+    sseDisconnectedAt: null,
     status: "WAITING",
   });
 }

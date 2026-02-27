@@ -8,12 +8,6 @@
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 import { db } from "./in-memory-db";
 
-/** Legacy dev keys — kept for backward compat during transition */
-const LEGACY_KEYS: Record<string, string> = {
-  "agent-a": process.env.AGENT_A_KEY || "dev-key-a",
-  "agent-b": process.env.AGENT_B_KEY || "dev-key-b",
-};
-
 /** Hash an API key with SHA-256 */
 export function hashApiKey(key: string): string {
   return createHash("sha256").update(key).digest("hex");
@@ -24,17 +18,23 @@ export function generateApiKey(): string {
   return `ak_live_${randomBytes(16).toString("hex")}`;
 }
 
-/** Timing-safe string comparison */
+/**
+ * Timing-safe string comparison.
+ * Pads shorter buffer to equal length to avoid early-return on length mismatch.
+ */
 function timingSafeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  const bufA = Buffer.from(a, "utf-8");
-  const bufB = Buffer.from(b, "utf-8");
-  return timingSafeEqual(bufA, bufB);
+  const maxLen = Math.max(a.length, b.length);
+  const bufA = Buffer.alloc(maxLen, 0);
+  const bufB = Buffer.alloc(maxLen, 0);
+  Buffer.from(a, "utf-8").copy(bufA);
+  Buffer.from(b, "utf-8").copy(bufB);
+  // timingSafeEqual + explicit length check (constant-time)
+  return timingSafeEqual(bufA, bufB) && a.length === b.length;
 }
 
 /**
  * Verify agent auth from request header.
- * Checks new hash-based agents first, then falls back to legacy keys.
+ * Hash-based agents only (legacy keys removed).
  */
 export function verifyAgentAuth(
   request: Request,
@@ -43,22 +43,14 @@ export function verifyAgentAuth(
   const apiKey = request.headers.get("x-agent-key");
   if (!apiKey) return { valid: false, error: "Missing x-agent-key header" };
 
-  // Try new agent system (hash-based lookup)
   const agent = db.getAgent(agentId);
-  if (agent) {
-    const keyHash = hashApiKey(apiKey);
-    if (timingSafeCompare(keyHash, agent.keyHash)) {
-      return { valid: true };
-    }
-    return { valid: false, error: "Invalid API key" };
+  if (!agent) return { valid: false, error: "Unknown agent" };
+
+  const keyHash = hashApiKey(apiKey);
+  if (timingSafeCompare(keyHash, agent.keyHash)) {
+    return { valid: true };
   }
-
-  // Legacy fallback
-  const expected = LEGACY_KEYS[agentId];
-  if (!expected) return { valid: false, error: "Unknown agent" };
-  if (apiKey !== expected) return { valid: false, error: "Invalid API key" };
-
-  return { valid: true };
+  return { valid: false, error: "Invalid API key" };
 }
 
 /**
@@ -74,10 +66,6 @@ export function authenticateByKey(
   const keyHash = hashApiKey(apiKey);
   const agent = db.getAgentByKeyHash(keyHash);
   if (!agent) {
-    // Legacy fallback
-    for (const [id, key] of Object.entries(LEGACY_KEYS)) {
-      if (apiKey === key) return { agentId: id, valid: true };
-    }
     return { valid: false, error: "Invalid API key" };
   }
 

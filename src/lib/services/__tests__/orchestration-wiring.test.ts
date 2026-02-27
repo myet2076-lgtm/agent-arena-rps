@@ -26,7 +26,7 @@ function createAgent(id: string, name: string) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   });
 }
 
@@ -36,7 +36,7 @@ function qualifyAgent(agentId: string) {
   for (let round = 1; round <= 5; round++) {
     try {
       const result = submitQualRound(agentId, qualMatchId, round, Move.ROCK);
-      if (result.status === "PASS" || result.status === "FAIL") break;
+      if (result.qualStatus === "PASSED" || result.qualStatus === "FAILED") break;
     } catch {
       break;
     }

@@ -1,7 +1,7 @@
 import { db } from "@/lib/server/in-memory-db";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { ApiError, handleApiError } from "@/lib/server/api-error";
-import { MatchStatus } from "@/types";
+import { MatchStatus, RoundPhase } from "@/types";
 import { NextResponse } from "next/server";
 
 export const GET = handleApiError(async (
@@ -16,72 +16,80 @@ export const GET = handleApiError(async (
   const match = db.getMatch(id);
   if (!match) throw new ApiError(404, "NOT_FOUND", "Match not found");
 
-  if (match.status === MatchStatus.FINISHED) {
-    const rounds = db.getRounds(id);
-    const agentA = db.getAgent(match.agentA);
-    const agentB = db.getAgent(match.agentB);
+  const allRounds = db.getRounds(id);
 
-    const roundDetails = rounds.map((r) => ({
-      round: r.roundNo,
-      moveA: r.moveA,
-      moveB: r.moveB,
-      winner: r.outcome === "WIN_A" || r.outcome === "FORFEIT_B"
-        ? "A"
-        : r.outcome === "WIN_B" || r.outcome === "FORFEIT_A"
-          ? "B"
-          : r.outcome === "DRAW"
-            ? null
-            : null,
-      predictionBonusA: r.predictionBonusA,
-      predictionBonusB: r.predictionBonusB,
-      scoreAfter: { A: 0, B: 0 },
-    }));
+  // Only include resolved rounds (PRD F12: no in-progress round data)
+  const resolvedRounds = allRounds.filter(
+    (r) => r.phase === RoundPhase.JUDGED || r.phase === RoundPhase.PUBLISHED,
+  );
 
-    let cumA = 0;
-    let cumB = 0;
-    for (const rd of roundDetails) {
-      const srcRound = rounds.find((r) => r.roundNo === rd.round)!;
-      cumA += srcRound.pointsA;
-      cumB += srcRound.pointsB;
-      rd.scoreAfter = { A: cumA, B: cumB };
-    }
+  const roundDetails = resolvedRounds.map((r) => ({
+    round: r.roundNo,
+    moveA: r.moveA,
+    moveB: r.moveB,
+    winner: r.outcome === "WIN_A" || r.outcome === "FORFEIT_B"
+      ? "A"
+      : r.outcome === "WIN_B" || r.outcome === "FORFEIT_A"
+        ? "B"
+        : null,
+    predictionBonusA: r.predictionBonusA,
+    predictionBonusB: r.predictionBonusB,
+    pointsA: r.pointsA,
+    pointsB: r.pointsB,
+    resolvedAt: r.judgedAt?.toISOString() ?? null,
+  }));
 
-    const eloChanges: Record<string, number> = {};
-    if (agentA && match.eloChangeA != null) eloChanges[agentA.name] = match.eloChangeA;
-    if (agentB && match.eloChangeB != null) eloChanges[agentB.name] = match.eloChangeB;
+  const agentA = db.getAgent(match.agentA);
+  const agentB = db.getAgent(match.agentB);
+  const votes = db.getVoteTally(id);
 
-    return NextResponse.json({
-      matchId: match.id,
-      agentA: match.agentA,
-      agentB: match.agentB,
-      status: "FINISHED",
-      winner: match.winnerId,
-      finalScore: { A: match.scoreA, B: match.scoreB },
-      rounds: roundDetails,
-      eloChanges,
-      eloUpdatedAt: match.eloUpdatedAt,
-      startedAt: match.startedAt,
-      finishedAt: match.finishedAt,
-      totalRounds: rounds.length,
-    }, { status: 200 });
-  }
-
-  const response = {
-    matchId: match.id,
+  // Build response matching MatchResponseDTO shape for frontend compatibility
+  const matchDTO = {
+    id: match.id,
+    seasonId: match.seasonId,
     agentA: match.agentA,
     agentB: match.agentB,
     status: match.status,
     format: match.format,
     scoreA: match.scoreA,
     scoreB: match.scoreB,
+    winsA: match.winsA,
+    winsB: match.winsB,
     currentRound: match.currentRound,
     maxRounds: match.maxRounds,
+    winnerId: match.winnerId,
+    startedAt: match.startedAt?.toISOString() ?? null,
+    finishedAt: match.finishedAt?.toISOString() ?? null,
+    createdAt: match.createdAt?.toISOString() ?? null,
+    readyA: match.readyA,
+    readyB: match.readyB,
+    readyDeadline: match.readyDeadline?.toISOString() ?? null,
     currentPhase: match.currentPhase,
-    startedAt: match.startedAt,
-    createdAt: match.createdAt,
-    market: db.getMarket(id),
-    votes: db.getVoteTally(id),
+    phaseDeadline: match.phaseDeadline?.toISOString() ?? null,
+    eloChangeA: match.eloChangeA,
+    eloChangeB: match.eloChangeB,
+    eloUpdatedAt: match.eloUpdatedAt?.toISOString() ?? null,
   };
 
-  return NextResponse.json(response, { status: 200 });
+  if (match.status === MatchStatus.FINISHED) {
+    const eloChanges: Record<string, number> = {};
+    if (agentA && match.eloChangeA != null) eloChanges[agentA.id] = match.eloChangeA;
+    if (agentB && match.eloChangeB != null) eloChanges[agentB.id] = match.eloChangeB;
+
+    return NextResponse.json({
+      match: matchDTO,
+      rounds: roundDetails,
+      market: db.getMarket(id) ?? null,
+      votes,
+      eloChanges,
+      eloUpdatedAt: match.eloUpdatedAt?.toISOString() ?? null,
+    });
+  }
+
+  return NextResponse.json({
+    match: matchDTO,
+    rounds: roundDetails,
+    market: db.getMarket(id) ?? null,
+    votes,
+  });
 });

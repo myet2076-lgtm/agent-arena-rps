@@ -2,17 +2,45 @@
 // This is acceptable for MVP; full end-to-end coverage should replace this pattern over time.
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/server/in-memory-db";
-import { MatchStatus, Move, RoundPhase, RoundOutcome, type Match, type Round } from "@/types";
+import { MatchStatus, Move, RoundPhase, RoundOutcome, AgentStatus, DEFAULT_AGENT_SETTINGS, type Match, type Round } from "@/types";
 import { extractHighlights } from "@/lib/share/highlight-extractor";
 import { generateShareToken } from "@/lib/share/share-card";
 import { generateCommit } from "@/lib/fairness/commit-reveal";
+import { hashApiKey } from "@/lib/server/auth";
+import { resetRateLimiter } from "@/lib/server/rate-limiter";
 import { POST as commitPOST } from "@/app/api/matches/[id]/rounds/[no]/commit/route";
 import { POST as revealPOST } from "@/app/api/matches/[id]/rounds/[no]/reveal/route";
 import { GET as voteGET, POST as votePOST } from "@/app/api/matches/[id]/votes/route";
 import { NextRequest } from "next/server";
 
+const KEY_A = "ak_live_share_test_a_key_123456";
+const KEY_B = "ak_live_share_test_b_key_789012";
+
+function createTestAgents() {
+  const now = new Date();
+  const base = {
+    status: AgentStatus.IN_MATCH,
+    elo: 1500,
+    createdAt: now,
+    updatedAt: now,
+    queueCooldownUntil: null,
+    queueBanUntil: null,
+    consecutiveTimeouts: 0,
+    suspiciousFlag: false,
+    settings: { ...DEFAULT_AGENT_SETTINGS },
+    consecutiveMatches: 0,
+    consecutiveQualFails: 0,
+    qualifiedAt: null,
+    lastQualFailAt: null,
+  };
+  db.createAgent({ ...base, id: "agent-a", name: "Agent A", keyHash: hashApiKey(KEY_A) });
+  db.createAgent({ ...base, id: "agent-b", name: "Agent B", keyHash: hashApiKey(KEY_B) });
+}
+
 beforeEach(() => {
   db.reset();
+  resetRateLimiter();
+  createTestAgents();
 });
 
 function fixtureMatch(): Match {
@@ -94,7 +122,7 @@ describe("api request/response validation", () => {
     const badRequest = new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
       method: "POST",
       body: JSON.stringify({ hash: "bad" }),
-      headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
+      headers: { "content-type": "application/json", "x-agent-key": KEY_A },
     });
 
     const badRes = await commitPOST(badRequest, { params: Promise.resolve({ id: matchId, no: "1" }) });
@@ -111,7 +139,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
         method: "POST",
         body: JSON.stringify({ hash: hashA }),
-        headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
+        headers: { "content-type": "application/json", "x-agent-key": KEY_A },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
@@ -124,7 +152,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
         method: "POST",
         body: JSON.stringify({ hash: hashB }),
-        headers: { "content-type": "application/json", "x-agent-key": "dev-key-b" },
+        headers: { "content-type": "application/json", "x-agent-key": KEY_B },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
@@ -134,7 +162,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/reveal`, {
         method: "POST",
         body: JSON.stringify({ move: moveA, salt: saltA }),
-        headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
+        headers: { "content-type": "application/json", "x-agent-key": KEY_A },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
@@ -144,7 +172,7 @@ describe("api request/response validation", () => {
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/reveal`, {
         method: "POST",
         body: JSON.stringify({ move: moveB, salt: saltB }),
-        headers: { "content-type": "application/json", "x-agent-key": "dev-key-b" },
+        headers: { "content-type": "application/json", "x-agent-key": KEY_B },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );

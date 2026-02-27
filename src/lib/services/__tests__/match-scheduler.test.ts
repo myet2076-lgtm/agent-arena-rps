@@ -35,15 +35,15 @@ function createTestAgent(id: string, status: AgentStatus = AgentStatus.QUEUED) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   });
 }
 
 function createMatchedPair(): string {
   createTestAgent("a1", AgentStatus.QUEUED);
   createTestAgent("a2", AgentStatus.QUEUED);
-  db.createQueueEntry({ id: "q-a1", agentId: "a1", joinedAt: new Date(Date.now() - 2000), lastActivityAt: new Date(), status: "WAITING" });
-  db.createQueueEntry({ id: "q-a2", agentId: "a2", joinedAt: new Date(Date.now() - 1000), lastActivityAt: new Date(), status: "WAITING" });
+  db.createQueueEntry({ id: "q-a1", agentId: "a1", joinedAt: new Date(Date.now() - 2000), lastActivityAt: new Date(), status: "WAITING", lastSSEPing: null, lastPollTimestamp: null, sseDisconnectedAt: null });
+  db.createQueueEntry({ id: "q-a2", agentId: "a2", joinedAt: new Date(Date.now() - 1000), lastActivityAt: new Date(), status: "WAITING", lastSSEPing: null, lastPollTimestamp: null, sseDisconnectedAt: null });
   const result = tryMatch()!;
   return result.matchId;
 }

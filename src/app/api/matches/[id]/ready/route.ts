@@ -3,11 +3,7 @@ import { ApiError, handleApiError } from "@/lib/server/api-error";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { db } from "@/lib/server/in-memory-db";
 import { markReady } from "@/lib/services/match-scheduler";
-import { NextRequest, NextResponse } from "next/server";
-
-interface Params {
-  params: Promise<{ id: string }>;
-}
+import { NextResponse } from "next/server";
 
 export const POST = handleApiError(async (req: Request): Promise<NextResponse> => {
   // Auth
@@ -35,22 +31,20 @@ export const POST = handleApiError(async (req: Request): Promise<NextResponse> =
     throw new ApiError(403, "NOT_YOUR_MATCH", "You are not a participant in this match");
   }
 
-  // Must be in READY_CHECK phase
+  // PRD F04: Must be in READY_CHECK phase → 409 MATCH_NOT_IN_READY_CHECK
   if (match.currentPhase !== "READY_CHECK") {
-    throw new ApiError(400, "INVALID_STATE", "Match is not in READY_CHECK phase");
+    throw new ApiError(409, "MATCH_NOT_IN_READY_CHECK", "Match is not in READY_CHECK phase");
   }
 
-  // Check deadline
+  // Check deadline (PRD §4.10: t >= deadline → timeout handler wins)
   if (match.phaseDeadline && Date.now() >= match.phaseDeadline.getTime()) {
-    throw new ApiError(400, "INVALID_STATE", "Ready check deadline has passed");
+    throw new ApiError(409, "MATCH_NOT_IN_READY_CHECK", "Ready check deadline has passed");
   }
-
-  // Check if already ready (idempotent)
-  const isA = auth.agentId === match.agentA;
-  const alreadyReady = isA ? match.readyA : match.readyB;
 
   const updated = markReady(matchId, auth.agentId);
-  if (!updated) throw new ApiError(400, "INVALID_STATE", "Match is not in READY_CHECK phase");
+  if (!updated) {
+    throw new ApiError(409, "MATCH_NOT_IN_READY_CHECK", "Match is not in READY_CHECK phase");
+  }
 
   // Check if both ready now
   if (updated.readyA && updated.readyB) {

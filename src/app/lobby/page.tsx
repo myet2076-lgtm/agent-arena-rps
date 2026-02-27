@@ -8,6 +8,7 @@ import styles from "./lobby.module.css";
 interface QueueEntry {
   agentId: string;
   agentName?: string;
+  name?: string;
   elo?: number;
   joinedAt?: string;
 }
@@ -42,8 +43,8 @@ export default function LobbyPage(): React.JSX.Element {
           throw new Error("Failed to load lobby data");
         }
 
-        const qData = (await qRes.json()) as { entries?: QueueEntry[] };
-        setQueue(qData.entries ?? []);
+        const qData = (await qRes.json()) as { queue?: QueueEntry[]; entries?: QueueEntry[] };
+        setQueue(qData.queue ?? qData.entries ?? []);
 
         const mData = (await mRes.json()) as { matches?: MatchSummary[] };
         setMatches(mData.matches ?? []);
@@ -66,8 +67,8 @@ export default function LobbyPage(): React.JSX.Element {
     void fetch("/api/queue", { cache: "no-store" })
       .then(async (qRes) => {
         if (!qRes.ok) throw new Error("Failed to load lobby data");
-        const qData = (await qRes.json()) as { entries?: QueueEntry[] };
-        setQueue(qData.entries ?? []);
+        const qData = (await qRes.json()) as { queue?: QueueEntry[]; entries?: QueueEntry[] };
+        setQueue(qData.queue ?? qData.entries ?? []);
         const mRes = await fetch("/api/matches", { cache: "no-store" });
         if (!mRes.ok) throw new Error("Failed to load lobby data");
         const mData = (await mRes.json()) as { matches?: MatchSummary[] };
@@ -129,7 +130,7 @@ export default function LobbyPage(): React.JSX.Element {
                 <div className={styles.queueList}>
                   {queue.map((entry) => (
                     <div key={entry.agentId} className={styles.queueEntry}>
-                      <span className={styles.agentName}>{entry.agentName ?? entry.agentId}</span>
+                      <span className={styles.agentName}>{entry.agentName ?? entry.name ?? entry.agentId}</span>
                       {entry.elo != null && (
                         <span className={styles.elo}>{entry.elo} ELO</span>
                       )}

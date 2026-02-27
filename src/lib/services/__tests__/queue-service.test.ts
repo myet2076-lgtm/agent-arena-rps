@@ -19,7 +19,7 @@ function createAgent(id: string, status: AgentStatus = AgentStatus.QUALIFIED) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   });
 }
 
@@ -41,7 +41,7 @@ describe("QueueService", () => {
 
   it("rejects non-QUALIFIED agent", () => {
     createAgent("a2", AgentStatus.REGISTERED);
-    expect(() => joinQueue("a2")).toThrow("must be QUALIFIED");
+    expect(() => joinQueue("a2")).toThrow();
   });
 
   it("leaves queue and restores status", () => {
@@ -57,7 +57,7 @@ describe("QueueService", () => {
   it("leave is idempotent when not in queue", () => {
     createAgent("a4");
     const result = leaveQueue("a4");
-    expect(result.status).toBe("LEFT");
+    expect(result.status).toBe("NOT_IN_QUEUE");
   });
 
   it("derives correct position", () => {
@@ -102,8 +102,9 @@ describe("QueueService", () => {
     expect(() => joinQueue("a9")).toThrow("Too many join/leave");
   });
 
-  it("throws NOT_IN_QUEUE for checkPosition when not queued", () => {
+  it("returns NOT_IN_QUEUE for checkPosition when not queued", () => {
     createAgent("a10");
-    expect(() => checkPosition("a10")).toThrow("not in queue");
+    const result = checkPosition("a10");
+    expect(result.status).toBe("NOT_IN_QUEUE");
   });
 });

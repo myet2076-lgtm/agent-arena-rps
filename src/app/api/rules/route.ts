@@ -4,11 +4,11 @@
 
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
+import { handleApiError } from "@/lib/server/api-error";
 import { COMMIT_SEC, READY_CHECK_SEC, REVEAL_SEC, ROUND_INTERVAL_SEC } from "@/lib/config/timing";
 import { RULES } from "@/types";
 
-
-export async function GET(req: Request): Promise<NextResponse> {
+export const GET = handleApiError(async (req: Request): Promise<NextResponse> => {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   const rl = checkRateLimit(null, ip);
   if (!rl.allowed) return rl.response!;
@@ -32,4 +32,4 @@ export async function GET(req: Request): Promise<NextResponse> {
     moves: ["ROCK", "PAPER", "SCISSORS"],
     hashFormat: "sha256({MOVE}:{SALT})",
   });
-}
+});

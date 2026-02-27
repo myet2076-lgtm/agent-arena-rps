@@ -37,7 +37,7 @@ function makeAgent(id: string, keyHash: string, status: AgentStatus = AgentStatu
     queueCooldownUntil: null, queueBanUntil: null,
     consecutiveTimeouts: 0, suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
-    consecutiveMatches: 0, consecutiveQualFails: 0,
+    consecutiveMatches: 0, consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   };
 }
 
@@ -131,11 +131,13 @@ describe("Ready endpoint", () => {
     expect(b.error).toBe("NOT_YOUR_MATCH");
   });
 
-  it("wrong phase → 400", async () => {
+  it("wrong phase → 409 MATCH_NOT_IN_READY_CHECK", async () => {
     const match = makeMatch("m1", "a1", "a2", "COMMIT");
     db.updateMatch(match);
     const r = await readyPOST(req("http://x/api/matches/m1/ready", KEY_A));
-    expect(r.status).toBe(400);
+    expect(r.status).toBe(409);
+    const b = await r.json();
+    expect(b.error).toBe("MATCH_NOT_IN_READY_CHECK");
   });
 });
 
@@ -344,15 +346,13 @@ describe("Match detail endpoint (F12)", () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.status).toBe("FINISHED");
-    expect(body.winner).toBe("a1");
-    expect(body.finalScore).toEqual({ A: 2, B: 1 });
-    expect(body.totalRounds).toBe(3);
+    expect(body.match.status).toBe("FINISHED");
+    expect(body.match.winnerId).toBe("a1");
+    expect(body.match.scoreA).toBe(2);
+    expect(body.match.scoreB).toBe(1);
     expect(body.rounds).toHaveLength(3);
     expect(body.rounds[0].moveA).toBe("ROCK");
     expect(body.rounds[0].winner).toBe("A");
-    expect(body.rounds[0].scoreAfter).toEqual({ A: 1, B: 0 });
-    expect(body.rounds[2].scoreAfter).toEqual({ A: 2, B: 1 });
     expect(body.eloChanges).toEqual({ a1: 16, a2: -16 });
     expect(body.eloUpdatedAt).toBeTruthy();
   });
@@ -367,9 +367,9 @@ describe("Match detail endpoint (F12)", () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.status).toBe("RUNNING");
-    expect(body.rounds).toBeUndefined();
+    expect(body.match.status).toBe("RUNNING");
+    expect(body.rounds).toEqual([]);
     expect(body.eloChanges).toBeUndefined();
-    expect(body.matchId).toBe("m1");
+    expect(body.match.id).toBe("m1");
   });
 });

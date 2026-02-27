@@ -21,6 +21,8 @@ function createTestAgent(id: string, status: AgentStatus = AgentStatus.REGISTERE
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
     consecutiveQualFails: 0,
+    qualifiedAt: null,
+    lastQualFailAt: null,
   });
   return id;
 }
@@ -37,8 +39,8 @@ describe("QualService", () => {
 
     expect(result.qualMatchId).toBeTruthy();
     expect(result.difficulty).toBe("easy");
-    expect(result.totalRounds).toBe(5);
-    expect(result.firstRound).toBe(1);
+    expect(result.format).toBe("BO3");
+    expect(result.opponent).toBe("house-bot");
 
     const agent = db.getAgent(agentId);
     expect(agent!.status).toBe(AgentStatus.QUALIFYING);
@@ -49,26 +51,27 @@ describe("QualService", () => {
     expect(() => startQualification(agentId)).toThrow("must be REGISTERED");
   });
 
-  it("plays through and passes qualification", () => {
+  it("plays through and passes qualification (BO3)", () => {
     const agentId = createTestAgent("bot-3");
     const { qualMatchId } = startQualification(agentId, "easy");
 
     // Play PAPER against easy bot (which plays ROCK ~70% of time)
-    // We'll just play all 5 rounds and check final status
-    let passed = false;
-    for (let round = 1; round <= 5; round++) {
+    let finished = false;
+    for (let round = 1; round <= 3; round++) {
       const result = submitQualRound(agentId, qualMatchId, round, Move.PAPER);
       expect(result.round).toBe(round);
-      if (result.status === "PASS") {
-        passed = true;
+      if (result.qualStatus === "PASSED") {
+        finished = true;
         break;
       }
-      if (result.status === "FAIL") break;
+      if (result.qualStatus === "FAILED") {
+        finished = true;
+        break;
+      }
     }
 
     // With PAPER vs mostly ROCK, should pass
     const agent = db.getAgent(agentId);
-    // Agent should be either QUALIFIED (pass) or REGISTERED (fail)
     expect([AgentStatus.QUALIFIED, AgentStatus.REGISTERED]).toContain(agent!.status);
   });
 
@@ -79,7 +82,7 @@ describe("QualService", () => {
     const r1 = submitQualRound(agentId, qualMatchId, 1, Move.ROCK);
     expect(r1.round).toBe(1);
     expect(["WIN", "LOSE", "DRAW"]).toContain(r1.result);
-    expect(r1.score.you + r1.score.bot).toBeLessThanOrEqual(1);
+    expect(r1.score.you + r1.score.opponent).toBeLessThanOrEqual(1);
   });
 
   it("rejects wrong round number", () => {
@@ -94,13 +97,13 @@ describe("QualService", () => {
     const { qualMatchId } = startQualification(agentId, "easy");
 
     // Play all rounds
-    for (let r = 1; r <= 5; r++) {
+    for (let r = 1; r <= 3; r++) {
       const res = submitQualRound(agentId, qualMatchId, r, Move.PAPER);
-      if (res.status !== "IN_PROGRESS") break;
+      if (res.qualStatus !== "IN_PROGRESS") break;
     }
 
     // Try submitting another round — should fail
-    expect(() => submitQualRound(agentId, qualMatchId, 6, Move.ROCK)).toThrow();
+    expect(() => submitQualRound(agentId, qualMatchId, 4, Move.ROCK)).toThrow();
   });
 
   it("applies cooldown on failure", () => {
@@ -108,17 +111,17 @@ describe("QualService", () => {
     const { qualMatchId } = startQualification(agentId, "hard");
 
     // Play ROCK every round against hard bot — likely to lose
-    for (let r = 1; r <= 5; r++) {
+    for (let r = 1; r <= 3; r++) {
       const res = submitQualRound(agentId, qualMatchId, r, Move.ROCK);
-      if (res.status !== "IN_PROGRESS") break;
+      if (res.qualStatus !== "IN_PROGRESS") break;
     }
 
     const agent = db.getAgent(agentId);
     if (agent!.status === AgentStatus.REGISTERED) {
-      // Should have cooldown set
-      expect(agent!.queueCooldownUntil).toBeTruthy();
+      // Should have lastQualFailAt set
+      expect(agent!.lastQualFailAt).toBeTruthy();
 
-      // Starting new qual should fail with QUAL_COOLDOWN
+      // Starting new qual should fail with QUALIFICATION_COOLDOWN
       expect(() => startQualification(agentId, "easy")).toThrow("cooldown");
     }
   });

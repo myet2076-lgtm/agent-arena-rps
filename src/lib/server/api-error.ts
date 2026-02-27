@@ -25,7 +25,7 @@ export class ApiError extends Error {
       {
         error: this.code,
         message: this.message,
-        ...(this.details ? { details: this.details } : {}),
+        details: this.details ?? {},
       },
       { status: this.status, headers },
     );
@@ -51,7 +51,7 @@ export function handleApiError(
       console.error("[API Error]", err);
 
       return NextResponse.json(
-        { error: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+        { error: "INTERNAL_ERROR", message: "An unexpected error occurred", details: {} },
         { status: 500 },
       );
     }

@@ -1,5 +1,5 @@
 /**
- * Queue Service (PRD §3.2)
+ * Queue Service (PRD §3.2, F03)
  * Join, leave, heartbeat, anti-abuse
  */
 
@@ -45,10 +45,18 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
   if (!agent) throw new ApiError(404, "AGENT_NOT_FOUND", "Agent not found");
 
   if (agent.status !== AgentStatus.QUALIFIED && agent.status !== AgentStatus.POST_MATCH) {
-    throw new ApiError(403, "INVALID_STATE", `Agent status is ${agent.status}, must be QUALIFIED or POST_MATCH`);
+    throw new ApiError(403, "NOT_QUALIFIED", `Agent status is ${agent.status}, must be QUALIFIED or POST_MATCH`);
   }
 
-  // Check durable cooldown first
+  // Check queue ban (PRD F03: 403 QUEUE_BANNED)
+  if (agent.queueBanUntil && agent.queueBanUntil.getTime() > Date.now()) {
+    const retryAfter = Math.ceil((agent.queueBanUntil.getTime() - Date.now()) / 1000);
+    throw new ApiError(403, "QUEUE_BANNED", `Queue ban active, retry after ${retryAfter}s`, {
+      retryAfter,
+    });
+  }
+
+  // Check durable cooldown (PRD F03: 429 QUEUE_COOLDOWN)
   if (agent.queueCooldownUntil && agent.queueCooldownUntil.getTime() > Date.now()) {
     const retryAfter = Math.ceil((agent.queueCooldownUntil.getTime() - Date.now()) / 1000);
     throw new ApiError(429, "QUEUE_COOLDOWN", `Queue cooldown active, retry after ${retryAfter}s`);
@@ -69,6 +77,9 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
     agentId,
     joinedAt: now,
     lastActivityAt: now,
+    lastSSEPing: null,
+    lastPollTimestamp: now,
+    sseDisconnectedAt: null,
     status: "WAITING",
   };
 
@@ -88,7 +99,11 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
   };
 }
 
-export function leaveQueue(agentId: string): { status: string } {
+export function leaveQueue(agentId: string): {
+  status: string;
+  removedAt: string | null;
+  reason: string | null;
+} {
   const agent = db.getAgent(agentId);
   if (!agent) throw new ApiError(404, "AGENT_NOT_FOUND", "Agent not found");
 
@@ -98,36 +113,72 @@ export function leaveQueue(agentId: string): { status: string } {
 
   const entry = db.getQueueEntryByAgent(agentId);
   if (!entry) {
-    // Idempotent: already not in queue
-    return { status: "LEFT" };
+    // PRD F03b: idempotent — already not in queue → 200
+    return { status: "NOT_IN_QUEUE", removedAt: null, reason: null };
   }
 
+  const removedAt = new Date();
   db.updateQueueEntry({ ...entry, status: "REMOVED", removedReason: "MANUAL" });
 
   // Restore previous status
   const newStatus = agent.status === AgentStatus.QUEUED ? AgentStatus.QUALIFIED : agent.status;
-  db.updateAgent({ ...agent, status: newStatus, updatedAt: new Date() });
+  db.updateAgent({ ...agent, status: newStatus, updatedAt: removedAt });
 
-  return { status: "LEFT" };
+  return { status: "LEFT", removedAt: removedAt.toISOString(), reason: "MANUAL" };
 }
 
 export function checkPosition(agentId: string): {
-  position: number;
-  estimatedWaitSec: number;
-  joinedAt: Date;
+  status: string;
+  position?: number;
+  estimatedWaitSec?: number;
+  matchId?: string;
+  opponent?: { id: string; name: string; elo: number };
+  readyDeadline?: string;
 } {
   const entry = db.getQueueEntryByAgent(agentId);
-  if (!entry) throw new ApiError(404, "NOT_IN_QUEUE", "Agent is not in queue");
 
-  // Update heartbeat
-  entry.lastActivityAt = new Date();
+  if (!entry) {
+    // PRD F03c: NOT_IN_QUEUE response
+    return { status: "NOT_IN_QUEUE" };
+  }
+
+  // Update heartbeat (explicit poll = lastPollTimestamp)
+  const now = new Date();
+  entry.lastPollTimestamp = now;
+  entry.lastActivityAt = now;
   db.updateQueueEntry(entry);
+
+  if (entry.status === "MATCHED") {
+    // Check if there's a match for this agent
+    const agent = db.getAgent(agentId);
+    if (agent && agent.status === AgentStatus.MATCHED) {
+      // Find the match
+      const matches = db.listMatches();
+      const match = matches.find(
+        (m) => (m.agentA === agentId || m.agentB === agentId) && m.currentPhase === "READY_CHECK",
+      );
+      if (match) {
+        const opponentId = match.agentA === agentId ? match.agentB : match.agentA;
+        const opponent = db.getAgent(opponentId);
+        return {
+          status: "MATCHED",
+          matchId: match.id,
+          opponent: {
+            id: opponentId,
+            name: opponent?.name ?? "Unknown",
+            elo: opponent?.elo ?? 1500,
+          },
+          readyDeadline: match.readyDeadline?.toISOString(),
+        };
+      }
+    }
+  }
 
   const position = getPosition(entry);
   return {
+    status: "QUEUED",
     position,
     estimatedWaitSec: position * 30,
-    joinedAt: entry.joinedAt,
   };
 }
 
@@ -138,28 +189,51 @@ function getPosition(entry: QueueEntry): number {
 }
 
 export function getPublicQueue(): {
-  queue: Array<{ position: number; agentId: string; agentName: string; elo: number; waitingSec: number }>;
-  total: number;
-  estimatedMatchSec: number;
+  queue: Array<{ position: number; agentId: string; name: string; elo: number; waitingSec: number }>;
+  currentMatch: {
+    matchId: string;
+    agentA: { id: string; name: string; elo: number };
+    agentB: { id: string; name: string; elo: number };
+    round: number;
+    score: string;
+    status: string;
+  } | null;
+  queueLength: number;
 } {
   const waiting = db.listQueueEntries("WAITING");
-  const now = Date.now();
+  const nowMs = Date.now();
 
   const queue = waiting.map((entry, idx) => {
     const agent = db.getAgent(entry.agentId);
     return {
       position: idx + 1,
       agentId: entry.agentId,
-      agentName: agent?.name ?? "Unknown",
+      name: agent?.name ?? "Unknown",
       elo: agent?.elo ?? 1500,
-      waitingSec: Math.floor((now - entry.joinedAt.getTime()) / 1000),
+      waitingSec: Math.floor((nowMs - entry.joinedAt.getTime()) / 1000),
     };
   });
 
+  // Find current running match
+  const runningMatch = db.listMatches().find((m) => m.status.toString() === "RUNNING");
+  let currentMatch = null;
+  if (runningMatch) {
+    const agentA = db.getAgent(runningMatch.agentA);
+    const agentB = db.getAgent(runningMatch.agentB);
+    currentMatch = {
+      matchId: runningMatch.id,
+      agentA: { id: runningMatch.agentA, name: agentA?.name ?? "Unknown", elo: agentA?.elo ?? 1500 },
+      agentB: { id: runningMatch.agentB, name: agentB?.name ?? "Unknown", elo: agentB?.elo ?? 1500 },
+      round: runningMatch.currentRound,
+      score: `${runningMatch.scoreA}:${runningMatch.scoreB}`,
+      status: "RUNNING",
+    };
+  }
+
   return {
     queue,
-    total: queue.length,
-    estimatedMatchSec: queue.length > 1 ? 30 : 60,
+    currentMatch,
+    queueLength: queue.length,
   };
 }
 

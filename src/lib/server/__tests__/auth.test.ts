@@ -55,7 +55,7 @@ describe("auth", () => {
         suspiciousFlag: false,
         settings: { ...DEFAULT_AGENT_SETTINGS },
         consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
       };
       db.createAgent(agent);
 
@@ -85,7 +85,7 @@ describe("auth", () => {
         suspiciousFlag: false,
         settings: { ...DEFAULT_AGENT_SETTINGS },
         consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
       };
       db.createAgent(agent);
 
@@ -94,10 +94,9 @@ describe("auth", () => {
       if (result.valid) expect(result.agentId).toBe("agent-bot");
     });
 
-    it("falls back to legacy keys", () => {
+    it("rejects unknown keys (no legacy fallback)", () => {
       const result = authenticateByKey(makeRequest("dev-key-a"));
-      expect(result.valid).toBe(true);
-      if (result.valid) expect(result.agentId).toBe("agent-a");
+      expect(result.valid).toBe(false);
     });
   });
 });

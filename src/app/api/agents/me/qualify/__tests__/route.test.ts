@@ -24,7 +24,7 @@ function setupAgent(status: AgentStatus = AgentStatus.REGISTERED) {
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   });
 }
 
@@ -49,7 +49,7 @@ describe("POST /api/agents/me/qualify", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.qualMatchId).toBeTruthy();
-    expect(body.totalRounds).toBe(5);
+    expect(body.format).toBe("BO3");
   });
 
   it("rejects without auth", async () => {

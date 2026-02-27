@@ -24,7 +24,7 @@ function setupAgent(id: string = "agent-qbot", status: AgentStatus = AgentStatus
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   });
 }
 
@@ -48,7 +48,7 @@ describe("Queue API", () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.queue).toEqual([]);
-      expect(body.total).toBe(0);
+      expect(body.queueLength).toBe(0);
     });
   });
 
@@ -96,10 +96,12 @@ describe("Queue API", () => {
       expect(body.position).toBe(1);
     });
 
-    it("404 when not in queue", async () => {
+    it("returns NOT_IN_QUEUE when not in queue", async () => {
       setupAgent();
       const res = await getMe(authReq("GET", "http://localhost/api/queue/me"));
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.status).toBe("NOT_IN_QUEUE");
     });
   });
 });

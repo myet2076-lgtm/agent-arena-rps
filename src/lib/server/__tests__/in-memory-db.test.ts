@@ -18,7 +18,7 @@ function makeAgent(id: string, name: string): AgentRecord {
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
-    consecutiveQualFails: 0,
+    consecutiveQualFails: 0, qualifiedAt: null, lastQualFailAt: null,
   };
 }
 
@@ -59,6 +59,9 @@ describe("in-memory-db new collections", () => {
         agentId: "agent-1",
         joinedAt: new Date(),
         lastActivityAt: new Date(),
+        lastSSEPing: null,
+        lastPollTimestamp: null,
+        sseDisconnectedAt: null,
         status: "WAITING",
       };
       db.createQueueEntry(entry);
@@ -67,8 +70,8 @@ describe("in-memory-db new collections", () => {
     });
 
     it("lists WAITING entries sorted by joinedAt", () => {
-      const e1: QueueEntry = { id: "q-1", agentId: "a1", joinedAt: new Date("2026-01-01"), lastActivityAt: new Date(), status: "WAITING" };
-      const e2: QueueEntry = { id: "q-2", agentId: "a2", joinedAt: new Date("2026-01-02"), lastActivityAt: new Date(), status: "WAITING" };
+      const e1: QueueEntry = { id: "q-1", agentId: "a1", joinedAt: new Date("2026-01-01"), lastActivityAt: new Date(), status: "WAITING", lastSSEPing: null, lastPollTimestamp: null, sseDisconnectedAt: null };
+      const e2: QueueEntry = { id: "q-2", agentId: "a2", joinedAt: new Date("2026-01-02"), lastActivityAt: new Date(), status: "WAITING", lastSSEPing: null, lastPollTimestamp: null, sseDisconnectedAt: null };
       db.createQueueEntry(e2);
       db.createQueueEntry(e1);
       const waiting = db.listQueueEntries("WAITING");

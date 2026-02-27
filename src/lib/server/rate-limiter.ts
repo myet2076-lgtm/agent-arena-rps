@@ -84,7 +84,7 @@ export function checkRateLimit(apiKey: string | null, ip: string): RateLimitResu
       return {
         allowed: false,
         response: NextResponse.json(
-          { error: "RATE_LIMITED", message: "Too many requests" },
+          { error: "RATE_LIMITED", message: "Too many requests", details: {} },
           { status: 429, headers: { "Retry-After": String(retryAfter) } },
         ),
       };
@@ -96,7 +96,7 @@ export function checkRateLimit(apiKey: string | null, ip: string): RateLimitResu
       return {
         allowed: false,
         response: NextResponse.json(
-          { error: "RATE_LIMITED", message: "Too many requests" },
+          { error: "RATE_LIMITED", message: "Too many requests", details: {} },
           { status: 429, headers: { "Retry-After": String(retryAfter) } },
         ),
       };

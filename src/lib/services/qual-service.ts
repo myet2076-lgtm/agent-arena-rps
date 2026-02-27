@@ -1,6 +1,7 @@
 /**
- * Qualification Service (PRD §3.3)
+ * Qualification Service (PRD §3.3, F02)
  * Manages qualification matches against house-bot
+ * Format: BO3 (first to 2 wins)
  */
 
 import { randomUUID } from "node:crypto";
@@ -15,11 +16,11 @@ import {
   type QualRound,
 } from "@/types";
 
-const TOTAL_ROUNDS = 5;
-const WIN_THRESHOLD = 3;
+const TOTAL_ROUNDS = 3; // BO3
+const WIN_THRESHOLD = 2; // First to 2 wins
 const FIRST_FAIL_COOLDOWN_MS = 60_000;       // 60s
 const HARSH_COOLDOWN_MS = 24 * 60 * 60_000;  // 24h
-const HARSH_THRESHOLD = 3; // consecutive fails before harsh cooldown
+const HARSH_THRESHOLD = 5; // PRD F02: consecutiveQualFails >= 5 → 24h cooldown
 
 // Map of active house-bots by qualMatchId
 const activeBots = new Map<string, HouseBot>();
@@ -36,23 +37,30 @@ function determineWinner(agentMove: Move, botMove: Move): "agent" | "bot" | "dra
 
 export function startQualification(agentId: string, difficulty: QualDifficulty = "easy"): {
   qualMatchId: string;
+  opponent: string;
+  format: string;
   difficulty: QualDifficulty;
-  totalRounds: number;
-  firstRound: number;
 } {
   const agent = db.getAgent(agentId);
   if (!agent) throw new ApiError(404, "AGENT_NOT_FOUND", "Agent not found");
 
+  // PRD F02: status must be REGISTERED → error 403 INVALID_STATE
   if (agent.status !== AgentStatus.REGISTERED) {
-    throw new ApiError(403, "NOT_REGISTERED", `Agent status is ${agent.status}, must be REGISTERED`);
+    throw new ApiError(403, "INVALID_STATE", `Agent status is ${agent.status}, must be REGISTERED`);
   }
 
-  // Check cooldown
-  if (agent.queueCooldownUntil && agent.queueCooldownUntil.getTime() > Date.now()) {
-    const retryAfter = Math.ceil((agent.queueCooldownUntil.getTime() - Date.now()) / 1000);
-    throw new ApiError(429, "QUAL_COOLDOWN", `Qualification cooldown active, retry after ${retryAfter}s`, {
-      retryAfterSec: retryAfter,
-    });
+  // Check cooldown using lastQualFailAt (PRD F02)
+  if (agent.lastQualFailAt) {
+    const cooldownMs = (agent.consecutiveQualFails >= HARSH_THRESHOLD)
+      ? HARSH_COOLDOWN_MS
+      : FIRST_FAIL_COOLDOWN_MS;
+    const cooldownEnd = agent.lastQualFailAt.getTime() + cooldownMs;
+    if (Date.now() < cooldownEnd) {
+      const retryAfter = Math.ceil((cooldownEnd - Date.now()) / 1000);
+      throw new ApiError(429, "QUALIFICATION_COOLDOWN", `Qualification cooldown active, retry after ${retryAfter}s`, {
+        retryAfter,
+      });
+    }
   }
 
   const qualMatch: QualificationMatch = {
@@ -73,9 +81,9 @@ export function startQualification(agentId: string, difficulty: QualDifficulty =
 
   return {
     qualMatchId: qualMatch.id,
+    opponent: "house-bot",
+    format: "BO3",
     difficulty,
-    totalRounds: TOTAL_ROUNDS,
-    firstRound: 1,
   };
 }
 
@@ -87,15 +95,15 @@ export function submitQualRound(
 ): {
   round: number;
   yourMove: Move;
-  botMove: Move;
+  opponentMove: Move;
   result: "WIN" | "LOSE" | "DRAW";
-  score: { you: number; bot: number };
-  status: "IN_PROGRESS" | "PASS" | "FAIL";
+  score: { you: number; opponent: number };
+  qualStatus: "IN_PROGRESS" | "PASSED" | "FAILED";
 } {
   const qualMatch = db.getQualificationMatch(qualMatchId);
-  if (!qualMatch) throw new ApiError(404, "QUAL_NOT_FOUND", "Qualification match not found");
+  if (!qualMatch) throw new ApiError(404, "NOT_FOUND", "Qualification match not found");
   if (qualMatch.agentId !== agentId) throw new ApiError(403, "FORBIDDEN", "Not your qualification match");
-  if (qualMatch.result !== "PENDING") throw new ApiError(400, "QUAL_COMPLETED", "Qualification already completed");
+  if (qualMatch.result !== "PENDING") throw new ApiError(409, "QUAL_ALREADY_COMPLETE", "Qualification already completed");
 
   const expectedRound = qualMatch.rounds.length + 1;
   if (roundNo !== expectedRound) {
@@ -118,46 +126,48 @@ export function submitQualRound(
   const resultMap = { agent: "WIN" as const, bot: "LOSE" as const, draw: "DRAW" as const };
   const roundResult = resultMap[winner];
 
-  // Check completion
-  let matchStatus: "IN_PROGRESS" | "PASS" | "FAIL" = "IN_PROGRESS";
+  // Check completion (BO3: first to 2 wins)
+  let matchStatus: "IN_PROGRESS" | "PASSED" | "FAILED" = "IN_PROGRESS";
   const roundsPlayed = qualMatch.rounds.length;
   const roundsRemaining = TOTAL_ROUNDS - roundsPlayed;
 
   if (agentWins >= WIN_THRESHOLD) {
-    matchStatus = "PASS";
-  } else if (botWins >= WIN_THRESHOLD || (roundsRemaining === 0 && agentWins < WIN_THRESHOLD)) {
-    // Can't reach threshold even with remaining rounds
-    matchStatus = "FAIL";
+    matchStatus = "PASSED";
+  } else if (botWins >= WIN_THRESHOLD) {
+    matchStatus = "FAILED";
+  } else if (roundsRemaining === 0) {
+    // All rounds played, agent didn't reach threshold
+    matchStatus = agentWins >= WIN_THRESHOLD ? "PASSED" : "FAILED";
   } else if (agentWins + roundsRemaining < WIN_THRESHOLD) {
-    matchStatus = "FAIL";
+    // Can't reach threshold even with remaining rounds
+    matchStatus = "FAILED";
   }
 
   if (matchStatus !== "IN_PROGRESS") {
-    qualMatch.result = matchStatus === "PASS" ? "PASS" : "FAIL";
+    qualMatch.result = matchStatus === "PASSED" ? "PASS" : "FAIL";
     qualMatch.completedAt = new Date();
     activeBots.delete(qualMatchId);
 
     const agent = db.getAgent(agentId)!;
-    if (matchStatus === "PASS") {
+    if (matchStatus === "PASSED") {
+      // PRD F02: pass → consecutiveQualFails = 0, qualifiedAt = now
       db.updateAgent({
         ...agent,
         status: AgentStatus.QUALIFIED,
         updatedAt: new Date(),
-        queueCooldownUntil: null,
         consecutiveQualFails: 0,
+        qualifiedAt: new Date(),
+        lastQualFailAt: null,
       });
     } else {
-      // Increment consecutive fails
-      const consecutiveFails = agent.consecutiveQualFails ?? 0;
-      const newFails = consecutiveFails + 1;
-      const cooldownMs = newFails >= HARSH_THRESHOLD ? HARSH_COOLDOWN_MS : FIRST_FAIL_COOLDOWN_MS;
-
+      // PRD F02: fail → consecutiveQualFails++, lastQualFailAt = now
+      const newFails = (agent.consecutiveQualFails ?? 0) + 1;
       db.updateAgent({
         ...agent,
         status: AgentStatus.REGISTERED,
         updatedAt: new Date(),
-        queueCooldownUntil: new Date(Date.now() + cooldownMs),
         consecutiveQualFails: newFails,
+        lastQualFailAt: new Date(),
       });
     }
   }
@@ -167,10 +177,10 @@ export function submitQualRound(
   return {
     round: roundNo,
     yourMove: move,
-    botMove,
+    opponentMove: botMove,
     result: roundResult,
-    score: { you: agentWins, bot: botWins },
-    status: matchStatus,
+    score: { you: agentWins, opponent: botWins },
+    qualStatus: matchStatus === "PASSED" ? "PASSED" : matchStatus === "FAILED" ? "FAILED" : "IN_PROGRESS",
   };
 }
 
