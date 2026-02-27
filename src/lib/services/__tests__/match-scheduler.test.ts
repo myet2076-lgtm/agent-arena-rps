@@ -388,3 +388,69 @@ describe("Prediction Bonus", () => {
     expect(rounds[0].readBonusA).toBe(true);
   });
 });
+
+describe("Timeout Scenarios (PRD §9.3)", () => {
+  it("both commit timeout → 0:0 draw, round advances", () => {
+    const matchId = createMatchedPair();
+    setupCommitPhase(matchId);
+
+    // Neither agent commits — advance past commit deadline
+    vi.advanceTimersByTime(30_000);
+
+    const rounds = db.getRounds(matchId);
+    expect(rounds).toHaveLength(1);
+    expect(rounds[0].outcome).toBe("DRAW");
+    expect(rounds[0].pointsA).toBe(0);
+    expect(rounds[0].pointsB).toBe(0);
+    expect(rounds[0].violationA).toBe("COMMIT_TIMEOUT");
+    expect(rounds[0].violationB).toBe("COMMIT_TIMEOUT");
+
+    // Match should still be running (not finished after 1 round)
+    const match = db.getMatch(matchId)!;
+    expect(match.status).toBe(MatchStatus.RUNNING);
+  });
+
+  it("both reveal timeout → 0:0 draw, commits discarded", () => {
+    const matchId = createMatchedPair();
+    setupCommitPhase(matchId);
+
+    const saltA = "A1b2C3d4E5f6G7h8";
+    const hashA = sha256hex(`ROCK:${saltA}`);
+    db.upsertCommit(matchId, 1, "a1", hashA);
+
+    const saltB = "Z9Y8X7W6V5U4T3S2";
+    const hashB = sha256hex(`PAPER:${saltB}`);
+    db.upsertCommit(matchId, 1, "a2", hashB);
+
+    transitionToReveal(matchId, 1);
+
+    // Neither agent reveals — advance past reveal deadline
+    vi.advanceTimersByTime(15_000);
+
+    const rounds = db.getRounds(matchId);
+    expect(rounds).toHaveLength(1);
+    expect(rounds[0].outcome).toBe("DRAW");
+    expect(rounds[0].pointsA).toBe(0);
+    expect(rounds[0].pointsB).toBe(0);
+    expect(rounds[0].violationA).toBe("REVEAL_TIMEOUT");
+    expect(rounds[0].violationB).toBe("REVEAL_TIMEOUT");
+  });
+
+  it("commit timeout + auto-advance → next round starts after 5s interval", () => {
+    const matchId = createMatchedPair();
+    setupCommitPhase(matchId);
+
+    // Neither commits → timeout
+    vi.advanceTimersByTime(30_000);
+
+    const matchAfterTimeout = db.getMatch(matchId)!;
+    expect(matchAfterTimeout.currentPhase).toBe("INTERVAL");
+
+    // Advance 5s for inter-round interval
+    vi.advanceTimersByTime(5_000);
+
+    const matchAfterAdvance = db.getMatch(matchId)!;
+    expect(matchAfterAdvance.currentPhase).toBe("COMMIT");
+    expect(matchAfterAdvance.currentRound).toBe(2);
+  });
+});

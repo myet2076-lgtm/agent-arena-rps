@@ -11,47 +11,72 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
   const match = db.getMatch(id);
   if (!match) return NextResponse.json({ error: "NOT_FOUND", message: "Match not found" }, { status: 404 });
 
-  const rounds = db.getRounds(id);
+  if (match.status === MatchStatus.FINISHED) {
+    // F12: Enhanced FINISHED response
+    const rounds = db.getRounds(id);
+    const agentA = db.getAgent(match.agentA);
+    const agentB = db.getAgent(match.agentB);
 
-  // Public view: no commit hashes or salts during match
-  const sanitizedRounds = rounds.map((r) => {
-    if (match.status === MatchStatus.FINISHED) {
-      return r; // Full details after finished
+    const roundDetails = rounds.map((r) => ({
+      round: r.roundNo,
+      moveA: r.moveA,
+      moveB: r.moveB,
+      winner: r.outcome === "WIN_A" || r.outcome === "FORFEIT_B"
+        ? "A"
+        : r.outcome === "WIN_B" || r.outcome === "FORFEIT_A"
+          ? "B"
+          : r.outcome === "DRAW"
+            ? null
+            : null,
+      predictionBonusA: r.readBonusA,
+      predictionBonusB: r.readBonusB,
+      scoreAfter: { A: 0, B: 0 }, // computed below
+    }));
+
+    // Compute cumulative scores
+    let cumA = 0;
+    let cumB = 0;
+    for (const rd of roundDetails) {
+      const srcRound = rounds.find((r) => r.roundNo === rd.round)!;
+      cumA += srcRound.pointsA;
+      cumB += srcRound.pointsB;
+      rd.scoreAfter = { A: cumA, B: cumB };
     }
-    // During match: strip crypto fields
-    const { ...rest } = r;
-    return {
-      ...rest,
-      // Keep basic round info, strip nothing that's not there
-    };
-  });
 
-  const response: Record<string, unknown> = {
-    match: {
-      id: match.id,
-      seasonId: match.seasonId,
+    const eloChanges: Record<string, number> = {};
+    if (agentA && match.eloChangeA != null) eloChanges[agentA.name] = match.eloChangeA;
+    if (agentB && match.eloChangeB != null) eloChanges[agentB.name] = match.eloChangeB;
+
+    return NextResponse.json({
+      matchId: match.id,
       agentA: match.agentA,
       agentB: match.agentB,
-      status: match.status,
-      format: match.format,
-      scoreA: match.scoreA,
-      scoreB: match.scoreB,
-      winsA: match.winsA,
-      winsB: match.winsB,
-      currentRound: match.currentRound,
-      maxRounds: match.maxRounds,
-      winnerId: match.winnerId,
-      currentPhase: match.currentPhase,
+      status: "FINISHED",
+      winner: match.winnerId,
+      finalScore: { A: match.scoreA, B: match.scoreB },
+      rounds: roundDetails,
+      eloChanges,
+      eloUpdatedAt: match.eloUpdatedAt,
       startedAt: match.startedAt,
       finishedAt: match.finishedAt,
-      createdAt: match.createdAt,
-      ...(match.status === MatchStatus.FINISHED ? {
-        eloChangeA: match.eloChangeA,
-        eloChangeB: match.eloChangeB,
-        eloUpdatedAt: match.eloUpdatedAt,
-      } : {}),
-    },
-    rounds: sanitizedRounds,
+      totalRounds: rounds.length,
+    }, { status: 200 });
+  }
+
+  // Non-finished: basic info, no moves/salts/hashes
+  const response = {
+    matchId: match.id,
+    agentA: match.agentA,
+    agentB: match.agentB,
+    status: match.status,
+    format: match.format,
+    scoreA: match.scoreA,
+    scoreB: match.scoreB,
+    currentRound: match.currentRound,
+    maxRounds: match.maxRounds,
+    currentPhase: match.currentPhase,
+    startedAt: match.startedAt,
+    createdAt: match.createdAt,
     market: db.getMarket(id),
     votes: db.getVoteTally(id),
   };

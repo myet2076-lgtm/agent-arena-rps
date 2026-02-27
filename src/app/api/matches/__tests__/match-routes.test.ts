@@ -14,11 +14,15 @@ import {
   MatchStatus,
   DEFAULT_AGENT_SETTINGS,
   RULES,
+  RoundPhase,
+  RoundOutcome,
+  Move,
 } from "@/types";
 import { POST as readyPOST } from "@/app/api/matches/[id]/ready/route";
 import { POST as commitPOST } from "@/app/api/matches/[id]/rounds/[no]/commit/route";
 import { POST as revealPOST } from "@/app/api/matches/[id]/rounds/[no]/reveal/route";
 import { GET as sseGET } from "@/app/api/matches/[id]/events/route";
+import { GET as matchDetailGET } from "@/app/api/matches/[id]/route";
 import { createHash } from "node:crypto";
 
 const KEY_A = "ak_live_test_agent_a_key_1234";
@@ -297,5 +301,75 @@ describe("SSE perspective", () => {
     });
     const res = await sseGET(r as any, { params: Promise.resolve({ id: "m1" }) });
     expect(res.status).toBe(401);
+  });
+});
+
+// ─── Match Detail F12 ────────────────────────────────────
+
+describe("Match detail endpoint (F12)", () => {
+  it("FINISHED match returns enhanced response with rounds and eloChanges", async () => {
+    const match = makeMatch("m1", "a1", "a2", "FINISHED");
+    match.status = MatchStatus.FINISHED;
+    match.scoreA = 2;
+    match.scoreB = 1;
+    match.winnerId = "a1";
+    match.eloChangeA = 16;
+    match.eloChangeB = -16;
+    match.eloUpdatedAt = new Date();
+    match.finishedAt = new Date();
+    db.updateMatch(match);
+
+    // Add rounds
+    db.addRound({
+      id: "r1", matchId: "m1", roundNo: 1, phase: RoundPhase.PUBLISHED,
+      moveA: Move.ROCK, moveB: Move.SCISSORS, outcome: RoundOutcome.WIN_A,
+      pointsA: 1, pointsB: 0, readBonusA: false, readBonusB: false,
+      violationA: null, violationB: null, judgedAt: new Date(), createdAt: new Date(),
+    });
+    db.addRound({
+      id: "r2", matchId: "m1", roundNo: 2, phase: RoundPhase.PUBLISHED,
+      moveA: Move.PAPER, moveB: Move.SCISSORS, outcome: RoundOutcome.WIN_B,
+      pointsA: 0, pointsB: 1, readBonusA: false, readBonusB: false,
+      violationA: null, violationB: null, judgedAt: new Date(), createdAt: new Date(),
+    });
+    db.addRound({
+      id: "r3", matchId: "m1", roundNo: 3, phase: RoundPhase.PUBLISHED,
+      moveA: Move.ROCK, moveB: Move.SCISSORS, outcome: RoundOutcome.WIN_A,
+      pointsA: 1, pointsB: 0, readBonusA: false, readBonusB: false,
+      violationA: null, violationB: null, judgedAt: new Date(), createdAt: new Date(),
+    });
+
+    const r = new Request("http://x/api/matches/m1", { method: "GET" });
+    const res = await matchDetailGET(r, { params: Promise.resolve({ id: "m1" }) });
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.status).toBe("FINISHED");
+    expect(body.winner).toBe("a1");
+    expect(body.finalScore).toEqual({ A: 2, B: 1 });
+    expect(body.totalRounds).toBe(3);
+    expect(body.rounds).toHaveLength(3);
+    expect(body.rounds[0].moveA).toBe("ROCK");
+    expect(body.rounds[0].winner).toBe("A");
+    expect(body.rounds[0].scoreAfter).toEqual({ A: 1, B: 0 });
+    expect(body.rounds[2].scoreAfter).toEqual({ A: 2, B: 1 });
+    expect(body.eloChanges).toEqual({ a1: 16, a2: -16 });
+    expect(body.eloUpdatedAt).toBeTruthy();
+  });
+
+  it("non-FINISHED match returns basic info without moves", async () => {
+    const match = makeMatch("m1", "a1", "a2", "COMMIT");
+    match.currentRound = 1;
+    db.updateMatch(match);
+
+    const r = new Request("http://x/api/matches/m1", { method: "GET" });
+    const res = await matchDetailGET(r, { params: Promise.resolve({ id: "m1" }) });
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.status).toBe("RUNNING");
+    expect(body.rounds).toBeUndefined();
+    expect(body.eloChanges).toBeUndefined();
+    expect(body.matchId).toBe("m1");
   });
 });

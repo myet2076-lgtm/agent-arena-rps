@@ -16,13 +16,17 @@ export class ApiError extends Error {
   }
 
   toResponse(): NextResponse {
+    const headers: Record<string, string> = {};
+    if (this.status === 429) {
+      headers["Retry-After"] = "1";
+    }
     return NextResponse.json(
       {
         error: this.code,
         message: this.message,
         ...(this.details ? { details: this.details } : {}),
       },
-      { status: this.status },
+      { status: this.status, headers },
     );
   }
 }
