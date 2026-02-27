@@ -3,87 +3,13 @@
   background: var(--bg-section, #f3f4f6);
 }
 
-/* ─── Top Bar ─── */
-.topBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 2rem;
-  background: var(--bg-dark, #1a1a2e);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-.tagline {
-  font-family: var(--font-sans);
-}
-
-.socialIcons {
-  display: flex;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-}
-
-/* ─── Hero Section ─── */
+/* ─── Hero ─── */
 .heroSection {
   position: relative;
-}
-
-.heroNav {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  background: rgba(26, 26, 46, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.heroLogo {
-  font-family: var(--font-serif);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-decoration: none;
-}
-
-.heroLinks {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.heroLink {
-  color: rgba(255, 255, 255, 0.85);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: color 150ms;
-}
-
-.heroLink:hover {
-  color: #ffffff;
-}
-
-/* ─── Hero Grid: Two large images side by side ─── */
-.heroGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 50vh;
-  min-height: 400px;
-  max-height: 600px;
-}
-
-.heroCard {
-  position: relative;
+  height: 70vh;
+  min-height: 480px;
+  max-height: 700px;
   overflow: hidden;
-  display: block;
-  height: 100%;
 }
 
 .heroImage {
@@ -91,139 +17,246 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 400ms ease;
-  image-rendering: auto;
-}
-
-.heroCard:hover .heroImage {
-  transform: scale(1.03);
 }
 
 .heroOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.35) 100%);
-  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(26, 26, 46, 0.3) 0%,
+    rgba(26, 26, 46, 0.7) 100%
+  );
   display: flex;
-  align-items: flex-end;
-  padding: 1.5rem 2rem;
+  align-items: center;
+  justify-content: center;
 }
 
-.heroLabel {
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
+.heroContent {
+  text-align: center;
+  padding: 2rem;
+}
+
+.heroTitle {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.heroSub {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  margin-bottom: 2rem;
+}
+
+.heroCtas {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaPrimary {
+  display: inline-block;
+  padding: 0.85rem 2rem;
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  pointer-events: none;
+  font-size: 0.95rem;
+  transition: background 150ms ease, transform 150ms ease;
 }
 
-/* ─── Content Cards (below images) ─── */
-.contentGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  width: min(1200px, 100% - 3rem);
+.ctaPrimary:hover {
+  background: var(--accent-hover);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.ctaSecondary {
+  display: inline-block;
+  padding: 0.85rem 2rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.ctaSecondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ─── Sections ─── */
+.section {
+  width: min(1120px, 100% - 3rem);
   margin: 0 auto;
-  padding: 2rem 0 3rem;
+  padding: 3rem 0;
 }
 
-.contentCard {
-  display: block;
-  padding: 2rem 2.5rem 2.5rem;
-  text-decoration: none;
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
   color: var(--text);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* ─── Steps ─── */
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stepCard {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
   box-shadow: var(--shadow);
-  transition: box-shadow 200ms, transform 200ms;
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
-.contentCard:hover {
+.stepCard:hover {
+  transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
 }
 
-.cardTags {
-  display: flex;
+.stepIcon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.stepNumber {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.cardCategory {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-caption, #999);
-}
-
-.cardTitle {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.8rem;
   font-weight: 700;
-  line-height: 1.3;
-  color: var(--text);
   margin-bottom: 0.75rem;
 }
 
-.cardDescription {
-  font-family: var(--font-sans);
+.stepName {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.stepDesc {
   font-size: 0.9rem;
   line-height: 1.6;
-  color: var(--text-secondary, #888);
-  margin-bottom: 1.25rem;
+  color: var(--text-secondary);
 }
 
-.cardFooter {
+/* ─── Features ─── */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.featureCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 200ms ease;
+}
+
+.featureCard:hover {
+  box-shadow: var(--shadow);
+}
+
+.featureIcon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.featureName {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+
+.featureDesc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* ─── Footer ─── */
+.footer {
+  background: var(--bg-dark);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 2.5rem 0;
+  margin-top: 1rem;
+}
+
+.footerInner {
+  width: min(1120px, 100% - 3rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footerLinks {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 1rem;
 }
 
-.cardRound {
+.footerLinks a {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  transition: color 150ms ease;
+}
+
+.footerLinks a:hover {
+  color: #ffffff;
+}
+
+.footerNote {
   font-size: 0.8rem;
-  color: var(--text-caption, #999);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
-  .heroGrid {
+  .heroSection {
+    height: 60vh;
+    min-height: 380px;
+  }
+
+  .stepsGrid {
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: auto;
-    max-height: none;
   }
 
-  .heroCard {
-    height: 220px;
-  }
-
-  .heroImage {
-    height: 100%;
-  }
-
-  .contentGrid {
+  .featuresGrid {
     grid-template-columns: 1fr;
-    gap: 1rem;
-    padding: 1.5rem 0 2rem;
-    width: min(1200px, 100% - 2rem);
   }
 
-  .contentCard {
-    padding: 1.5rem;
-  }
-
-  .heroNav {
-    padding: 0.75rem 1rem;
-  }
-
-  .heroLinks {
-    gap: 1rem;
+  .section {
+    padding: 2rem 0;
   }
 }

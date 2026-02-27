@@ -145,6 +145,9 @@ export const db = {
     eventSeq = 0;
     initDevData();
   },
+  listMatches(): Match[] {
+    return Array.from(matches.values());
+  },
   getMatch(matchId: string): Match | null {
     return matches.get(matchId) ?? null;
   },

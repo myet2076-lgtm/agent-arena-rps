@@ -1,0 +1,159 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-section, #f3f4f6);
+}
+
+.heroSection {
+  position: relative;
+  height: 32vh;
+  min-height: 220px;
+  max-height: 360px;
+  overflow: hidden;
+}
+
+.heroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 2rem 2rem 2.5rem;
+}
+
+.heroText {
+  text-align: center;
+}
+
+.heroTitle {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.3rem;
+}
+
+.heroSub {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+}
+
+.content {
+  width: min(900px, 100% - 3rem);
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.panelTitle {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.empty {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.queueList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.queueEntry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.agentName {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.elo {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.matchList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.matchCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  transition: background 150ms ease;
+}
+
+.matchCard:hover {
+  background: var(--accent-light);
+  color: var(--text);
+}
+
+.matchAgents {
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.matchScore {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.matchRound {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.winner {
+  font-size: 0.8rem;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.state {
+  padding: 2rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-align: center;
+  background: var(--bg-secondary);
+}
+
+@media (max-width: 768px) {
+  .heroSection {
+    height: 25vh;
+    min-height: 180px;
+  }
+}
