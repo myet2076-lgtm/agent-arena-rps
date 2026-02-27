@@ -1,5 +1,6 @@
 import { authenticateByKey } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/api-error";
+import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { db } from "@/lib/server/in-memory-db";
 import { markReady } from "@/lib/services/match-scheduler";
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +12,14 @@ interface Params {
 export const POST = handleApiError(async (req: Request): Promise<NextResponse> => {
   // Auth
   const auth = authenticateByKey(req);
-  if (!auth.valid) throw new ApiError(401, "INVALID_KEY", auth.error);
+  if (!auth.valid) {
+    const apiKey = req.headers.get("x-agent-key");
+    throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);
+  }
+
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(auth.agentId, ip);
+  if (!rl.allowed) return rl.response!;
 
   // Get matchId from URL
   const url = new URL(req.url);

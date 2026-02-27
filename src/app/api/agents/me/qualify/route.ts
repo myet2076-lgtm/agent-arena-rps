@@ -10,7 +10,10 @@ import type { QualDifficulty } from "@/types";
 
 export const POST = handleApiError(async (req: Request) => {
   const auth = authenticateByKey(req);
-  if (!auth.valid) throw new ApiError(401, "UNAUTHORIZED", auth.error);
+  if (!auth.valid) {
+    const apiKey = req.headers.get("x-agent-key");
+    throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);
+  }
 
   const url = new URL(req.url);
   const difficulty = (url.searchParams.get("difficulty") ?? "easy") as QualDifficulty;

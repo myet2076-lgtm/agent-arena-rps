@@ -21,7 +21,14 @@ export const GET = handleApiError(async (req: Request) => {
 
 export const POST = handleApiError(async (req: Request) => {
   const auth = authenticateByKey(req);
-  if (!auth.valid) throw new ApiError(401, "UNAUTHORIZED", auth.error);
+  if (!auth.valid) {
+    const apiKey = req.headers.get("x-agent-key");
+    throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);
+  }
+
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(auth.agentId, ip);
+  if (!rl.allowed) return rl.response!;
 
   const result = joinQueue(auth.agentId);
   return NextResponse.json(result, { status: 201 });
@@ -29,7 +36,14 @@ export const POST = handleApiError(async (req: Request) => {
 
 export const DELETE = handleApiError(async (req: Request) => {
   const auth = authenticateByKey(req);
-  if (!auth.valid) throw new ApiError(401, "UNAUTHORIZED", auth.error);
+  if (!auth.valid) {
+    const apiKey = req.headers.get("x-agent-key");
+    throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);
+  }
+
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(auth.agentId, ip);
+  if (!rl.allowed) return rl.response!;
 
   const result = leaveQueue(auth.agentId);
   return NextResponse.json(result);

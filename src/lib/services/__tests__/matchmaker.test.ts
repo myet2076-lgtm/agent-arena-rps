@@ -20,6 +20,7 @@ function createQueuedAgent(id: string, joinedAt?: Date) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   });
 
   const now = joinedAt ?? new Date();

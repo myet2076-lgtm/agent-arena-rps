@@ -55,6 +55,7 @@ describe("auth", () => {
         suspiciousFlag: false,
         settings: { ...DEFAULT_AGENT_SETTINGS },
         consecutiveMatches: 0,
+    consecutiveQualFails: 0,
       };
       db.createAgent(agent);
 
@@ -84,6 +85,7 @@ describe("auth", () => {
         suspiciousFlag: false,
         settings: { ...DEFAULT_AGENT_SETTINGS },
         consecutiveMatches: 0,
+    consecutiveQualFails: 0,
       };
       db.createAgent(agent);
 

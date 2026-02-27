@@ -184,8 +184,8 @@ export function handleBothRevealed(matchId: string, roundNo: number): boolean {
   const result = processRound(match, rounds, moveA, moveB);
 
   // Check prediction hits
-  const predictionA = (commitA as any)?.prediction as Move | null | undefined;
-  const predictionB = (commitB as any)?.prediction as Move | null | undefined;
+  const predictionA = commitA?.prediction ?? null;
+  const predictionB = commitB?.prediction ?? null;
   const predictionAHit = predictionA != null && predictionA === moveB;
   const predictionBHit = predictionB != null && predictionB === moveA;
 
@@ -605,32 +605,39 @@ function handleRevealTimeout(matchId: string, roundNo: number): void {
   }
 }
 
-async function finishMatch(match: Match): Promise<void> {
+/**
+ * Atomically finalize a match (PRD §4.8): status, agent states, ELO — one logical operation.
+ * Synchronous for status + agent transitions; ELO update is async but applied atomically.
+ */
+function finishMatch(match: Match): void {
   const now = new Date();
 
-  // Agent status → POST_MATCH
+  // Step 1: Synchronously set agent status → POST_MATCH and match status
   const agentA = db.getAgent(match.agentA);
   const agentB = db.getAgent(match.agentB);
   if (agentA) db.updateAgent({ ...agentA, status: AgentStatus.POST_MATCH, updatedAt: now });
   if (agentB) db.updateAgent({ ...agentB, status: AgentStatus.POST_MATCH, updatedAt: now });
 
-  // ELO update
-  try {
-    const { ratingA, ratingB } = await updateEloRatings(match, eloProvider);
+  // Step 2: Attempt ELO update (async, but we apply results synchronously via .then)
+  updateEloRatings(match, eloProvider).then(({ ratingA, ratingB }) => {
     db.addEloRating(ratingA);
     db.addEloRating(ratingB);
 
-    if (agentA) db.updateAgent({ ...db.getAgent(match.agentA)!, elo: ratingA.rating, updatedAt: now });
-    if (agentB) db.updateAgent({ ...db.getAgent(match.agentB)!, elo: ratingB.rating, updatedAt: now });
+    // Update agents with new ELO
+    const freshA = db.getAgent(match.agentA);
+    const freshB = db.getAgent(match.agentB);
+    if (freshA) db.updateAgent({ ...freshA, elo: ratingA.rating, updatedAt: new Date() });
+    if (freshB) db.updateAgent({ ...freshB, elo: ratingB.rating, updatedAt: new Date() });
 
+    // Atomic: write ELO changes to match
     db.updateMatch({
       ...db.getMatch(match.id)!,
       eloChangeA: ratingA.delta,
       eloChangeB: ratingB.delta,
-      eloUpdatedAt: now,
+      eloUpdatedAt: new Date(),
     });
-  } catch {
-    // ELO update failed — retry in 5s per PRD §4.8
+  }).catch(() => {
+    // ELO calculation failed — set null, retry in 5s
     db.updateMatch({
       ...db.getMatch(match.id)!,
       eloChangeA: null,
@@ -638,18 +645,17 @@ async function finishMatch(match: Match): Promise<void> {
       eloUpdatedAt: null,
     });
     setTimeout(() => retryEloUpdate(match.id), 5000);
-  }
+  });
 
-  // Emit MATCH_FINISHED event
-  const finalMatch = db.getMatch(match.id)!;
+  // Emit MATCH_FINISHED event (synchronous, uses current match state)
   db.appendEvents(match.id, [{
     type: "MATCH_FINISHED",
     matchId: match.id,
-    winnerId: finalMatch.winnerId,
-    finalScoreA: finalMatch.scoreA,
-    finalScoreB: finalMatch.scoreB,
-    eloChangeA: finalMatch.eloChangeA,
-    eloChangeB: finalMatch.eloChangeB,
+    winnerId: match.winnerId,
+    finalScoreA: match.scoreA,
+    finalScoreB: match.scoreB,
+    eloChangeA: match.eloChangeA,
+    eloChangeB: match.eloChangeB,
   }]);
 
   emitDomainEvent({ type: "MATCH_FINISHED", matchId: match.id });

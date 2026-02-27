@@ -199,6 +199,7 @@ export const db = {
       commitHash,
       committedAt: now(),
       expiresAt: new Date(Date.now() + RULES.COMMIT_TIMEOUT_MS),
+      prediction: null,
     };
     commits.set(commitKey(matchId, roundNo, agentId), record);
 
@@ -224,6 +225,11 @@ export const db = {
   },
   getReveal(matchId: string, roundNo: number, agentId: string): RevealRecord | null {
     return reveals.get(revealKey(matchId, roundNo, agentId)) ?? null;
+  },
+  /** Directly mark a reveal as verified (called after hash check in reveal route) */
+  verifyRevealDirect(matchId: string, roundNo: number, agentId: string): void {
+    const reveal = reveals.get(revealKey(matchId, roundNo, agentId));
+    if (reveal) reveal.verified = true;
   },
   verifyReveal(matchId: string, roundNo: number, agentId: string): boolean {
     const reveal = reveals.get(revealKey(matchId, roundNo, agentId));

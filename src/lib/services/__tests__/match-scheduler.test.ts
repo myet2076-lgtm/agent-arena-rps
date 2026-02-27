@@ -35,6 +35,7 @@ function createTestAgent(id: string, status: AgentStatus = AgentStatus.QUEUED) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   });
 }
 

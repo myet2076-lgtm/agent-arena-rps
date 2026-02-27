@@ -5,7 +5,7 @@
 export type QueueEvent =
   | { type: "POSITION_UPDATE"; agentId: string; position: number }
   | { type: "MATCH_ASSIGNED"; agentId: string; matchId: string; opponentId: string }
-  | { type: "REMOVED"; agentId: string; reason: "TIMEOUT" | "MATCHED" | "MANUAL" };
+  | { type: "REMOVED"; agentId: string; reason: "TIMEOUT" | "BANNED" | "MATCHED" | "MANUAL" };
 
 type Listener = (event: QueueEvent) => void;
 

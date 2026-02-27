@@ -18,6 +18,7 @@ function makeAgent(id: string, name: string): AgentRecord {
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   };
 }
 

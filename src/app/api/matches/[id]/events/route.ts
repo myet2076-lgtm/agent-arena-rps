@@ -122,6 +122,8 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
 
   const encoder = new TextEncoder();
   let closed = false;
+  let closeScheduled = false;
+  let closeTimeout: ReturnType<typeof setTimeout> | undefined;
   let pollInterval: ReturnType<typeof setInterval> | undefined;
   let heartbeatInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -170,9 +172,9 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
         }
 
         const current = db.getMatch(matchId);
-        if (current?.status === MatchStatus.FINISHED || current?.status === MatchStatus.ARCHIVED) {
-          // Close after 5s
-          setTimeout(() => {
+        if ((current?.status === MatchStatus.FINISHED || current?.status === MatchStatus.ARCHIVED) && !closeScheduled) {
+          closeScheduled = true;
+          closeTimeout = setTimeout(() => {
             if (pollInterval) clearInterval(pollInterval);
             if (heartbeatInterval) clearInterval(heartbeatInterval);
             closed = true;
@@ -189,6 +191,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
     cancel() {
       if (pollInterval) clearInterval(pollInterval);
       if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (closeTimeout) clearTimeout(closeTimeout);
       closed = true;
     },
   });

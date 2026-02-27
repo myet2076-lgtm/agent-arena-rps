@@ -24,6 +24,7 @@ function setupAgent(status: AgentStatus = AgentStatus.REGISTERED) {
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   });
 }
 

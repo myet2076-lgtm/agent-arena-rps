@@ -19,6 +19,7 @@ function createAgent(id: string, status: AgentStatus = AgentStatus.QUALIFIED) {
     suspiciousFlag: false,
     settings: { autoRequeue: false, maxConsecutiveMatches: 5, restBetweenSec: 30, allowedIps: [] },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   });
 }
 

@@ -147,7 +147,7 @@ export function submitQualRound(
       });
     } else {
       // Increment consecutive fails
-      const consecutiveFails = (agent as any).consecutiveQualFails ?? 0;
+      const consecutiveFails = agent.consecutiveQualFails ?? 0;
       const newFails = consecutiveFails + 1;
       const cooldownMs = newFails >= HARSH_THRESHOLD ? HARSH_COOLDOWN_MS : FIRST_FAIL_COOLDOWN_MS;
 
@@ -157,7 +157,7 @@ export function submitQualRound(
         updatedAt: new Date(),
         queueCooldownUntil: new Date(Date.now() + cooldownMs),
         consecutiveQualFails: newFails,
-      } as any);
+      });
     }
   }
 

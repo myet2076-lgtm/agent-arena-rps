@@ -65,6 +65,7 @@ export const POST = handleApiError(async (req: Request) => {
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   };
 
   db.createAgent(agent);

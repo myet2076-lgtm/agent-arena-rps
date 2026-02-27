@@ -41,6 +41,12 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
   // Check anti-abuse
   checkAntiAbuse(agentId);
 
+  // Check duplicate (PRD: 409 ALREADY_IN_QUEUE)
+  const existingEntry = db.getQueueEntryByAgent(agentId);
+  if (existingEntry) {
+    throw new ApiError(409, "ALREADY_IN_QUEUE", "Agent is already in the queue");
+  }
+
   const now = new Date();
   const entry: QueueEntry = {
     id: randomUUID(),

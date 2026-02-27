@@ -16,7 +16,10 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     const auth = authenticateByKey(req);
-    if (!auth.valid) throw new ApiError(401, "UNAUTHORIZED", auth.error);
+    if (!auth.valid) {
+      const apiKey = req.headers.get("x-agent-key");
+      throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);
+    }
 
     const { qualMatchId, roundNo: roundNoStr } = await params;
     const roundNo = parseInt(roundNoStr, 10);

@@ -36,7 +36,7 @@ export function handleApiError(
 ): (req: Request, ...args: unknown[]) => Promise<NextResponse> {
   return async (req: Request, ...args: unknown[]) => {
     try {
-      return await handler(req);
+      return await handler(req, ...args);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         return err.toResponse();

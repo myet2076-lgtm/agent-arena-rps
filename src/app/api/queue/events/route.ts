@@ -10,7 +10,8 @@ import { db } from "@/lib/server/in-memory-db";
 export async function GET(req: Request): Promise<Response> {
   const auth = authenticateByKey(req);
   if (!auth.valid) {
-    return new Response(JSON.stringify({ error: "UNAUTHORIZED", message: auth.error }), {
+    const apiKey = req.headers.get("x-agent-key");
+    return new Response(JSON.stringify({ error: apiKey ? "INVALID_KEY" : "MISSING_KEY", message: auth.error }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });

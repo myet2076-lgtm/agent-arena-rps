@@ -50,6 +50,8 @@ export interface AgentRecord {
   suspiciousFlag: boolean;
   settings: AgentSettings;
   consecutiveMatches: number;
+  /** Consecutive qualification failures (for escalating cooldown) */
+  consecutiveQualFails: number;
 }
 
 // ─── Queue (PRD §3.2) ──────────────────────────────────
@@ -202,6 +204,8 @@ export interface CommitRecord {
   commitHash: string;
   committedAt: Date;
   expiresAt: Date;  // TTL for timeout enforcement
+  /** Optional prediction of opponent's move (read-bonus) */
+  prediction: Move | null;
 }
 
 export interface RevealRecord {

@@ -69,6 +69,7 @@ describe("POST /api/agents", () => {
         suspiciousFlag: false,
         settings: { ...DEFAULT_AGENT_SETTINGS },
         consecutiveMatches: 0,
+    consecutiveQualFails: 0,
       });
     }
     const res = await POST(makeReq({ name: "OneMore" }));

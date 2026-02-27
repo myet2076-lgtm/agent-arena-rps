@@ -24,6 +24,7 @@ function setupAgent(id: string = "agent-qbot", status: AgentStatus = AgentStatus
     suspiciousFlag: false,
     settings: { ...DEFAULT_AGENT_SETTINGS },
     consecutiveMatches: 0,
+    consecutiveQualFails: 0,
   });
 }
 
