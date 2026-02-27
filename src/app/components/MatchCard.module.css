@@ -23,7 +23,7 @@
 }
 
 .agentName {
-  color: #ffffff;
+  color: var(--color-white);
   font-family: var(--font-serif);
   font-weight: 700;
   font-size: 1.1rem;

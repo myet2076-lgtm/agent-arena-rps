@@ -27,6 +27,15 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(255, 255, 255, 0.9);
+  --color-hero-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.55) 100%);
+  --color-nav-bg: rgba(26, 26, 46, 0.6);
+  --color-text-on-dark: rgba(255, 255, 255, 0.8);
+  --color-text-on-dark-muted: rgba(255, 255, 255, 0.75);
+  --color-text-on-dark-faint: rgba(255, 255, 255, 0.4);
   --font-serif: var(--font-playfair), Georgia, 'Times New Roman', serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
 }

@@ -28,6 +28,7 @@ export default function LobbyPage(): React.JSX.Element {
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load(): Promise<void> {
@@ -37,17 +38,18 @@ export default function LobbyPage(): React.JSX.Element {
           fetch("/api/matches", { cache: "no-store" }),
         ]);
 
-        if (qRes.ok) {
-          const qData = (await qRes.json()) as { entries?: QueueEntry[] };
-          setQueue(qData.entries ?? []);
+        if (!qRes.ok || !mRes.ok) {
+          throw new Error("Failed to load lobby data");
         }
 
-        if (mRes.ok) {
-          const mData = (await mRes.json()) as { matches?: MatchSummary[] };
-          setMatches(mData.matches ?? []);
-        }
-      } catch {
-        // silently fail
+        const qData = (await qRes.json()) as { entries?: QueueEntry[] };
+        setQueue(qData.entries ?? []);
+
+        const mData = (await mRes.json()) as { matches?: MatchSummary[] };
+        setMatches(mData.matches ?? []);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to load data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -57,6 +59,26 @@ export default function LobbyPage(): React.JSX.Element {
     const interval = setInterval(() => void load(), 5_000);
     return () => clearInterval(interval);
   }, []);
+
+  function refetch(): void {
+    setLoading(true);
+    setError(null);
+    void fetch("/api/queue", { cache: "no-store" })
+      .then(async (qRes) => {
+        if (!qRes.ok) throw new Error("Failed to load lobby data");
+        const qData = (await qRes.json()) as { entries?: QueueEntry[] };
+        setQueue(qData.entries ?? []);
+        const mRes = await fetch("/api/matches", { cache: "no-store" });
+        if (!mRes.ok) throw new Error("Failed to load lobby data");
+        const mData = (await mRes.json()) as { matches?: MatchSummary[] };
+        setMatches(mData.matches ?? []);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Unable to load data. Please try again.");
+      })
+      .finally(() => setLoading(false));
+  }
 
   const running = matches.filter((m) => m.status === "RUNNING");
   const recent = matches
@@ -81,9 +103,22 @@ export default function LobbyPage(): React.JSX.Element {
       </div>
 
       <div className={styles.content}>
-        {loading && <div className={styles.state}>Loading lobby…</div>}
+        {loading && (
+          <div className={styles.state}>
+            <div className={styles.skeleton} />
+            <div className={styles.skeleton} />
+            <div className={styles.skeleton} />
+          </div>
+        )}
 
-        {!loading && (
+        {error && (
+          <div className={styles.errorCard}>
+            {error}
+            <button type="button" onClick={refetch} className={styles.retryBtn}>Retry</button>
+          </div>
+        )}
+
+        {!loading && !error && (
           <>
             {/* Queue */}
             <div className={styles.panel}>

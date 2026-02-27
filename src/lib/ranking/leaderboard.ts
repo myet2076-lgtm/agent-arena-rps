@@ -10,6 +10,9 @@ export interface AgentLeaderboardEntry {
   agentId: string;
   rating: number;
   matches: number;
+  wins: number;
+  losses: number;
+  draws: number;
   rank: number;
 }
 
@@ -102,8 +105,18 @@ export class LeaderboardService {
     }
 
     const matchesByAgent = new Map<string, number>();
+    const winsByAgent = new Map<string, number>();
+    const lossesByAgent = new Map<string, number>();
+    const drawsByAgent = new Map<string, number>();
     for (const rating of ratings) {
       matchesByAgent.set(rating.agentId, (matchesByAgent.get(rating.agentId) ?? 0) + 1);
+      if (rating.delta > 0) {
+        winsByAgent.set(rating.agentId, (winsByAgent.get(rating.agentId) ?? 0) + 1);
+      } else if (rating.delta < 0) {
+        lossesByAgent.set(rating.agentId, (lossesByAgent.get(rating.agentId) ?? 0) + 1);
+      } else {
+        drawsByAgent.set(rating.agentId, (drawsByAgent.get(rating.agentId) ?? 0) + 1);
+      }
     }
 
     return [...latestByAgent.values()]
@@ -112,6 +125,9 @@ export class LeaderboardService {
         agentId: rating.agentId,
         rating: rating.rating,
         matches: matchesByAgent.get(rating.agentId) ?? 0,
+        wins: winsByAgent.get(rating.agentId) ?? 0,
+        losses: lossesByAgent.get(rating.agentId) ?? 0,
+        draws: drawsByAgent.get(rating.agentId) ?? 0,
         rank: index + 1,
       }));
   }

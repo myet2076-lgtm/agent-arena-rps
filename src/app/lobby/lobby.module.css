@@ -21,7 +21,7 @@
 .heroOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  background: var(--color-hero-gradient);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -36,12 +36,12 @@
   font-family: var(--font-serif);
   font-size: clamp(1.8rem, 4vw, 2.5rem);
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-white);
   margin-bottom: 0.3rem;
 }
 
 .heroSub {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-on-dark);
   font-size: 1rem;
 }
 
@@ -156,4 +156,48 @@
     height: 25vh;
     min-height: 180px;
   }
+}
+
+.errorCard {
+  background: var(--danger-light);
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--danger);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.retryBtn {
+  background: var(--danger);
+  color: var(--color-white, #ffffff);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.retryBtn:hover {
+  opacity: 0.85;
+}
+
+.skeleton {
+  height: 60px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--bg-section) 25%, var(--border) 50%, var(--bg-section) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 0.75rem;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

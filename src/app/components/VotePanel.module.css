@@ -32,7 +32,7 @@
 
 .aButton {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .aButton:hover:not(:disabled) {
@@ -42,7 +42,7 @@
 
 .bButton {
   background: var(--bg-dark);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .bButton:hover:not(:disabled) {

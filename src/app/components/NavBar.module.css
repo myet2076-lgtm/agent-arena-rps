@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   z-index: 20;
-  background: rgba(26, 26, 46, 0.6);
+  background: var(--color-nav-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -23,11 +23,11 @@
   font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: -0.01em;
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .logo:hover {
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .nav {
@@ -36,7 +36,7 @@
 }
 
 .link {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--color-text-on-dark-muted);
   padding: 0.45rem 0.9rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -45,17 +45,17 @@
 }
 
 .link:hover {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(255, 255, 255, 0.1);
 }
 
 .active {
-  color: #ffffff;
+  color: var(--color-white);
   font-weight: 600;
 }
 
 .active:hover {
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .link:focus-visible {
@@ -79,7 +79,7 @@
   display: block;
   width: 22px;
   height: 2px;
-  background: #ffffff;
+  background: var(--color-white);
   border-radius: 2px;
   transition: transform 200ms ease, opacity 200ms ease;
 }

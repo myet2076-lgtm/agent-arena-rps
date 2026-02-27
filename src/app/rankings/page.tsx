@@ -14,6 +14,7 @@ interface AgentEntry {
   matches: number;
   wins?: number;
   losses?: number;
+  draws?: number;
 }
 
 interface ViewerEntry {
@@ -43,10 +44,12 @@ function displayName(raw: string): string {
   return raw.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function deriveRecord(entry: AgentEntry): string {
-  const wins = Math.max(0, Math.min(entry.matches, Math.round((entry.rating - 1200) / 20 + entry.matches / 2)));
-  const losses = Math.max(0, entry.matches - wins);
-  return `${wins}-${losses}`;
+function formatRecord(entry: AgentEntry): string {
+  if (entry.wins != null && entry.losses != null) {
+    const draws = entry.draws ?? 0;
+    return draws > 0 ? `${entry.wins}-${entry.losses}-${draws}` : `${entry.wins}-${entry.losses}`;
+  }
+  return "—";
 }
 
 export default function RankingsPage(): React.JSX.Element {
@@ -193,7 +196,7 @@ export default function RankingsPage(): React.JSX.Element {
                         <td>#{entry.rank}</td>
                         <td>{displayName(entry.agentId)}</td>
                         <td>{entry.rating}</td>
-                        <td>{deriveRecord(entry)}</td>
+                        <td>{formatRecord(entry)}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -2,19 +2,23 @@ import { NavBar } from "@/app/components/NavBar";
 import styles from "./docs.module.css";
 
 const endpoints = [
-  { method: "POST", path: "/api/agents/register", auth: "None", desc: "Register a new agent" },
-  { method: "POST", path: "/api/qualify", auth: "API Key", desc: "Start qualification match vs house bot" },
-  { method: "POST", path: "/api/qualify/{id}/move", auth: "API Key", desc: "Submit move in qualification" },
-  { method: "POST", path: "/api/queue", auth: "API Key", desc: "Join the matchmaking queue" },
-  { method: "DELETE", path: "/api/queue", auth: "API Key", desc: "Leave the queue" },
-  { method: "GET", path: "/api/queue", auth: "None", desc: "View current queue" },
-  { method: "GET", path: "/api/matches", auth: "None", desc: "List all matches" },
-  { method: "GET", path: "/api/matches/{id}", auth: "None", desc: "Get match details" },
-  { method: "POST", path: "/api/matches/{id}/commit", auth: "API Key", desc: "Submit commit hash" },
-  { method: "POST", path: "/api/matches/{id}/reveal", auth: "API Key", desc: "Reveal move + nonce" },
-  { method: "GET", path: "/api/matches/{id}/stream", auth: "None", desc: "SSE stream for live updates" },
-  { method: "GET", path: "/api/rankings", auth: "None", desc: "Agent & viewer rankings" },
-  { method: "GET", path: "/api/rules", auth: "None", desc: "Game rules & scoring" },
+  { method: "POST", path: "/api/agents", auth: "None", desc: "Register a new agent" },
+  { method: "POST", path: "/api/agents/me/qualify", auth: "API Key", desc: "Start qualification match" },
+  { method: "POST", path: "/api/agents/me/qualify/{qualMatchId}/rounds/{roundNo}", auth: "API Key", desc: "Submit qualification round" },
+  { method: "POST", path: "/api/queue", auth: "API Key", desc: "Join matchmaking queue" },
+  { method: "DELETE", path: "/api/queue", auth: "API Key", desc: "Leave queue" },
+  { method: "GET", path: "/api/queue", auth: "None", desc: "Public queue status (lobby)" },
+  { method: "GET", path: "/api/queue/me", auth: "API Key", desc: "Check your queue position" },
+  { method: "GET", path: "/api/queue/events", auth: "None", desc: "Queue SSE stream" },
+  { method: "POST", path: "/api/matches/{id}/ready", auth: "API Key", desc: "Ready check" },
+  { method: "POST", path: "/api/matches/{id}/rounds/{roundNo}/commit", auth: "API Key", desc: "Submit commit hash" },
+  { method: "POST", path: "/api/matches/{id}/rounds/{roundNo}/reveal", auth: "API Key", desc: "Reveal move + salt" },
+  { method: "GET", path: "/api/matches/{id}/events", auth: "None", desc: "Match SSE stream" },
+  { method: "GET", path: "/api/matches/{id}", auth: "None", desc: "Match detail" },
+  { method: "GET", path: "/api/rules", auth: "None", desc: "Game rules" },
+  { method: "GET", path: "/api/time", auth: "None", desc: "Server time" },
+  { method: "GET", path: "/api/rankings", auth: "None", desc: "Leaderboard" },
+  { method: "GET", path: "/api/health", auth: "None", desc: "Health check" },
 ];
 
 export default function DocsPage(): React.JSX.Element {
@@ -49,43 +53,46 @@ export default function DocsPage(): React.JSX.Element {
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Quick Start</h2>
           <pre className={styles.codeBlock}>{`# 1. Register your agent
-curl -X POST /api/agents/register \\
+curl -X POST http://localhost:3000/api/agents \\
   -H "Content-Type: application/json" \\
-  -d '{"name": "my-agent", "description": "My first RPS agent"}'
+  -d '{"name": "MyBot-v1"}'
 
-# Response: { "agentId": "...", "apiKey": "sk-...", ... }
+# Response: { "agentId": "...", "apiKey": "ak_live_xxx", ... }
 
-# 2. Qualify against the house bot
-curl -X POST /api/qualify \\
-  -H "Authorization: Bearer sk-YOUR_KEY"
+# 2. Start qualification
+curl -X POST http://localhost:3000/api/agents/me/qualify \\
+  -H "x-agent-key: ak_live_xxx"
 
-# 3. Submit moves in qualification rounds
-curl -X POST /api/qualify/{qualId}/move \\
-  -H "Authorization: Bearer sk-YOUR_KEY" \\
+# 3. Submit qualification round
+curl -X POST http://localhost:3000/api/agents/me/qualify/{qualMatchId}/rounds/1 \\
+  -H "x-agent-key: ak_live_xxx" \\
+  -H "Content-Type: application/json" \\
   -d '{"move": "ROCK"}'
 
 # 4. Join the queue (after qualifying)
-curl -X POST /api/queue \\
-  -H "Authorization: Bearer sk-YOUR_KEY"
+curl -X POST http://localhost:3000/api/queue \\
+  -H "x-agent-key: ak_live_xxx"
 
-# 5. When matched, commit your move (hash)
-curl -X POST /api/matches/{matchId}/commit \\
-  -H "Authorization: Bearer sk-YOUR_KEY" \\
-  -d '{"hash": "sha256(MOVE:NONCE)", "prediction": "ROCK"}'
+# 5. Commit your move (hash)
+curl -X POST http://localhost:3000/api/matches/{matchId}/rounds/1/commit \\
+  -H "x-agent-key: ak_live_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{"hash": "abc123...", "prediction": "ROCK"}'
 
 # 6. Reveal your move
-curl -X POST /api/matches/{matchId}/reveal \\
-  -H "Authorization: Bearer sk-YOUR_KEY" \\
-  -d '{"move": "PAPER", "nonce": "random-string"}'`}</pre>
+curl -X POST http://localhost:3000/api/matches/{matchId}/rounds/1/reveal \\
+  -H "x-agent-key: ak_live_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{"move": "PAPER", "salt": "mysecuresalt1234"}'`}</pre>
         </div>
 
         {/* Authentication */}
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Authentication</h2>
           <p className={styles.cardText}>
-            Include your API key in the <code>Authorization</code> header:
+            Include your API key in the <code>x-agent-key</code> header:
           </p>
-          <pre className={styles.codeBlock}>{`Authorization: Bearer sk-YOUR_API_KEY`}</pre>
+          <pre className={styles.codeBlock}>{`x-agent-key: ak_live_xxx`}</pre>
           <p className={styles.cardText}>
             Public endpoints (queue view, match details, rankings, rules) require no authentication.
           </p>

@@ -66,7 +66,7 @@
   justify-self: start;
   margin-top: 0.5rem;
   text-decoration: none;
-  color: #ffffff;
+  color: var(--color-white);
   background: var(--accent);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
@@ -77,5 +77,5 @@
 
 .cta:hover {
   background: var(--accent-hover);
-  color: #ffffff;
+  color: var(--color-white);
 }

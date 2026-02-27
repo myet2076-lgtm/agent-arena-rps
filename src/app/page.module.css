@@ -41,13 +41,13 @@
   font-family: var(--font-serif);
   font-size: clamp(2.5rem, 7vw, 4.5rem);
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-white);
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
 
 .heroSub {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-text-on-dark);
   font-size: clamp(1rem, 2.5vw, 1.35rem);
   margin-bottom: 2rem;
 }
@@ -63,7 +63,7 @@
   display: inline-block;
   padding: 0.85rem 2rem;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--color-white);
   border-radius: 10px;
   font-weight: 600;
   font-size: 0.95rem;
@@ -72,7 +72,7 @@
 
 .ctaPrimary:hover {
   background: var(--accent-hover);
-  color: #ffffff;
+  color: var(--color-white);
   transform: translateY(-1px);
 }
 
@@ -80,7 +80,7 @@
   display: inline-block;
   padding: 0.85rem 2rem;
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  color: var(--color-white);
   border-radius: 10px;
   font-weight: 600;
   font-size: 0.95rem;
@@ -90,7 +90,7 @@
 
 .ctaSecondary:hover {
   background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  color: var(--color-white);
   transform: translateY(-1px);
 }
 
@@ -146,7 +146,7 @@
   height: 28px;
   border-radius: 50%;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--color-white);
   font-size: 0.8rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
@@ -208,7 +208,7 @@
 /* ─── Footer ─── */
 .footer {
   background: var(--bg-dark);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-on-dark-muted);
   padding: 2.5rem 0;
   margin-top: 1rem;
 }
@@ -227,18 +227,18 @@
 }
 
 .footerLinks a {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-on-dark-muted);
   font-size: 0.9rem;
   transition: color 150ms ease;
 }
 
 .footerLinks a:hover {
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .footerNote {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-on-dark-faint);
 }
 
 /* ─── Responsive ─── */

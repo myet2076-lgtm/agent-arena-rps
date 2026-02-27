@@ -17,7 +17,7 @@
 .heroOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  background: var(--color-hero-gradient);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -32,12 +32,12 @@
   font-family: var(--font-serif);
   font-size: clamp(1.5rem, 4vw, 2.5rem);
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-white);
   margin-bottom: 0.5rem;
 }
 
 .heroSub {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-on-dark);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -53,12 +53,12 @@
 }
 
 .online {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(34, 197, 94, 0.3);
 }
 
 .offline {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(245, 158, 11, 0.3);
 }
 

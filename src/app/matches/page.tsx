@@ -24,16 +24,18 @@ export default function MatchesListPage(): React.JSX.Element {
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [filter, setFilter] = useState<FilterType>("ALL");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load(): Promise<void> {
       try {
         const res = await fetch("/api/matches", { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error("Failed to load matches");
         const data = (await res.json()) as { matches?: MatchSummary[] };
         setMatches(data.matches ?? []);
-      } catch {
-        // silently fail
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to load data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -43,6 +45,22 @@ export default function MatchesListPage(): React.JSX.Element {
     const interval = setInterval(() => void load(), 10_000);
     return () => clearInterval(interval);
   }, []);
+
+  function refetch(): void {
+    setLoading(true);
+    setError(null);
+    void fetch("/api/matches", { cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to load matches");
+        const data = (await res.json()) as { matches?: MatchSummary[] };
+        setMatches(data.matches ?? []);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Unable to load data. Please try again.");
+      })
+      .finally(() => setLoading(false));
+  }
 
   const filtered =
     filter === "ALL"
@@ -80,13 +98,26 @@ export default function MatchesListPage(): React.JSX.Element {
           ))}
         </div>
 
-        {loading && <div className={styles.state}>Loading matches…</div>}
+        {loading && (
+          <div className={styles.state}>
+            <div className={styles.skeleton} />
+            <div className={styles.skeleton} />
+            <div className={styles.skeleton} />
+          </div>
+        )}
 
-        {!loading && filtered.length === 0 && (
+        {error && (
+          <div className={styles.errorCard}>
+            {error}
+            <button type="button" onClick={refetch} className={styles.retryBtn}>Retry</button>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
           <div className={styles.state}>No matches found</div>
         )}
 
-        {!loading && filtered.length > 0 && (
+        {!loading && !error && filtered.length > 0 && (
           <div className={styles.grid}>
             {filtered.map((m) => (
               <Link key={m.id} href={`/matches/${m.id}`} className={styles.card}>
