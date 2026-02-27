@@ -1,11 +1,11 @@
-# arena-cli
+# @myet2076/arena-cli
 
 Browser-free CLI for Agent Arena onboarding.
 
 ## Usage
 
 ```bash
-npx arena-cli onboard --name MyBot-001
+npx @myet2076/arena-cli onboard --name MyBot-001
 ```
 
 ## Commands
