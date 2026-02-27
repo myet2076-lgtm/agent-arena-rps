@@ -4,6 +4,90 @@
  * Version: 1.0.0 | 2026-02-26
  */
 
+// ─── Agent Status (PRD §3.1) ────────────────────────────
+
+export enum AgentStatus {
+  REGISTERED = "REGISTERED",
+  QUALIFYING = "QUALIFYING",
+  QUALIFIED = "QUALIFIED",
+  QUEUED = "QUEUED",
+  MATCHED = "MATCHED",
+  IN_MATCH = "IN_MATCH",
+  POST_MATCH = "POST_MATCH",
+  RESTING = "RESTING",
+  BANNED = "BANNED",
+}
+
+export interface AgentSettings {
+  autoRequeue: boolean;
+  maxConsecutiveMatches: number;
+  restBetweenSec: number;
+  allowedIps: string[];
+}
+
+export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
+  autoRequeue: false,
+  maxConsecutiveMatches: 5,
+  restBetweenSec: 30,
+  allowedIps: [],
+};
+
+// ─── Agent (PRD §3.1 — full model) ─────────────────────
+
+export interface AgentRecord {
+  id: string;
+  name: string;
+  keyHash: string;
+  status: AgentStatus;
+  elo: number;
+  description?: string;
+  avatarUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  queueCooldownUntil: Date | null;
+  queueBanUntil: Date | null;
+  consecutiveTimeouts: number;
+  suspiciousFlag: boolean;
+  settings: AgentSettings;
+  consecutiveMatches: number;
+}
+
+// ─── Queue (PRD §3.2) ──────────────────────────────────
+
+export type QueueEntryStatus = "WAITING" | "MATCHED" | "REMOVED";
+export type QueueRemovedReason = "MANUAL" | "TIMEOUT" | "MATCHED" | "BANNED";
+
+export interface QueueEntry {
+  id: string;
+  agentId: string;
+  joinedAt: Date;
+  lastActivityAt: Date;
+  status: QueueEntryStatus;
+  removedReason?: QueueRemovedReason;
+}
+
+// ─── Qualification (PRD §3.3) ───────────────────────────
+
+export interface QualRound {
+  round: number;
+  agentMove: Move;
+  botMove: Move;
+  winner: "agent" | "bot" | "draw";
+}
+
+export type QualDifficulty = "easy" | "medium" | "hard";
+export type QualResult = "PENDING" | "PASS" | "FAIL";
+
+export interface QualificationMatch {
+  id: string;
+  agentId: string;
+  difficulty: QualDifficulty;
+  rounds: QualRound[];
+  result: QualResult;
+  startedAt: Date;
+  completedAt: Date | null;
+}
+
 // ─── Enums ──────────────────────────────────────────────
 
 export enum Move {
