@@ -69,7 +69,7 @@ describe("auth", () => {
   });
 
   describe("authenticateByKey", () => {
-    it("returns agentId for valid key", () => {
+    it("returns agentId for valid key", async () => {
       const rawKey = generateApiKey();
       const agent: AgentRecord = {
         id: "agent-bot",
@@ -89,13 +89,13 @@ describe("auth", () => {
       };
       db.createAgent(agent);
 
-      const result = authenticateByKey(makeRequest(rawKey));
+      const result = await authenticateByKey(makeRequest(rawKey));
       expect(result.valid).toBe(true);
       if (result.valid) expect(result.agentId).toBe("agent-bot");
     });
 
-    it("rejects unknown keys (no legacy fallback)", () => {
-      const result = authenticateByKey(makeRequest("dev-key-a"));
+    it("rejects unknown keys (no legacy fallback)", async () => {
+      const result = await authenticateByKey(makeRequest("dev-key-a"));
       expect(result.valid).toBe(false);
     });
   });

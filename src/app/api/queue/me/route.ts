@@ -9,7 +9,7 @@ import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { checkPosition } from "@/lib/services/queue-service";
 
 export const GET = handleApiError(async (req: Request) => {
-  const auth = authenticateByKey(req);
+  const auth = await authenticateByKey(req);
   if (!auth.valid) {
     const apiKey = req.headers.get("x-agent-key");
     throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);

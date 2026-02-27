@@ -1,4 +1,4 @@
-import { persistToRedis, loadFromRedis } from "@/lib/server/redis";
+import { persistToRedis, persistToRedisSync, loadFromRedis } from "@/lib/server/redis";
 import {
   type AgentRecord,
   type AgentStatus,
@@ -288,6 +288,9 @@ export const db = {
     if (_loaded) return;
     if (!_loadPromise) _loadPromise = _doLoad();
     await _loadPromise;
+  },
+  async flush(): Promise<void> {
+    await persistToRedisSync(getState);
   },
   initDevData,
   reset(): void {

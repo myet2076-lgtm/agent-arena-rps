@@ -121,7 +121,7 @@ export const GET = handleApiError(async (request: NextRequest, { params }: Param
   let authedAgentId: string | null = null;
 
   if (apiKey) {
-    const auth = authenticateByKey(request);
+    const auth = await authenticateByKey(request);
     if (!auth.valid) {
       throw new ApiError(401, "INVALID_KEY", "Invalid API key");
     }

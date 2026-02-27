@@ -15,7 +15,7 @@ export const POST = handleApiError(async (
   req: Request,
   { params }: { params: Promise<{ qualMatchId: string; roundNo: string }> },
 ) => {
-  const auth = authenticateByKey(req);
+  const auth = await authenticateByKey(req);
   if (!auth.valid) {
     const apiKey = req.headers.get("x-agent-key");
     throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);

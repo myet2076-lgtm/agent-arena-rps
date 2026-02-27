@@ -19,6 +19,8 @@ function slugify(name: string): string {
 }
 
 export const POST = handleApiError(async (req: Request) => {
+  await db.ensureLoaded();
+
   // Rate limit by IP (public endpoint)
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   const rl = checkRateLimit(null, ip);
@@ -98,6 +100,7 @@ export const POST = handleApiError(async (req: Request) => {
   };
 
   db.createAgent(agent);
+  await db.flush();
   recordIpRegistration(ip);
 
   return NextResponse.json(

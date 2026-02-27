@@ -57,12 +57,13 @@ export function verifyAgentAuth(
  * Authenticate request by API key (new system).
  * Returns the agent ID if valid, or null.
  */
-export function authenticateByKey(
+export async function authenticateByKey(
   request: Request,
-): { agentId: string; valid: true } | { valid: false; error: string } {
+): Promise<{ agentId: string; valid: true } | { valid: false; error: string }> {
   const apiKey = request.headers.get("x-agent-key");
   if (!apiKey) return { valid: false, error: "Missing x-agent-key header" };
 
+  await db.ensureLoaded();
   const keyHash = hashApiKey(apiKey);
   const agent = db.getAgentByKeyHash(keyHash);
   if (!agent) {

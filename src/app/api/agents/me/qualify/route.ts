@@ -10,7 +10,7 @@ import { startQualification } from "@/lib/services/qual-service";
 import type { QualDifficulty } from "@/types";
 
 export const POST = handleApiError(async (req: Request) => {
-  const auth = authenticateByKey(req);
+  const auth = await authenticateByKey(req);
   if (!auth.valid) {
     const apiKey = req.headers.get("x-agent-key");
     throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);

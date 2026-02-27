@@ -79,6 +79,19 @@ export function persistToRedis(getState: () => Record<string, unknown>): void {
   persistPromise = run();
 }
 
+/**
+ * Persist state immediately and await completion.
+ * Use for critical flows (e.g. registration) where cross-instance read-after-write
+ * consistency is important before returning success to client.
+ */
+export async function persistToRedisSync(getState: () => Record<string, unknown>): Promise<void> {
+  const r = getRedis();
+  if (!r) return;
+
+  const serialized = serializeState(getState());
+  await r.set(STATE_KEY, serialized);
+}
+
 export async function loadFromRedis(): Promise<Record<string, unknown> | null> {
   const r = getRedis();
   if (!r) return null;

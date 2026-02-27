@@ -10,7 +10,7 @@ import { db } from "@/lib/server/in-memory-db";
 import { AgentStatus } from "@/types";
 
 export const GET = handleApiError(async (req: Request) => {
-  const auth = authenticateByKey(req);
+  const auth = await authenticateByKey(req);
   if (!auth.valid) {
     const apiKey = req.headers.get("x-agent-key");
     throw new ApiError(401, apiKey ? "INVALID_KEY" : "MISSING_KEY", auth.error);
