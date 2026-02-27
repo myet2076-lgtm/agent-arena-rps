@@ -8,6 +8,7 @@ import { db } from "@/lib/server/in-memory-db";
 import { AgentStatus, MatchStatus } from "@/types";
 import type { MatchPhase } from "@/types";
 import { emitQueueEvent, type QueueEvent } from "./queue-events";
+import { startReadyCheck } from "./match-scheduler";
 
 export interface MatchResult {
   matchId: string;
@@ -79,6 +80,9 @@ export function tryMatch(): MatchResult | null {
   // Then REMOVED with reason MATCHED
   emitQueueEvent(entryA.agentId, { type: "REMOVED", agentId: entryA.agentId, reason: "MATCHED" });
   emitQueueEvent(entryB.agentId, { type: "REMOVED", agentId: entryB.agentId, reason: "MATCHED" });
+
+  // Start ready check timer
+  startReadyCheck(matchId);
 
   return { matchId, agentA: entryA.agentId, agentB: entryB.agentId };
 }

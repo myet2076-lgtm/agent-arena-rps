@@ -109,14 +109,18 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
     }
   }
 
-  // Parse Last-Event-ID
+  // Parse Last-Event-ID — format is "seq:{number}" or legacy "{matchId}:{seq}"
   const lastEventId = request.headers.get("last-event-id");
   let startSeq = 0;
+  let needsResyncCheck = false;
   if (lastEventId) {
-    const parts = lastEventId.split("-");
-    if (parts.length === 2 && parts[0] === matchId) {
-      const seq = parseInt(parts[1], 10);
-      if (!isNaN(seq)) startSeq = seq;
+    const colonIdx = lastEventId.lastIndexOf(":");
+    if (colonIdx >= 0) {
+      const seq = parseInt(lastEventId.slice(colonIdx + 1), 10);
+      if (!isNaN(seq)) {
+        startSeq = seq;
+        needsResyncCheck = true;
+      }
     }
   }
 
@@ -133,14 +137,44 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
 
       controller.enqueue(encoder.encode(`: connected ${new Date().toISOString()}\n\n`));
 
-      // Replay from buffer if needed
-      const buffered = db.getEventsSince(matchId, startSeq);
-      if (startSeq > 0 && buffered.length === 0) {
-        // Buffer overflow → send RESYNC
+      // Replay from buffer or send RESYNC
+      if (needsResyncCheck) {
+        const oldestSeq = db.getOldestSeq(matchId);
+        if (startSeq < oldestSeq) {
+          // Client is too far behind — send RESYNC with full snapshot
+          const currentMatch = db.getMatch(matchId);
+          if (currentMatch) {
+            const snapshot: Record<string, unknown> = {
+              type: "RESYNC",
+              matchId,
+              snapshot: {
+                status: currentMatch.status,
+                phase: currentMatch.currentPhase,
+                scoreA: currentMatch.scoreA,
+                scoreB: currentMatch.scoreB,
+                currentRound: currentMatch.currentRound,
+              },
+            };
+            controller.enqueue(encoder.encode(encodeSse(`seq:0`, snapshot)));
+          }
+          // Update lastSeq to current oldest so polling picks up from there
+          const allBuffered = db.getEventsSince(matchId, 0);
+          if (allBuffered.length > 0) lastSeq = allBuffered[allBuffered.length - 1].seq;
+        } else {
+          // Replay events from lastSeenSeq+1
+          const buffered = db.getEventsSince(matchId, startSeq);
+          for (const item of buffered) {
+            const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
+            controller.enqueue(encoder.encode(encodeSse(`seq:${item.seq}`, formatted)));
+            lastSeq = item.seq;
+          }
+        }
+      } else {
+        // No Last-Event-ID — send current state snapshot then stream
         const currentMatch = db.getMatch(matchId);
         if (currentMatch) {
           const snapshot: Record<string, unknown> = {
-            type: "RESYNC",
+            type: "STATE_SNAPSHOT",
             matchId,
             snapshot: {
               status: currentMatch.status,
@@ -150,13 +184,13 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
               currentRound: currentMatch.currentRound,
             },
           };
-          controller.enqueue(encoder.encode(encodeSse(`${matchId}-0`, snapshot)));
+          controller.enqueue(encoder.encode(encodeSse(`seq:0`, snapshot)));
         }
-      } else {
-        // Replay buffered events
-        for (const item of buffered.slice(-MAX_BUFFER)) {
+        // Also replay any existing buffered events
+        const buffered = db.getEventsSince(matchId, 0);
+        for (const item of buffered) {
           const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-          controller.enqueue(encoder.encode(encodeSse(`${matchId}-${item.seq}`, formatted)));
+          controller.enqueue(encoder.encode(encodeSse(`seq:${item.seq}`, formatted)));
           lastSeq = item.seq;
         }
       }
@@ -167,7 +201,7 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
         const next = db.getEventsSince(matchId, lastSeq);
         for (const item of next) {
           const formatted = formatEventForPerspective(item.event, perspective, agentId, match.agentA, match.agentB);
-          controller.enqueue(encoder.encode(encodeSse(`${matchId}-${item.seq}`, formatted)));
+          controller.enqueue(encoder.encode(encodeSse(`seq:${item.seq}`, formatted)));
           lastSeq = item.seq;
         }
 

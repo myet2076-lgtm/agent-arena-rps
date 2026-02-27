@@ -220,14 +220,12 @@ describe("game engine", () => {
 describe("commit-reveal fairness", () => {
   it("verifies commit hash correctly", () => {
     const salt = generateSalt();
-    const roundId = "round-1";
-    const agentId = "agent-A";
     const move = Move.ROCK;
 
-    const commit = generateCommit(move, salt, roundId, agentId);
+    const commit = generateCommit(move, salt);
 
-    expect(verifyCommit(commit, move, salt, roundId, agentId)).toBe(true);
-    expect(verifyCommit(commit, Move.PAPER, salt, roundId, agentId)).toBe(false);
+    expect(verifyCommit(commit, move, salt)).toBe(true);
+    expect(verifyCommit(commit, Move.PAPER, salt)).toBe(false);
   });
 
   it("blocks nonce replay", () => {

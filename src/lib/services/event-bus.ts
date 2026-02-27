@@ -5,7 +5,7 @@
 
 import { EventEmitter } from "node:events";
 
-export type DomainEventType = "MATCH_FINISHED" | "QUEUE_EXPIRED" | "READY_TIMEOUT" | "ROUND_RESULT";
+export type DomainEventType = "MATCH_FINISHED" | "QUEUE_EXPIRED" | "READY_TIMEOUT" | "ROUND_RESULT" | "QUEUE_JOINED";
 
 export interface DomainEvent {
   type: DomainEventType;
@@ -28,4 +28,21 @@ export function onDomainEvent(type: DomainEventType | "*", handler: (event: Doma
 
 export function resetEventBus(): void {
   emitter.removeAllListeners();
+  _wired = false;
 }
+
+// ─── Auto-wire: MATCH_FINISHED → re-check queue ────────
+let _wired = false;
+export function ensureOrchestrationWired(): void {
+  if (_wired) return;
+  _wired = true;
+  const handler = () => {
+    // Lazy import to avoid circular deps
+    import("./matchmaker").then(({ tryMatch }) => tryMatch()).catch(() => {});
+  };
+  onDomainEvent("MATCH_FINISHED", handler);
+  onDomainEvent("QUEUE_JOINED", handler);
+}
+
+// Wire on first import
+ensureOrchestrationWired();

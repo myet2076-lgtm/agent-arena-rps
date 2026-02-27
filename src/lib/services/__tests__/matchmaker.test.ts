@@ -55,9 +55,9 @@ describe("Matchmaker", () => {
     expect(result!.agentA).toBe("m1");
     expect(result!.agentB).toBe("m2");
 
-    // Agents should be MATCHED
-    expect(db.getAgent("m1")!.status).toBe(AgentStatus.MATCHED);
-    expect(db.getAgent("m2")!.status).toBe(AgentStatus.MATCHED);
+    // Agents should be IN_MATCH (startReadyCheck transitions MATCHED → IN_MATCH)
+    expect(db.getAgent("m1")!.status).toBe(AgentStatus.IN_MATCH);
+    expect(db.getAgent("m2")!.status).toBe(AgentStatus.IN_MATCH);
 
     // Queue entries should be MATCHED
     expect(db.getQueueEntry("q-m1")!.status).toBe("MATCHED");

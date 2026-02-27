@@ -10,32 +10,29 @@ export function buildRevealNonce(roundId: string, agentId: string, salt: string)
 
 /**
  * Deterministically generates commit hash.
- * hash = SHA-256(move + salt + roundId + agentId)
+ * Canonical format: sha256("{MOVE}:{SALT}") — uppercase move, colon separator.
+ * Matches the API verification in reveal route.
  */
-export function generateCommit(move: Move, salt: string, roundId: string, agentId: string): string {
+export function generateCommit(move: Move, salt: string): string {
   if (!salt) throw new Error("Salt is required to generate commit hash.");
-  if (!roundId) throw new Error("roundId is required to generate commit hash.");
-  if (!agentId) throw new Error("agentId is required to generate commit hash.");
-
-  const payload = `${move}|${salt}|${roundId}|${agentId}`;
-  return createHash("sha256").update(payload).digest("hex");
+  const payload = `${move.toUpperCase()}:${salt}`;
+  return createHash("sha256").update(payload, "utf-8").digest("hex");
 }
 
 /**
  * Verifies submitted reveal payload against expected commit hash.
+ * Canonical format: sha256("{MOVE}:{SALT}").
  */
 export function verifyCommit(
   commitHash: string,
   move: Move,
   salt: string,
-  roundId: string,
-  agentId: string,
 ): boolean {
   if (!commitHash) {
     throw new Error("commitHash is required.");
   }
 
-  const expected = generateCommit(move, salt, roundId, agentId);
+  const expected = generateCommit(move, salt);
   return commitHash === expected;
 }
 

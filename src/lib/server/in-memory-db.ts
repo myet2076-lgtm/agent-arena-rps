@@ -53,9 +53,15 @@ function revealKey(matchId: string, roundNo: number, agentId: string): string {
   return `${matchId}:${roundNo}:${agentId}`;
 }
 
+const MAX_EVENT_BUFFER = 50;
+
 function pushEvent(matchId: string, event: GameEvent): void {
   const list = eventsByMatch.get(matchId) ?? [];
   list.push({ seq: ++eventSeq, event });
+  // Enforce max buffer size (PRD contract)
+  if (list.length > MAX_EVENT_BUFFER) {
+    list.splice(0, list.length - MAX_EVENT_BUFFER);
+  }
   eventsByMatch.set(matchId, list);
 }
 
@@ -236,8 +242,7 @@ export const db = {
     const commit = commits.get(commitKey(matchId, roundNo, agentId));
     if (!reveal || !commit) return false;
 
-    const roundId = `${matchId}:${roundNo}`;
-    reveal.verified = verifyCommit(commit.commitHash, reveal.move, reveal.salt, roundId, agentId);
+    reveal.verified = verifyCommit(commit.commitHash, reveal.move, reveal.salt);
     return reveal.verified;
   },
   getOrCreateRevealNonceSet(matchId: string): Set<string> {
@@ -250,6 +255,10 @@ export const db = {
   },
   getEventsSince(matchId: string, sinceSeq: number): Array<{ seq: number; event: GameEvent }> {
     return (eventsByMatch.get(matchId) ?? []).filter((entry) => entry.seq > sinceSeq);
+  },
+  getOldestSeq(matchId: string): number {
+    const list = eventsByMatch.get(matchId) ?? [];
+    return list.length > 0 ? list[0].seq : 0;
   },
   addVote(matchId: string, vote: Vote): Vote {
     const votes = votesByMatch.get(matchId) ?? [];

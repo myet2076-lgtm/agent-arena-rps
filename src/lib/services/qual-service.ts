@@ -144,6 +144,7 @@ export function submitQualRound(
         status: AgentStatus.QUALIFIED,
         updatedAt: new Date(),
         queueCooldownUntil: null,
+        consecutiveQualFails: 0,
       });
     } else {
       // Increment consecutive fails

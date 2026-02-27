@@ -37,7 +37,11 @@ function clearTimer(matchId: string, phase: string, round?: number): void {
 function setTimer(matchId: string, phase: string, round: number | undefined, ms: number, handler: () => void): void {
   const key = timerKey(matchId, phase, round);
   clearTimer(matchId, phase, round);
-  activeTimers.set(key, setTimeout(handler, ms));
+  const handle = setTimeout(() => {
+    activeTimers.delete(key); // Clean up stale handle on fire
+    handler();
+  }, ms);
+  activeTimers.set(key, handle);
 }
 
 // ─── ELO Provider ──────────────────────────────────────

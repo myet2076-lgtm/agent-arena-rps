@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/server/in-memory-db";
 import { ApiError } from "@/lib/server/api-error";
 import { AgentStatus, type QueueEntry } from "@/types";
+import { emitDomainEvent } from "./event-bus";
 
 const ANTI_ABUSE_WINDOW_MS = 5 * 60_000; // 5 minutes
 const ANTI_ABUSE_MAX_CYCLES = 3;
@@ -19,6 +20,15 @@ function checkAntiAbuse(agentId: string): void {
   const now = Date.now();
   const cycles = (joinCycles.get(agentId) ?? []).filter((t) => now - t < ANTI_ABUSE_WINDOW_MS);
   if (cycles.length >= ANTI_ABUSE_MAX_CYCLES) {
+    // Set durable cooldown on agent record
+    const agent = db.getAgent(agentId);
+    if (agent) {
+      db.updateAgent({
+        ...agent,
+        queueCooldownUntil: new Date(now + ANTI_ABUSE_COOLDOWN_MS),
+        updatedAt: new Date(),
+      });
+    }
     throw new ApiError(429, "QUEUE_COOLDOWN", "Too many join/leave cycles, wait 5 minutes");
   }
 }
@@ -36,6 +46,12 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
 
   if (agent.status !== AgentStatus.QUALIFIED && agent.status !== AgentStatus.POST_MATCH) {
     throw new ApiError(403, "INVALID_STATE", `Agent status is ${agent.status}, must be QUALIFIED or POST_MATCH`);
+  }
+
+  // Check durable cooldown first
+  if (agent.queueCooldownUntil && agent.queueCooldownUntil.getTime() > Date.now()) {
+    const retryAfter = Math.ceil((agent.queueCooldownUntil.getTime() - Date.now()) / 1000);
+    throw new ApiError(429, "QUEUE_COOLDOWN", `Queue cooldown active, retry after ${retryAfter}s`);
   }
 
   // Check anti-abuse
@@ -61,6 +77,10 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
   recordJoinCycle(agentId);
 
   const position = getPosition(entry);
+
+  // Signal that queue changed — event bus wiring will trigger matchmaker
+  emitDomainEvent({ type: "QUEUE_JOINED", matchId: "" });
+
   return {
     position,
     estimatedWaitSec: position * 30, // rough estimate
