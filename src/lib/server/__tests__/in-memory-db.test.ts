@@ -78,6 +78,46 @@ describe("in-memory-db new collections", () => {
       expect(waiting[0].id).toBe("q-1");
       expect(waiting[1].id).toBe("q-2");
     });
+
+    it("returns active queue entry for WAITING or MATCHED", () => {
+      const waiting: QueueEntry = {
+        id: "q-w",
+        agentId: "a-w",
+        joinedAt: new Date(),
+        lastActivityAt: new Date(),
+        lastSSEPing: null,
+        lastPollTimestamp: null,
+        sseDisconnectedAt: null,
+        status: "WAITING",
+      };
+      const matched: QueueEntry = {
+        id: "q-m",
+        agentId: "a-m",
+        joinedAt: new Date(),
+        lastActivityAt: new Date(),
+        lastSSEPing: null,
+        lastPollTimestamp: null,
+        sseDisconnectedAt: null,
+        status: "MATCHED",
+      };
+      const removed: QueueEntry = {
+        id: "q-r",
+        agentId: "a-r",
+        joinedAt: new Date(),
+        lastActivityAt: new Date(),
+        lastSSEPing: null,
+        lastPollTimestamp: null,
+        sseDisconnectedAt: null,
+        status: "REMOVED",
+      };
+      db.createQueueEntry(waiting);
+      db.createQueueEntry(matched);
+      db.createQueueEntry(removed);
+
+      expect(db.getActiveQueueEntryByAgent("a-w")?.id).toBe("q-w");
+      expect(db.getActiveQueueEntryByAgent("a-m")?.id).toBe("q-m");
+      expect(db.getActiveQueueEntryByAgent("a-r")).toBeNull();
+    });
   });
 
   describe("qualification matches", () => {

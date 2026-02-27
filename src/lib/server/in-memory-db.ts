@@ -373,6 +373,12 @@ export const db = {
     }
     return null;
   },
+  getActiveQueueEntryByAgent(agentId: string): QueueEntry | null {
+    for (const entry of queueEntries.values()) {
+      if (entry.agentId === agentId && (entry.status === "WAITING" || entry.status === "MATCHED")) return entry;
+    }
+    return null;
+  },
   updateQueueEntry(entry: QueueEntry): QueueEntry {
     queueEntries.set(entry.id, entry);
     return entry;

@@ -7,6 +7,7 @@ import { ApiError, handleApiError } from "@/lib/server/api-error";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { subscribeQueueEvents } from "@/lib/services/queue-events";
 import { db } from "@/lib/server/in-memory-db";
+import { AgentStatus } from "@/types";
 
 export const GET = handleApiError(async (req: Request) => {
   const auth = authenticateByKey(req);
@@ -20,9 +21,10 @@ export const GET = handleApiError(async (req: Request) => {
   if (!rl.allowed) return rl.response!;
 
   const agentId = auth.agentId;
-  const entry = db.getQueueEntryByAgent(agentId);
-  if (!entry) {
-    throw new ApiError(404, "NOT_IN_QUEUE", "Agent is not in queue");
+  const agent = db.getAgent(agentId);
+  if (!agent) throw new ApiError(401, "INVALID_KEY", "Invalid API key");
+  if (agent.status !== AgentStatus.QUALIFIED && agent.status !== AgentStatus.QUEUED && agent.status !== AgentStatus.MATCHED) {
+    throw new ApiError(403, "NOT_QUALIFIED", `Agent status is ${agent.status}, must be QUALIFIED/QUEUED/MATCHED`);
   }
 
   const stream = new ReadableStream({
@@ -36,37 +38,59 @@ export const GET = handleApiError(async (req: Request) => {
         }
       };
 
-      // Subscribe to events
-      const unsubscribe = subscribeQueueEvents(agentId, (event) => {
-        send(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
-        // Update lastSSEPing
-        const e = db.getQueueEntryByAgent(agentId);
+      const touchHeartbeat = () => {
+        const e = db.getActiveQueueEntryByAgent(agentId);
         if (e) {
           e.lastSSEPing = new Date();
           e.lastActivityAt = new Date();
           e.sseDisconnectedAt = null;
           db.updateQueueEntry(e);
         }
+      };
+
+      // Send snapshot-on-connect semantics (PRD F08 queue SSE reconnect behavior)
+      const activeEntry = db.getActiveQueueEntryByAgent(agentId);
+      if (activeEntry?.status === "WAITING") {
+        const waiting = db.listQueueEntries("WAITING");
+        const idx = waiting.findIndex((e) => e.id === activeEntry.id);
+        const position = idx >= 0 ? idx + 1 : waiting.length + 1;
+        send(`event: POSITION_UPDATE\ndata: ${JSON.stringify({ type: "POSITION_UPDATE", agentId, position, estimatedWaitSec: position * 30 })}\n\n`);
+      } else if (activeEntry?.status === "MATCHED") {
+        const matches = db.listMatches();
+        const match = matches.find((m) => (m.agentA === agentId || m.agentB === agentId) && m.currentPhase === "READY_CHECK");
+        if (match) {
+          const opponentId = match.agentA === agentId ? match.agentB : match.agentA;
+          const opponent = db.getAgent(opponentId);
+          send(`event: MATCH_ASSIGNED\ndata: ${JSON.stringify({
+            type: "MATCH_ASSIGNED",
+            agentId,
+            matchId: match.id,
+            opponent: { id: opponentId, name: opponent?.name ?? "Unknown", elo: opponent?.elo ?? 1500 },
+            readyDeadline: match.readyDeadline?.toISOString() ?? new Date().toISOString(),
+          })}\n\n`);
+        }
+      } else if (agent.status === AgentStatus.QUALIFIED) {
+        send(`event: REMOVED\ndata: ${JSON.stringify({ type: "REMOVED", agentId, reason: "MANUAL" })}\n\n`);
+      }
+      touchHeartbeat();
+
+      // Subscribe to events
+      const unsubscribe = subscribeQueueEvents(agentId, (event) => {
+        send(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+        touchHeartbeat();
       });
 
       // 15s heartbeat (implicit SSE heartbeat)
       const heartbeat = setInterval(() => {
         send(": heartbeat\n\n");
-        const e = db.getQueueEntryByAgent(agentId);
-        if (e) {
-          e.lastSSEPing = new Date();
-          e.lastActivityAt = new Date();
-          e.sseDisconnectedAt = null;
-          db.updateQueueEntry(e);
-        }
+        touchHeartbeat();
       }, 15_000);
 
       // Cleanup on abort — mark SSE disconnect time for grace period
       req.signal.addEventListener("abort", () => {
         unsubscribe();
         clearInterval(heartbeat);
-        // Mark SSE disconnect for grace period
-        const e = db.getQueueEntryByAgent(agentId);
+        const e = db.getActiveQueueEntryByAgent(agentId);
         if (e) {
           e.sseDisconnectedAt = new Date();
           db.updateQueueEntry(e);

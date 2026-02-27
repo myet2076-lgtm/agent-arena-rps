@@ -135,7 +135,7 @@ export function checkPosition(agentId: string): {
   opponent?: { id: string; name: string; elo: number };
   readyDeadline?: string;
 } {
-  const entry = db.getQueueEntryByAgent(agentId);
+  const entry = db.getActiveQueueEntryByAgent(agentId);
 
   if (!entry) {
     // PRD F03c: NOT_IN_QUEUE response

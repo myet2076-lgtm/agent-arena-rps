@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { joinQueue, leaveQueue, checkPosition, resetQueueService } from "../queue-service";
 import { db } from "@/lib/server/in-memory-db";
-import { AgentStatus } from "@/types";
+import { AgentStatus, MatchStatus } from "@/types";
 import { hashApiKey } from "@/lib/server/auth";
 
 function createAgent(id: string, status: AgentStatus = AgentStatus.QUALIFIED) {
@@ -102,9 +102,60 @@ describe("QueueService", () => {
     expect(() => joinQueue("a9")).toThrow("Too many join/leave");
   });
 
-  it("returns NOT_IN_QUEUE for checkPosition when not queued", () => {
-    createAgent("a10");
+  it("returns MATCHED payload when active queue entry is matched", () => {
+    createAgent("a10", AgentStatus.MATCHED);
+    createAgent("a11", AgentStatus.MATCHED);
+
+    const now = new Date();
+    const readyDeadline = new Date(now.getTime() + 30_000);
+    db.createQueueEntry({
+      id: "qe-a10",
+      agentId: "a10",
+      joinedAt: now,
+      lastActivityAt: now,
+      lastSSEPing: null,
+      lastPollTimestamp: null,
+      sseDisconnectedAt: null,
+      status: "MATCHED",
+    });
+
+    db.updateMatch({
+      id: "m-1",
+      seasonId: "season-1",
+      agentA: "a10",
+      agentB: "a11",
+      status: MatchStatus.CREATED,
+      format: "BO7",
+      scoreA: 0,
+      scoreB: 0,
+      winsA: 0,
+      winsB: 0,
+      currentRound: 0,
+      maxRounds: 12,
+      winnerId: null,
+      startedAt: now,
+      finishedAt: null,
+      createdAt: now,
+      readyA: false,
+      readyB: false,
+      readyDeadline,
+      currentPhase: "READY_CHECK",
+      phaseDeadline: readyDeadline,
+      eloChangeA: null,
+      eloChangeB: null,
+      eloUpdatedAt: null,
+    });
+
     const result = checkPosition("a10");
+    expect(result.status).toBe("MATCHED");
+    expect(result.matchId).toBe("m-1");
+    expect(result.opponent?.id).toBe("a11");
+    expect(result.readyDeadline).toBe(readyDeadline.toISOString());
+  });
+
+  it("returns NOT_IN_QUEUE for checkPosition when not queued", () => {
+    createAgent("a12");
+    const result = checkPosition("a12");
     expect(result.status).toBe("NOT_IN_QUEUE");
   });
 });
