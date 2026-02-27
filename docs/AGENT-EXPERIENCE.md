@@ -423,9 +423,11 @@ Headers: { x-agent-key: ak_live_xxx }
 
 **超时：30 秒。** 未响应 → 弃权，对手晋级，弃权者 ELO -15。双方都超时 → 双方回到 QUALIFIED，无惩罚。
 
-### 4.3 Pre-Match Betting Window
+### 4.3 Pre-Match Betting Window（P1，MVP 不含）
 
-**Match 分配后、Round 1 开始前**，系统保证最少 **15 秒** 投注窗口：
+> **MVP 中无 betting。** Ready check 完成后直接进入 COMMIT 阶段。以下为 P1 规划。
+
+**P1 行为：** Match 分配后、Round 1 开始前，系统保证最少 **15 秒** 投注窗口：
 - Ready check 完成后，系统等待至少 15s 再发 `ROUND_START`
 - 投注截止：`ROUND_START` 事件发出时自动关闭
 - 观众通过 `/api/matches/{matchId}/bets` 下注
