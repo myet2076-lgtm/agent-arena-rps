@@ -1,3 +1,4 @@
+import { persistToRedis, loadFromRedis } from "@/lib/server/redis";
 import {
   type AgentRecord,
   type AgentStatus,
@@ -121,7 +122,173 @@ function initDevData(): void {
   shareCardByToken.set(devShareCard.shareToken, devShareCard);
 }
 
+
+// ─── Redis Persistence Layer ────────────────────────────
+
+function getState(): Record<string, unknown> {
+  const mapToObj = (m: Map<string, unknown>) => Object.fromEntries(m);
+  const setMapToObj = (m: Map<string, Set<string>>) => {
+    const obj: Record<string, string[]> = {};
+    for (const [k, v] of m) obj[k] = [...v];
+    return obj;
+  };
+  const eventsToObj = (m: Map<string, Array<{ seq: number; event: unknown }>>) => {
+    const obj: Record<string, unknown> = {};
+    for (const [k, v] of m) obj[k] = v;
+    return obj;
+  };
+
+  return {
+    agents: mapToObj(agents),
+    agentsByKeyHash: Object.fromEntries([...agentsByKeyHash.entries()].map(([k, v]) => [k, v.id])),
+    agentsByName: Object.fromEntries([...agentsByName.entries()].map(([k, v]) => [k, v.id])),
+    queueEntries: mapToObj(queueEntries),
+    qualificationMatches: mapToObj(qualificationMatches),
+    matches: mapToObj(matches),
+    roundsByMatch: Object.fromEntries([...roundsByMatch.entries()].map(([k, v]) => [k, v])),
+    commits: mapToObj(commits),
+    reveals: mapToObj(reveals),
+    marketByMatch: mapToObj(marketByMatch),
+    votesByMatch: Object.fromEntries([...votesByMatch.entries()].map(([k, v]) => [k, v])),
+    shareCardByMatch: mapToObj(shareCardByMatch),
+    shareCardByToken: mapToObj(shareCardByToken),
+    shareEventsByCard: Object.fromEntries([...shareEventsByCard.entries()].map(([k, v]) => [k, v])),
+    viewerRankings: mapToObj(viewerRankings),
+    eloRatingsByAgent: Object.fromEntries([...eloRatingsByAgent.entries()].map(([k, v]) => [k, v])),
+    usedRevealNoncesByMatch: setMapToObj(usedRevealNoncesByMatch),
+    eventsByMatch: eventsToObj(eventsByMatch),
+    eventSeq,
+  };
+}
+
+function loadState(state: Record<string, unknown>): void {
+  const s = state as any;
+
+  // Agents
+  if (s.agents) {
+    agents.clear();
+    agentsByKeyHash.clear();
+    agentsByName.clear();
+    for (const [id, a] of Object.entries(s.agents)) {
+      const agent = a as any;
+      agents.set(id, agent);
+      if (agent.keyHash) agentsByKeyHash.set(agent.keyHash, agent);
+      if (agent.name) agentsByName.set(agent.name.toLowerCase(), agent);
+    }
+  }
+
+  // Queue
+  if (s.queueEntries) {
+    queueEntries.clear();
+    for (const [id, e] of Object.entries(s.queueEntries)) queueEntries.set(id, e as any);
+  }
+
+  // Qualification
+  if (s.qualificationMatches) {
+    qualificationMatches.clear();
+    for (const [id, m] of Object.entries(s.qualificationMatches)) qualificationMatches.set(id, m as any);
+  }
+
+  // Matches
+  if (s.matches) {
+    matches.clear();
+    for (const [id, m] of Object.entries(s.matches)) matches.set(id, m as any);
+  }
+
+  // Rounds
+  if (s.roundsByMatch) {
+    roundsByMatch.clear();
+    for (const [id, r] of Object.entries(s.roundsByMatch)) roundsByMatch.set(id, r as any);
+  }
+
+  // Commits
+  if (s.commits) {
+    commits.clear();
+    for (const [id, c] of Object.entries(s.commits)) commits.set(id, c as any);
+  }
+
+  // Reveals
+  if (s.reveals) {
+    reveals.clear();
+    for (const [id, r] of Object.entries(s.reveals)) reveals.set(id, r as any);
+  }
+
+  // Market
+  if (s.marketByMatch) {
+    marketByMatch.clear();
+    for (const [id, m] of Object.entries(s.marketByMatch)) marketByMatch.set(id, m as any);
+  }
+
+  // Votes
+  if (s.votesByMatch) {
+    votesByMatch.clear();
+    for (const [id, v] of Object.entries(s.votesByMatch)) votesByMatch.set(id, v as any);
+  }
+
+  // Share cards
+  if (s.shareCardByMatch) {
+    shareCardByMatch.clear();
+    for (const [id, c] of Object.entries(s.shareCardByMatch)) shareCardByMatch.set(id, c as any);
+  }
+  if (s.shareCardByToken) {
+    shareCardByToken.clear();
+    for (const [id, c] of Object.entries(s.shareCardByToken)) shareCardByToken.set(id, c as any);
+  }
+  if (s.shareEventsByCard) {
+    shareEventsByCard.clear();
+    for (const [id, e] of Object.entries(s.shareEventsByCard)) shareEventsByCard.set(id, e as any);
+  }
+
+  // Viewer rankings
+  if (s.viewerRankings) {
+    viewerRankings.clear();
+    for (const [id, r] of Object.entries(s.viewerRankings)) viewerRankings.set(id, r as any);
+  }
+
+  // ELO
+  if (s.eloRatingsByAgent) {
+    eloRatingsByAgent.clear();
+    for (const [id, r] of Object.entries(s.eloRatingsByAgent)) eloRatingsByAgent.set(id, r as any);
+  }
+
+  // Reveal nonces
+  if (s.usedRevealNoncesByMatch) {
+    usedRevealNoncesByMatch.clear();
+    for (const [id, set] of Object.entries(s.usedRevealNoncesByMatch)) {
+      usedRevealNoncesByMatch.set(id, set instanceof Set ? set : new Set(set as string[]));
+    }
+  }
+
+  // Events
+  if (s.eventsByMatch) {
+    eventsByMatch.clear();
+    for (const [id, e] of Object.entries(s.eventsByMatch)) eventsByMatch.set(id, e as any);
+  }
+  if (typeof s.eventSeq === "number") eventSeq = s.eventSeq;
+}
+
+function persist(): void {
+  persistToRedis(getState);
+}
+
+let _loaded = false;
+let _loadPromise: Promise<void> | null = null;
+
+async function _doLoad(): Promise<void> {
+  if (_loaded) return;
+  const state = await loadFromRedis();
+  if (state && Object.keys(state).length > 0) {
+    loadState(state);
+  }
+  _loaded = true;
+}
+
 export const db = {
+  async ensureLoaded(): Promise<void> {
+    if (_loaded) return;
+    if (!_loadPromise) _loadPromise = _doLoad();
+    await _loadPromise;
+  },
   initDevData,
   reset(): void {
     matches.clear();
@@ -153,6 +320,7 @@ export const db = {
   },
   updateMatch(match: Match): Match {
     matches.set(match.id, match);
+    persist();
     return match;
   },
   getRounds(matchId: string): Round[] {
@@ -163,6 +331,7 @@ export const db = {
     const next = rounds.filter((r) => r.roundNo !== round.roundNo);
     next.push(round);
     roundsByMatch.set(round.matchId, next.sort((a, b) => a.roundNo - b.roundNo));
+    persist();
     return round;
   },
   getRound(matchId: string, roundNo: number): Round | null {
@@ -181,6 +350,7 @@ export const db = {
     const current = eloRatingsByAgent.get(rating.agentId) ?? [];
     current.push(rating);
     eloRatingsByAgent.set(rating.agentId, current);
+    persist();
     return rating;
   },
   getCurrentEloRating(agentId: string): EloRating | null {
@@ -213,6 +383,7 @@ export const db = {
     commits.set(commitKey(matchId, roundNo, agentId), record);
 
     pushEvent(matchId, { type: "ROUND_COMMIT", matchId, roundNo, agentId });
+    persist();
     return record;
   },
   getCommit(matchId: string, roundNo: number, agentId: string): CommitRecord | null {
@@ -230,6 +401,7 @@ export const db = {
       revealedAt: now(),
     };
     reveals.set(revealKey(matchId, roundNo, agentId), rec);
+    persist();
     return rec;
   },
   getReveal(matchId: string, roundNo: number, agentId: string): RevealRecord | null {
@@ -274,6 +446,7 @@ export const db = {
       votesB: withoutCurrent.filter((v) => v.side === "B").length,
     };
     pushEvent(matchId, { type: "VOTE_UPDATE", matchId, ...tally });
+    persist();
     return vote;
   },
   getVoteTally(matchId: string): { a: number; b: number } {
@@ -286,6 +459,7 @@ export const db = {
   setShareCard(matchId: string, card: ShareCard): ShareCard {
     shareCardByMatch.set(matchId, card);
     shareCardByToken.set(card.shareToken, card);
+    persist();
     return card;
   },
   getShareCard(matchId: string): ShareCard | null {
@@ -298,6 +472,7 @@ export const db = {
     const events = shareEventsByCard.get(event.shareCardId) ?? [];
     events.push(event);
     shareEventsByCard.set(event.shareCardId, events);
+    persist();
     return event;
   },
   getViewerRankings(period: "weekly" | "season", seasonId?: string): ViewerRanking[] {
@@ -328,6 +503,7 @@ export const db = {
   },
   upsertViewerRanking(ranking: ViewerRanking): ViewerRanking {
     viewerRankings.set(`${ranking.seasonId}:${ranking.viewerId}`, ranking);
+    persist();
     return ranking;
   },
   // ─── Agent CRUD ──────────────────────────────────────
@@ -335,6 +511,7 @@ export const db = {
     agents.set(agent.id, agent);
     agentsByKeyHash.set(agent.keyHash, agent);
     agentsByName.set(agent.name.toLowerCase(), agent);
+    persist();
     return agent;
   },
   getAgent(id: string): AgentRecord | null {
@@ -350,6 +527,7 @@ export const db = {
     agents.set(agent.id, agent);
     agentsByKeyHash.set(agent.keyHash, agent);
     agentsByName.set(agent.name.toLowerCase(), agent);
+    persist();
     return agent;
   },
   listAgents(): AgentRecord[] {
@@ -362,6 +540,7 @@ export const db = {
   // ─── Queue CRUD ─────────────────────────────────────
   createQueueEntry(entry: QueueEntry): QueueEntry {
     queueEntries.set(entry.id, entry);
+    persist();
     return entry;
   },
   getQueueEntry(id: string): QueueEntry | null {
@@ -381,6 +560,7 @@ export const db = {
   },
   updateQueueEntry(entry: QueueEntry): QueueEntry {
     queueEntries.set(entry.id, entry);
+    persist();
     return entry;
   },
   listQueueEntries(status?: QueueEntry["status"]): QueueEntry[] {
@@ -392,6 +572,7 @@ export const db = {
   // ─── Qualification CRUD ─────────────────────────────
   createQualificationMatch(match: QualificationMatch): QualificationMatch {
     qualificationMatches.set(match.id, match);
+    persist();
     return match;
   },
   getQualificationMatch(id: string): QualificationMatch | null {
@@ -399,6 +580,7 @@ export const db = {
   },
   updateQualificationMatch(match: QualificationMatch): QualificationMatch {
     qualificationMatches.set(match.id, match);
+    persist();
     return match;
   },
   listQualificationMatchesByAgent(agentId: string): QualificationMatch[] {
@@ -406,4 +588,10 @@ export const db = {
   },
 };
 
-initDevData();
+// Dev data is seeded only when Redis has no state (handled in ensureLoaded)
+
+
+// Auto-seed dev data for local development (no Redis)
+if (!process.env.UPSTASH_REDIS_REST_URL) {
+  initDevData();
+}

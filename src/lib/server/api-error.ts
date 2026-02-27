@@ -3,6 +3,8 @@
  */
 
 import { NextResponse } from "next/server";
+import { db } from "@/lib/server/in-memory-db";
+
 
 export class ApiError extends Error {
   constructor(
@@ -41,6 +43,7 @@ export function handleApiError(
 ): (req: any, ...args: any[]) => Promise<NextResponse | Response> {
   return async (req: any, ...args: any[]) => {
     try {
+      await db.ensureLoaded();
       return await handler(req, ...args);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
