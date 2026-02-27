@@ -33,6 +33,14 @@ function fixtureMatch(): Match {
     startedAt: new Date(),
     finishedAt: new Date(),
     createdAt: new Date(),
+    readyA: false,
+    readyB: false,
+    readyDeadline: null,
+    currentPhase: "FINISHED" as Match["currentPhase"],
+    phaseDeadline: null,
+    eloChangeA: null,
+    eloChangeB: null,
+    eloUpdatedAt: null,
   };
 }
 
@@ -79,47 +87,53 @@ describe("share/highlight extraction", () => {
 describe("api request/response validation", () => {
   it("rejects invalid commit hash and accepts valid commit+reveal flow", async () => {
     const matchId = "match-1";
+    // Update match to COMMIT phase for round 1
+    const match = db.getMatch(matchId)!;
+    db.updateMatch({ ...match, currentPhase: "COMMIT", currentRound: 1, phaseDeadline: new Date(Date.now() + 30000) });
+
     const badRequest = new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
       method: "POST",
-      body: JSON.stringify({ agentId: "agent-a", commitHash: "bad" }),
+      body: JSON.stringify({ hash: "bad" }),
       headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
     });
 
     const badRes = await commitPOST(badRequest, { params: Promise.resolve({ id: matchId, no: "1" }) });
-    expect(badRes.status).toBe(422);
+    expect(badRes.status).toBe(400);
 
-    const roundId = `${matchId}:1`;
-    const saltA = "s-a";
+    const { createHash } = await import("node:crypto");
+    const sha256 = (s: string) => createHash("sha256").update(s, "utf-8").digest("hex");
+
+    const saltA = "A1b2C3d4E5f6G7h8";
     const moveA = Move.ROCK;
-    const hashA = generateCommit(moveA, saltA, roundId, "agent-a");
+    const hashA = sha256(`${moveA}:${saltA}`);
 
     const commitResA = await commitPOST(
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
         method: "POST",
-        body: JSON.stringify({ agentId: "agent-a", commitHash: hashA }),
+        body: JSON.stringify({ hash: hashA }),
         headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
-    expect(commitResA.status).toBe(201);
+    expect(commitResA.status).toBe(200);
 
-    const saltB = "s-b";
+    const saltB = "Z9Y8X7W6V5U4T3S2";
     const moveB = Move.SCISSORS;
-    const hashB = generateCommit(moveB, saltB, roundId, "agent-b");
+    const hashB = sha256(`${moveB}:${saltB}`);
     const commitResB = await commitPOST(
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/commit`, {
         method: "POST",
-        body: JSON.stringify({ agentId: "agent-b", commitHash: hashB }),
+        body: JSON.stringify({ hash: hashB }),
         headers: { "content-type": "application/json", "x-agent-key": "dev-key-b" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
     );
-    expect(commitResB.status).toBe(201);
+    expect(commitResB.status).toBe(200);
 
     const revealResA = await revealPOST(
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/reveal`, {
         method: "POST",
-        body: JSON.stringify({ agentId: "agent-a", move: moveA, salt: saltA }),
+        body: JSON.stringify({ move: moveA, salt: saltA }),
         headers: { "content-type": "application/json", "x-agent-key": "dev-key-a" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },
@@ -129,7 +143,7 @@ describe("api request/response validation", () => {
     const revealResB = await revealPOST(
       new NextRequest(`http://localhost/api/matches/${matchId}/rounds/1/reveal`, {
         method: "POST",
-        body: JSON.stringify({ agentId: "agent-b", move: moveB, salt: saltB }),
+        body: JSON.stringify({ move: moveB, salt: saltB }),
         headers: { "content-type": "application/json", "x-agent-key": "dev-key-b" },
       }),
       { params: Promise.resolve({ id: matchId, no: "1" }) },

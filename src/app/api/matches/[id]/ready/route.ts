@@ -1,0 +1,60 @@
+import { authenticateByKey } from "@/lib/server/auth";
+import { ApiError, handleApiError } from "@/lib/server/api-error";
+import { db } from "@/lib/server/in-memory-db";
+import { markReady } from "@/lib/services/match-scheduler";
+import { NextRequest, NextResponse } from "next/server";
+
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+export const POST = handleApiError(async (req: Request): Promise<NextResponse> => {
+  // Auth
+  const auth = authenticateByKey(req);
+  if (!auth.valid) throw new ApiError(401, "INVALID_KEY", auth.error);
+
+  // Get matchId from URL
+  const url = new URL(req.url);
+  const segments = url.pathname.split("/");
+  const matchesIdx = segments.indexOf("matches");
+  const matchId = segments[matchesIdx + 1];
+
+  const match = db.getMatch(matchId);
+  if (!match) throw new ApiError(404, "NOT_FOUND", "Match not found");
+
+  // Must be participant
+  if (auth.agentId !== match.agentA && auth.agentId !== match.agentB) {
+    throw new ApiError(403, "NOT_YOUR_MATCH", "You are not a participant in this match");
+  }
+
+  // Must be in READY_CHECK phase
+  if (match.currentPhase !== "READY_CHECK") {
+    throw new ApiError(400, "INVALID_STATE", "Match is not in READY_CHECK phase");
+  }
+
+  // Check deadline
+  if (match.phaseDeadline && Date.now() >= match.phaseDeadline.getTime()) {
+    throw new ApiError(400, "INVALID_STATE", "Ready check deadline has passed");
+  }
+
+  // Check if already ready (idempotent)
+  const isA = auth.agentId === match.agentA;
+  const alreadyReady = isA ? match.readyA : match.readyB;
+
+  const updated = markReady(matchId, auth.agentId);
+  if (!updated) throw new ApiError(400, "INVALID_STATE", "Match is not in READY_CHECK phase");
+
+  // Check if both ready now
+  if (updated.readyA && updated.readyB) {
+    return NextResponse.json({
+      status: "STARTING",
+      firstRound: 1,
+      commitDeadline: updated.phaseDeadline?.toISOString(),
+    });
+  }
+
+  return NextResponse.json({
+    status: "READY",
+    waitingFor: "opponent",
+  });
+});

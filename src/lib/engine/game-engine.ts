@@ -41,6 +41,14 @@ export function createMatch(agentA: string, agentB: string, seasonId: string): M
     startedAt: now,
     finishedAt: null,
     createdAt: now,
+    readyA: false,
+    readyB: false,
+    readyDeadline: null,
+    currentPhase: "READY_CHECK" as Match["currentPhase"],
+    phaseDeadline: null,
+    eloChangeA: null,
+    eloChangeB: null,
+    eloUpdatedAt: null,
   };
 }
 

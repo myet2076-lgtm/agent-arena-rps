@@ -1,99 +1,102 @@
-import { checkMatchWinner } from "@/lib/engine";
-import { handleTimeout } from "@/lib/fairness/timeout";
+import { authenticateByKey } from "@/lib/server/auth";
+import { ApiError, handleApiError } from "@/lib/server/api-error";
 import { db } from "@/lib/server/in-memory-db";
-import { MatchStatus, type CommitRequest, type Match, type Round, RoundOutcome } from "@/types";
-import { NextRequest, NextResponse } from "next/server";
+import { transitionToReveal } from "@/lib/services/match-scheduler";
+import { Move } from "@/types";
+import { NextResponse } from "next/server";
 
-interface Params {
-  params: Promise<{ id: string; no: string }>;
-}
+const HASH_REGEX = /^[0-9a-f]{64}$/;
 
-const HASH_REGEX = /^[a-f0-9]{64}$/i;
+export const POST = handleApiError(async (req: Request): Promise<NextResponse> => {
+  // Auth
+  const auth = authenticateByKey(req);
+  if (!auth.valid) throw new ApiError(401, "INVALID_KEY", auth.error);
 
-function persistTimeoutResult(match: Match, round: Round): Match {
-  const winsAInc = round.outcome === RoundOutcome.WIN_A || round.outcome === RoundOutcome.FORFEIT_B ? 1 : 0;
-  const winsBInc = round.outcome === RoundOutcome.WIN_B || round.outcome === RoundOutcome.FORFEIT_A ? 1 : 0;
-
-  const progressedMatch: Match = {
-    ...match,
-    status: match.status === MatchStatus.CREATED ? MatchStatus.RUNNING : match.status,
-    scoreA: match.scoreA + round.pointsA,
-    scoreB: match.scoreB + round.pointsB,
-    winsA: match.winsA + winsAInc,
-    winsB: match.winsB + winsBInc,
-    currentRound: round.roundNo,
-  };
-
-  const winnerId = checkMatchWinner(progressedMatch);
-  if (!winnerId) {
-    return progressedMatch;
-  }
-
-  return {
-    ...progressedMatch,
-    status: MatchStatus.FINISHED,
-    winnerId: winnerId === "DRAW" ? null : winnerId,
-    finishedAt: new Date(),
-  };
-}
-
-export async function POST(request: NextRequest, { params }: Params): Promise<NextResponse> {
-  const { id, no } = await params;
-  const roundNo = Number.parseInt(no, 10);
+  // Parse URL params
+  const url = new URL(req.url);
+  const segments = url.pathname.split("/");
+  const matchesIdx = segments.indexOf("matches");
+  const matchId = segments[matchesIdx + 1];
+  const roundNo = Number.parseInt(segments[segments.indexOf("rounds") + 1], 10);
 
   if (!Number.isInteger(roundNo) || roundNo <= 0) {
-    return NextResponse.json({ error: "Invalid round number" }, { status: 400 });
+    throw new ApiError(400, "BAD_REQUEST", "Invalid round number");
   }
 
-  let body: unknown;
+  let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await req.json() as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    throw new ApiError(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
-  const parsedBody = body as CommitRequest;
-  if (!parsedBody?.agentId || !parsedBody?.commitHash) {
-    return NextResponse.json({ error: "agentId and commitHash are required" }, { status: 400 });
+  const hash = body.hash as string | undefined;
+  const prediction = body.prediction as string | undefined;
+  const bodyAgentId = body.agentId as string | undefined;
+
+  if (!hash) throw new ApiError(400, "BAD_REQUEST", "hash is required");
+
+  // Hash format validation
+  if (!HASH_REGEX.test(hash)) {
+    throw new ApiError(400, "INVALID_HASH_FORMAT", "hash must be a 64-character lowercase hex string");
   }
 
-  if (!HASH_REGEX.test(parsedBody.commitHash)) {
-    return NextResponse.json({ error: "commitHash must be a SHA-256 hex digest" }, { status: 422 });
+  // agentId validation
+  if (bodyAgentId && bodyAgentId !== auth.agentId) {
+    throw new ApiError(403, "NOT_YOUR_MATCH", "agentId does not match authenticated agent");
   }
 
-  const match = db.getMatch(id);
-  if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 });
-
-  if (parsedBody.agentId !== match.agentA && parsedBody.agentId !== match.agentB) {
-    return NextResponse.json({ error: "Unknown agent for match" }, { status: 403 });
+  // Prediction validation
+  if (prediction !== undefined && !Object.values(Move).includes(prediction as Move)) {
+    throw new ApiError(400, "INVALID_PREDICTION", "prediction must be ROCK, PAPER, or SCISSORS");
   }
 
-  const expectedRound = match.currentRound + 1;
-  if (roundNo !== expectedRound) {
-    return NextResponse.json({ error: `Expected round ${expectedRound}, got ${roundNo}` }, { status: 400 });
+  const match = db.getMatch(matchId);
+  if (!match) throw new ApiError(404, "NOT_FOUND", "Match not found");
+
+  // Must be participant
+  if (auth.agentId !== match.agentA && auth.agentId !== match.agentB) {
+    throw new ApiError(403, "NOT_YOUR_MATCH", "You are not a participant in this match");
   }
 
-  const existing = db.getCommit(id, roundNo, parsedBody.agentId);
+  // Phase check
+  if (match.currentPhase !== "COMMIT") {
+    throw new ApiError(400, "ROUND_NOT_ACTIVE", "Match is not in COMMIT phase");
+  }
+
+  if (match.currentRound !== roundNo) {
+    throw new ApiError(400, "ROUND_NOT_ACTIVE", `Expected round ${match.currentRound}, got ${roundNo}`);
+  }
+
+  // Check deadline
+  if (match.phaseDeadline && Date.now() >= match.phaseDeadline.getTime()) {
+    throw new ApiError(400, "ROUND_NOT_ACTIVE", "Commit deadline has passed");
+  }
+
+  // Idempotent check
+  const existing = db.getCommit(matchId, roundNo, auth.agentId);
   if (existing) {
-    return NextResponse.json({ error: "Commit already submitted for this round" }, { status: 409 });
+    const otherAgentId = auth.agentId === match.agentA ? match.agentB : match.agentA;
+    const otherCommit = db.getCommit(matchId, roundNo, otherAgentId);
+    return NextResponse.json({
+      status: "COMMITTED",
+      waitingFor: otherCommit ? "none" : "opponent",
+    });
   }
 
-  const otherAgentId = parsedBody.agentId === match.agentA ? match.agentB : match.agentA;
-  const otherCommit = db.getCommit(id, roundNo, otherAgentId);
-  if (otherCommit && new Date().getTime() > otherCommit.expiresAt.getTime()) {
-    const timeout = handleTimeout(id, roundNo, parsedBody.agentId, match.scoreA, match.scoreB);
-    db.addRound(timeout.round);
-    db.appendEvents(id, timeout.events);
-    const updatedMatch = persistTimeoutResult(match, timeout.round);
-    db.updateMatch(updatedMatch);
+  // Store commit (using existing db method, and store prediction separately)
+  const commit = db.upsertCommit(matchId, roundNo, auth.agentId, hash);
+  // Store prediction on commit record (hacky but works for in-memory)
+  (commit as any).prediction = prediction ? prediction as Move : null;
 
-    return NextResponse.json(
-      { timeout: true, forfeitedAgentId: parsedBody.agentId, round: timeout.round, match: updatedMatch },
-      { status: 200 },
-    );
+  // Check if both committed
+  const otherAgentId = auth.agentId === match.agentA ? match.agentB : match.agentA;
+  const otherCommit = db.getCommit(matchId, roundNo, otherAgentId);
+
+  if (otherCommit) {
+    transitionToReveal(matchId, roundNo);
+    return NextResponse.json({ status: "COMMITTED", waitingFor: "none" });
   }
 
-  const commit = db.upsertCommit(id, roundNo, parsedBody.agentId, parsedBody.commitHash.toLowerCase());
-
-  return NextResponse.json({ commit }, { status: 201 });
-}
+  return NextResponse.json({ status: "COMMITTED", waitingFor: "opponent" });
+});

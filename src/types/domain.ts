@@ -129,6 +129,14 @@ export interface Agent {
   createdAt: Date;
 }
 
+export type MatchPhase =
+  | "READY_CHECK"
+  | "COMMIT"
+  | "REVEAL"
+  | "RESULT"
+  | "INTERVAL"
+  | "FINISHED";
+
 export interface Match {
   id: string;
   seasonId: string;
@@ -147,6 +155,20 @@ export interface Match {
   startedAt: Date;
   finishedAt: Date | null;
   createdAt: Date;
+
+  // Ready check
+  readyA: boolean;
+  readyB: boolean;
+  readyDeadline: Date | null;
+
+  // Phase management
+  currentPhase: MatchPhase;
+  phaseDeadline: Date | null;
+
+  // ELO tracking
+  eloChangeA: number | null;
+  eloChangeB: number | null;
+  eloUpdatedAt: Date | null;
 }
 
 export interface Round {
@@ -324,11 +346,16 @@ export interface MatchSummary {
 
 export type GameEvent =
   | { type: "MATCH_STARTED"; matchId: string; agentA: string; agentB: string }
+  | { type: "MATCH_START"; matchId: string; round: number; commitDeadline: string }
+  | { type: "ROUND_START"; matchId: string; round: number; commitDeadline: string }
+  | { type: "BOTH_COMMITTED"; matchId: string; round: number; revealDeadline: string }
   | { type: "ROUND_COMMIT"; matchId: string; roundNo: number; agentId: string }
-  | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; readBonusA: boolean; readBonusB: boolean; scoreA: number; scoreB: number }
-  | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; finalScoreA: number; finalScoreB: number }
+  | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; readBonusA: boolean; readBonusB: boolean; scoreA: number; scoreB: number; moveA?: Move | null; moveB?: Move | null; predictionBonusA?: boolean; predictionBonusB?: boolean; winner?: string | null }
+  | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; finalScoreA: number; finalScoreB: number; eloChangeA?: number | null; eloChangeB?: number | null }
   | { type: "MARKET_UPDATE"; matchId: string; impliedProbA: number; impliedProbB: number; volume: number }
-  | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number };
+  | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number }
+  | { type: "RESYNC"; matchId: string; snapshot: Record<string, unknown> }
+  | { type: "READY_TIMEOUT"; matchId: string; readyA: boolean; readyB: boolean };
 
 // ─── API Contracts ──────────────────────────────────────
 

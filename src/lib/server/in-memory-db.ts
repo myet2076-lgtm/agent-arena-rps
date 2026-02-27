@@ -78,6 +78,14 @@ function seedMatch(matchId: string): Match {
     startedAt: started,
     finishedAt: null,
     createdAt: started,
+    readyA: false,
+    readyB: false,
+    readyDeadline: null,
+    currentPhase: "COMMIT" as Match["currentPhase"],
+    phaseDeadline: null,
+    eloChangeA: null,
+    eloChangeB: null,
+    eloUpdatedAt: null,
   };
 }
 

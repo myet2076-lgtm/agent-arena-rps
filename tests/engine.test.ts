@@ -141,7 +141,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("agent-A");
@@ -164,7 +164,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("agent-A");
@@ -187,7 +187,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("agent-A");
@@ -210,7 +210,7 @@ describe("game engine", () => {
       winnerId: null,
       startedAt: new Date(),
       finishedAt: null,
-      createdAt: new Date(),
+      createdAt: new Date(), readyA: false, readyB: false, readyDeadline: null, currentPhase: "COMMIT" as Match["currentPhase"], phaseDeadline: null, eloChangeA: null, eloChangeB: null, eloUpdatedAt: null,
     };
 
     expect(checkMatchWinner(synthetic)).toBe("DRAW");

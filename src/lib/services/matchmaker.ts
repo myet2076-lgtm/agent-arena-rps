@@ -6,6 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/server/in-memory-db";
 import { AgentStatus, MatchStatus } from "@/types";
+import type { MatchPhase } from "@/types";
 import { emitQueueEvent, type QueueEvent } from "./queue-events";
 
 export interface MatchResult {
@@ -23,6 +24,7 @@ export function tryMatch(): MatchResult | null {
   const matchId = randomUUID();
 
   // Create match
+  const readyDeadline = new Date(now.getTime() + 30_000);
   db.updateMatch({
     id: matchId,
     seasonId: "season-1",
@@ -40,6 +42,14 @@ export function tryMatch(): MatchResult | null {
     startedAt: now,
     finishedAt: null,
     createdAt: now,
+    readyA: false,
+    readyB: false,
+    readyDeadline,
+    currentPhase: "READY_CHECK" as MatchPhase,
+    phaseDeadline: readyDeadline,
+    eloChangeA: null,
+    eloChangeB: null,
+    eloUpdatedAt: null,
   });
 
   // Update queue entries
