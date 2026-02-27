@@ -184,8 +184,8 @@ export interface Round {
   /** Points awarded this round (1 = normal win, 2 = read-bonus win, 0 = draw/loss) */
   pointsA: number;
   pointsB: number;
-  readBonusA: boolean; // true if A triggered read-bonus
-  readBonusB: boolean;
+  predictionBonusA: boolean; // true if A triggered read-bonus
+  predictionBonusB: boolean;
   /** Rule violation flags */
   violationA: string | null; // e.g., "CONSECUTIVE_LIMIT"
   violationB: string | null;
@@ -340,7 +340,7 @@ export interface MatchSummary {
   finalScoreA: number;
   finalScoreB: number;
   roundsPlayed: number;
-  readBonusCount: number;
+  predictionBonusCount: number;
   largestComeback: number;
   momentumSwings: number;
   topHighlights: HighlightRound[];
@@ -354,7 +354,7 @@ export type GameEvent =
   | { type: "ROUND_START"; matchId: string; round: number; commitDeadline: string }
   | { type: "BOTH_COMMITTED"; matchId: string; round: number; revealDeadline: string }
   | { type: "ROUND_COMMIT"; matchId: string; roundNo: number; agentId: string }
-  | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; readBonusA: boolean; readBonusB: boolean; scoreA: number; scoreB: number; moveA?: Move | null; moveB?: Move | null; predictionBonusA?: boolean; predictionBonusB?: boolean; winner?: string | null }
+  | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; predictionBonusA: boolean; predictionBonusB: boolean; scoreA: number; scoreB: number; moveA?: Move | null; moveB?: Move | null; winner?: string | null }
   | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; finalScoreA: number; finalScoreB: number; eloChangeA?: number | null; eloChangeB?: number | null }
   | { type: "MARKET_UPDATE"; matchId: string; impliedProbA: number; impliedProbB: number; volume: number }
   | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number }

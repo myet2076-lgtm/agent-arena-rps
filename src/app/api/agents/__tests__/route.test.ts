@@ -73,8 +73,8 @@ describe("POST /api/agents", () => {
       });
     }
     const res = await POST(makeReq({ name: "OneMore" }));
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(429);
     const body = await res.json();
-    expect(body.error).toBe("MAX_AGENTS_REACHED");
+    expect(body.error).toBe("REGISTRATION_LIMIT");
   });
 });

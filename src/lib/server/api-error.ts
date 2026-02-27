@@ -18,7 +18,8 @@ export class ApiError extends Error {
   toResponse(): NextResponse {
     const headers: Record<string, string> = {};
     if (this.status === 429) {
-      headers["Retry-After"] = "1";
+      const retryAfter = this.details?.retryAfter ?? this.details?.retryAfterSec ?? 1;
+      headers["Retry-After"] = String(retryAfter);
     }
     return NextResponse.json(
       {
@@ -36,9 +37,9 @@ export class ApiError extends Error {
  * Never leaks stack traces. 500 errors are logged internally.
  */
 export function handleApiError(
-  handler: (req: Request, ...args: unknown[]) => Promise<NextResponse>,
-): (req: Request, ...args: unknown[]) => Promise<NextResponse> {
-  return async (req: Request, ...args: unknown[]) => {
+  handler: (req: Request, ...args: any[]) => Promise<NextResponse>,
+): (req: Request, ...args: any[]) => Promise<NextResponse> {
+  return async (req: Request, ...args: any[]) => {
     try {
       return await handler(req, ...args);
     } catch (err: unknown) {

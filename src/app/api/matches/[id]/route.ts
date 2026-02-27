@@ -1,18 +1,22 @@
 import { db } from "@/lib/server/in-memory-db";
+import { checkRateLimit } from "@/lib/server/rate-limiter";
+import { ApiError, handleApiError } from "@/lib/server/api-error";
 import { MatchStatus } from "@/types";
 import { NextResponse } from "next/server";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+export const GET = handleApiError(async (
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) => {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(null, ip);
+  if (!rl.allowed) return rl.response!;
 
-export async function GET(_request: Request, { params }: Params): Promise<NextResponse> {
   const { id } = await params;
   const match = db.getMatch(id);
-  if (!match) return NextResponse.json({ error: "NOT_FOUND", message: "Match not found" }, { status: 404 });
+  if (!match) throw new ApiError(404, "NOT_FOUND", "Match not found");
 
   if (match.status === MatchStatus.FINISHED) {
-    // F12: Enhanced FINISHED response
     const rounds = db.getRounds(id);
     const agentA = db.getAgent(match.agentA);
     const agentB = db.getAgent(match.agentB);
@@ -28,12 +32,11 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
           : r.outcome === "DRAW"
             ? null
             : null,
-      predictionBonusA: r.readBonusA,
-      predictionBonusB: r.readBonusB,
-      scoreAfter: { A: 0, B: 0 }, // computed below
+      predictionBonusA: r.predictionBonusA,
+      predictionBonusB: r.predictionBonusB,
+      scoreAfter: { A: 0, B: 0 },
     }));
 
-    // Compute cumulative scores
     let cumA = 0;
     let cumB = 0;
     for (const rd of roundDetails) {
@@ -63,7 +66,6 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
     }, { status: 200 });
   }
 
-  // Non-finished: basic info, no moves/salts/hashes
   const response = {
     matchId: match.id,
     agentA: match.agentA,
@@ -82,4 +84,4 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
   };
 
   return NextResponse.json(response, { status: 200 });
-}
+});

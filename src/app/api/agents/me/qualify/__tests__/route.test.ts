@@ -46,7 +46,7 @@ describe("POST /api/agents/me/qualify", () => {
   it("starts qualification", async () => {
     setupAgent();
     const res = await startQual(makeReq("http://localhost/api/agents/me/qualify?difficulty=easy"));
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.qualMatchId).toBeTruthy();
     expect(body.totalRounds).toBe(5);

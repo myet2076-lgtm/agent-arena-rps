@@ -3,7 +3,7 @@
  */
 
 import { authenticateByKey } from "@/lib/server/auth";
-import { ApiError } from "@/lib/server/api-error";
+import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { subscribeQueueEvents } from "@/lib/services/queue-events";
 import { db } from "@/lib/server/in-memory-db";
 
@@ -11,11 +11,15 @@ export async function GET(req: Request): Promise<Response> {
   const auth = authenticateByKey(req);
   if (!auth.valid) {
     const apiKey = req.headers.get("x-agent-key");
-    return new Response(JSON.stringify({ error: apiKey ? "INVALID_KEY" : "MISSING_KEY", message: auth.error }), {
+    return new Response(JSON.stringify({ error: apiKey ? "INVALID_KEY" : "MISSING_KEY", message: auth.error, details: {} }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(auth.agentId, ip);
+  if (!rl.allowed) return new Response(rl.response!.body, { status: 429, headers: Object.fromEntries(rl.response!.headers.entries()) });
 
   const agentId = auth.agentId;
   const entry = db.getQueueEntryByAgent(agentId);

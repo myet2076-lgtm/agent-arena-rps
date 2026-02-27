@@ -385,7 +385,7 @@ describe("Prediction Bonus", () => {
 
     const rounds = db.getRounds(matchId);
     expect(rounds[0].pointsA).toBe(2); // 1 for win + 1 for prediction
-    expect(rounds[0].readBonusA).toBe(true);
+    expect(rounds[0].predictionBonusA).toBe(true);
   });
 });
 

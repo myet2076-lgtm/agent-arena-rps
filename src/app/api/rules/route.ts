@@ -3,11 +3,16 @@
  */
 
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { COMMIT_SEC, READY_CHECK_SEC, REVEAL_SEC, ROUND_INTERVAL_SEC } from "@/lib/config/timing";
 import { RULES } from "@/types";
-import type { RulesResponse } from "@/types/api";
 
-export async function GET(): Promise<NextResponse<RulesResponse>> {
+
+export async function GET(req: Request): Promise<NextResponse> {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = checkRateLimit(null, ip);
+  if (!rl.allowed) return rl.response!;
+
   return NextResponse.json({
     format: RULES.FORMAT,
     winScore: RULES.WIN_THRESHOLD,

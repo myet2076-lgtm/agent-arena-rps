@@ -35,12 +35,21 @@ export const POST = handleApiError(async (req: Request) => {
     throw new ApiError(400, "INVALID_NAME", "name must be 3-32 characters");
   }
 
+  // PRD: ^[a-zA-Z0-9][a-zA-Z0-9 -]*$ (alphanumeric + spaces + hyphens)
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9 -]*$/.test(name)) {
+    throw new ApiError(400, "INVALID_NAME", "name must start with alphanumeric and contain only letters, digits, spaces, and hyphens");
+  }
+
+  if (typeof body.description === "string" && body.description.length > 500) {
+    throw new ApiError(400, "BAD_REQUEST", "description must be 500 characters or less");
+  }
+
   if (db.getAgentByName(name)) {
     throw new ApiError(409, "NAME_TAKEN", "An agent with this name already exists");
   }
 
   if (db.agentCount() >= MAX_AGENTS) {
-    throw new ApiError(400, "MAX_AGENTS_REACHED", "Maximum number of agents reached");
+    throw new ApiError(429, "REGISTRATION_LIMIT", "Maximum number of agents reached");
   }
 
   const slug = slugify(name);
@@ -77,6 +86,7 @@ export const POST = handleApiError(async (req: Request) => {
       apiKey: rawKey,
       status: agent.status,
       elo: agent.elo,
+      createdAt: agent.createdAt.toISOString(),
     },
     { status: 201 },
   );

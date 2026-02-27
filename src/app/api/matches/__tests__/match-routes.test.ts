@@ -323,19 +323,19 @@ describe("Match detail endpoint (F12)", () => {
     db.addRound({
       id: "r1", matchId: "m1", roundNo: 1, phase: RoundPhase.PUBLISHED,
       moveA: Move.ROCK, moveB: Move.SCISSORS, outcome: RoundOutcome.WIN_A,
-      pointsA: 1, pointsB: 0, readBonusA: false, readBonusB: false,
+      pointsA: 1, pointsB: 0, predictionBonusA: false, predictionBonusB: false,
       violationA: null, violationB: null, judgedAt: new Date(), createdAt: new Date(),
     });
     db.addRound({
       id: "r2", matchId: "m1", roundNo: 2, phase: RoundPhase.PUBLISHED,
       moveA: Move.PAPER, moveB: Move.SCISSORS, outcome: RoundOutcome.WIN_B,
-      pointsA: 0, pointsB: 1, readBonusA: false, readBonusB: false,
+      pointsA: 0, pointsB: 1, predictionBonusA: false, predictionBonusB: false,
       violationA: null, violationB: null, judgedAt: new Date(), createdAt: new Date(),
     });
     db.addRound({
       id: "r3", matchId: "m1", roundNo: 3, phase: RoundPhase.PUBLISHED,
       moveA: Move.ROCK, moveB: Move.SCISSORS, outcome: RoundOutcome.WIN_A,
-      pointsA: 1, pointsB: 0, readBonusA: false, readBonusB: false,
+      pointsA: 1, pointsB: 0, predictionBonusA: false, predictionBonusB: false,
       violationA: null, violationB: null, judgedAt: new Date(), createdAt: new Date(),
     });
 

@@ -1,4 +1,5 @@
 import { authenticateByKey } from "@/lib/server/auth";
+import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { db } from "@/lib/server/in-memory-db";
 import { type GameEvent, MatchStatus } from "@/types";
 import { NextRequest } from "next/server";
@@ -82,9 +83,27 @@ function encodeSse(id: string, event: Record<string, unknown>): string {
 export async function GET(request: NextRequest, { params }: Params): Promise<Response> {
   const { id: matchId } = await params;
 
+  // Rate limit: authenticated by key if present, otherwise by IP
+  const apiKey = request.headers.get("x-agent-key");
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  if (apiKey) {
+    const auth = authenticateByKey(request);
+    if (!auth.valid) {
+      return new Response(JSON.stringify({ error: "INVALID_KEY", message: "Invalid API key", details: {} }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    const rl = checkRateLimit(auth.agentId, ip);
+    if (!rl.allowed) return new Response(rl.response!.body, { status: 429, headers: Object.fromEntries(rl.response!.headers.entries()) });
+  } else {
+    const rl = checkRateLimit(null, ip);
+    if (!rl.allowed) return new Response(rl.response!.body, { status: 429, headers: Object.fromEntries(rl.response!.headers.entries()) });
+  }
+
   const match = db.getMatch(matchId);
   if (!match) {
-    return new Response(JSON.stringify({ error: "NOT_FOUND", message: "Match not found" }), {
+    return new Response(JSON.stringify({ error: "NOT_FOUND", message: "Match not found", details: {} }), {
       status: 404,
       headers: { "content-type": "application/json" },
     });
@@ -94,16 +113,9 @@ export async function GET(request: NextRequest, { params }: Params): Promise<Res
   let perspective: Perspective = "viewer";
   let agentId: string | null = null;
 
-  const apiKey = request.headers.get("x-agent-key");
   if (apiKey) {
     const auth = authenticateByKey(request);
-    if (!auth.valid) {
-      return new Response(JSON.stringify({ error: "INVALID_KEY", message: "Invalid API key" }), {
-        status: 401,
-        headers: { "content-type": "application/json" },
-      });
-    }
-    if (auth.agentId === match.agentA || auth.agentId === match.agentB) {
+    if (auth.valid && (auth.agentId === match.agentA || auth.agentId === match.agentB)) {
       perspective = "agent";
       agentId = auth.agentId;
     }

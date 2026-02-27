@@ -53,7 +53,7 @@ describe("game engine", () => {
     const second = processRound(match, rounds, Move.SCISSORS, Move.PAPER);
 
     expect(second.round.outcome).toBe(RoundOutcome.WIN_A);
-    expect(second.round.readBonusA).toBe(true);
+    expect(second.round.predictionBonusA).toBe(true);
     expect(second.round.pointsA).toBe(2);
     expect(second.updatedMatch.scoreA).toBe(2);
   });

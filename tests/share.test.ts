@@ -55,8 +55,8 @@ function baseRound(roundNo: number): Round {
     outcome: RoundOutcome.WIN_A,
     pointsA: 1,
     pointsB: 0,
-    readBonusA: false,
-    readBonusB: false,
+    predictionBonusA: false,
+    predictionBonusB: false,
     violationA: null,
     violationB: null,
     judgedAt: new Date(),
@@ -69,8 +69,8 @@ describe("share/highlight extraction", () => {
     const rounds: Round[] = [
       { ...baseRound(1), pointsA: 0, pointsB: 1, outcome: RoundOutcome.WIN_B, moveA: Move.ROCK, moveB: Move.PAPER },
       { ...baseRound(2), pointsA: 0, pointsB: 1, outcome: RoundOutcome.WIN_B, moveA: Move.SCISSORS, moveB: Move.ROCK },
-      { ...baseRound(3), pointsA: 2, pointsB: 0, readBonusA: true, outcome: RoundOutcome.WIN_A },
-      { ...baseRound(4), pointsA: 2, pointsB: 0, readBonusA: true, outcome: RoundOutcome.WIN_A },
+      { ...baseRound(3), pointsA: 2, pointsB: 0, predictionBonusA: true, outcome: RoundOutcome.WIN_A },
+      { ...baseRound(4), pointsA: 2, pointsB: 0, predictionBonusA: true, outcome: RoundOutcome.WIN_A },
     ];
 
     const highlights = extractHighlights(fixtureMatch(), rounds);
