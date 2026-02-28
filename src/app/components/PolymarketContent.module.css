@@ -248,10 +248,6 @@
     flex-direction: column;
   }
 
-  .emailError {
-    font-size: 0.75rem;
-  }
-
   .sideBtn {
     min-width: unset;
     width: 100%;
@@ -259,10 +255,6 @@
 
   .confidenceRow {
     flex-direction: column;
-  }
-
-  .emailError {
-    font-size: 0.75rem;
   }
 
   .notifyRow {
