@@ -84,7 +84,8 @@ export function useRoundAnimation(
     const fast = queueRef.current.length > 1; // more events waiting after this one
     const next = queueRef.current.shift();
     if (next && processEventRef.current) {
-      setTimeout(() => processEventRef.current!(next, fast), 50);
+      const id = setTimeout(() => processEventRef.current!(next, fast), 50);
+      timerRefs.current.push(id);
     }
   }, []);
 
