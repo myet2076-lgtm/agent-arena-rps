@@ -42,6 +42,16 @@ const DURATIONS: Partial<Record<AnimationPhase, number>> = {
   "match-end": 4000,
 };
 
+/* Shorter durations when draining a backlog */
+const FAST_DURATIONS: Partial<Record<AnimationPhase, number>> = {
+  "round-announce": 300,
+  choosing: 400,
+  reveal: 300,
+  clash: 400,
+  result: 500,
+  "match-end": 4000,
+};
+
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -55,7 +65,8 @@ export function useRoundAnimation(
   const [state, setState] = useState<RoundAnimationState>(INITIAL_STATE);
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const animatingRef = useRef(false);
-  const queueRef = useRef<GameEvent | null>(null);
+  /* Fix #3: queue is now an array instead of single ref */
+  const queueRef = useRef<GameEvent[]>([]);
   const processEventRef = useRef<((evt: GameEvent) => void) | null>(null);
 
   const clearTimers = useCallback(() => {
@@ -67,20 +78,21 @@ export function useRoundAnimation(
     timerRefs.current.push(setTimeout(fn, ms));
   }, []);
 
-  const finishAnimation = useCallback(() => {
+  const drainNext = useCallback(() => {
     animatingRef.current = false;
     setState((prev) => ({ ...prev, phase: "idle" }));
-    const queued = queueRef.current;
-    queueRef.current = null;
-    if (queued && processEventRef.current) {
-      setTimeout(() => processEventRef.current!(queued), 50);
+    const next = queueRef.current.shift();
+    if (next && processEventRef.current) {
+      setTimeout(() => processEventRef.current!(next), 50);
     }
   }, []);
 
   const runRoundSequence = useCallback(
-    (evt: GameEvent & { type: "ROUND_RESULT" }) => {
+    (evt: GameEvent & { type: "ROUND_RESULT" }, fast: boolean) => {
       animatingRef.current = true;
       clearTimers();
+
+      const dur = fast ? FAST_DURATIONS : DURATIONS;
 
       if (prefersReducedMotion()) {
         setState({
@@ -92,7 +104,7 @@ export function useRoundAnimation(
           winnerId: evt.winner ?? null,
           winnerName: null,
         });
-        schedule(() => finishAnimation(), 600);
+        schedule(() => drainNext(), 600);
         return;
       }
 
@@ -106,12 +118,12 @@ export function useRoundAnimation(
         winnerName: null,
       });
 
-      let t = DURATIONS["round-announce"]!;
+      let t = dur["round-announce"]!;
 
       schedule(() => {
         setState((prev) => ({ ...prev, phase: "choosing" }));
       }, t);
-      t += DURATIONS.choosing!;
+      t += dur.choosing!;
 
       schedule(() => {
         setState((prev) => ({
@@ -121,12 +133,12 @@ export function useRoundAnimation(
           moveB: evt.moveB ?? null,
         }));
       }, t);
-      t += DURATIONS.reveal!;
+      t += dur.reveal!;
 
       schedule(() => {
         setState((prev) => ({ ...prev, phase: "clash" }));
       }, t);
-      t += DURATIONS.clash!;
+      t += dur.clash!;
 
       schedule(() => {
         setState((prev) => ({
@@ -136,11 +148,11 @@ export function useRoundAnimation(
           winnerId: evt.winner ?? null,
         }));
       }, t);
-      t += DURATIONS.result!;
+      t += dur.result!;
 
-      schedule(() => finishAnimation(), t);
+      schedule(() => drainNext(), t);
     },
-    [clearTimers, schedule, finishAnimation],
+    [clearTimers, schedule, drainNext],
   );
 
   const runMatchEnd = useCallback(
@@ -173,19 +185,15 @@ export function useRoundAnimation(
     (evt: GameEvent) => {
       if (evt.type === "ROUND_RESULT") {
         if (animatingRef.current) {
-          queueRef.current = evt;
-          clearTimers();
-          animatingRef.current = false;
-          setState((prev) => ({ ...prev, phase: "idle" }));
-          setTimeout(() => {
-            const queued = queueRef.current;
-            queueRef.current = null;
-            if (queued && processEventRef.current) processEventRef.current(queued);
-          }, 50);
+          /* Fix #3: push to queue array instead of overwriting */
+          queueRef.current.push(evt);
           return;
         }
-        runRoundSequence(evt as GameEvent & { type: "ROUND_RESULT" });
+        const fast = queueRef.current.length > 0;
+        runRoundSequence(evt as GameEvent & { type: "ROUND_RESULT" }, fast);
       } else if (evt.type === "MATCH_FINISHED") {
+        /* Match end takes priority: clear queue and play immediately */
+        queueRef.current = [];
         clearTimers();
         animatingRef.current = false;
         runMatchEnd(evt as GameEvent & { type: "MATCH_FINISHED" });

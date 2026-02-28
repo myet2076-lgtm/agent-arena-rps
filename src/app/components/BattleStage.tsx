@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Move, RoundOutcome } from "@/types";
 import type { AnimationPhase, RoundAnimationState } from "@/app/hooks/useRoundAnimation";
 import styles from "./BattleStage.module.css";
@@ -70,14 +70,30 @@ function RoundAnnounceContent({ roundNo }: { roundNo: number }) {
 }
 
 function ChoosingContent() {
+  const [indexA, setIndexA] = useState(0);
+  const [indexB, setIndexB] = useState(1);
+
+  useEffect(() => {
+    const intervalA = setInterval(() => {
+      setIndexA((prev) => (prev + 1) % SLOT_ITEMS.length);
+    }, 100);
+    const intervalB = setInterval(() => {
+      setIndexB((prev) => (prev + 1) % SLOT_ITEMS.length);
+    }, 120);
+    return () => {
+      clearInterval(intervalA);
+      clearInterval(intervalB);
+    };
+  }, []);
+
   return (
     <div className={styles.choosingArea}>
       <div className={styles.slotMachine}>
-        <span className={styles.slotReel}>{SLOT_ITEMS.join("")}</span>
+        <span className={styles.slotReel}>{SLOT_ITEMS[indexA]}</span>
       </div>
       <span className={styles.choosingVs}>VS</span>
       <div className={styles.slotMachine}>
-        <span className={`${styles.slotReel} ${styles.slotReelRight}`}>{SLOT_ITEMS.join("")}</span>
+        <span className={styles.slotReel}>{SLOT_ITEMS[indexB]}</span>
       </div>
     </div>
   );
@@ -147,16 +163,18 @@ function MatchEndContent({ winnerId, winnerName }: { winnerId: string | null; wi
 export function BattleStage({ animState, agentA, agentB, waitingCount }: BattleStageProps): React.JSX.Element {
   const { phase, roundNo, moveA, moveB, outcome, winnerId, winnerName } = animState;
 
-  const shakeClass = useMemo(() => {
-    if (phase === "round-announce") return styles.shakeRoundAnnounce;
-    if (phase === "clash") return styles.shakeClash;
-    return "";
-  }, [phase]);
+  /* Fix #5: simple conditional instead of useMemo; Fix #2: shakeChoosing during choosing */
+  const shakeClass = phase === "round-announce"
+    ? styles.shakeRoundAnnounce
+    : phase === "clash"
+      ? styles.shakeClash
+      : phase === "choosing"
+        ? styles.shakeChoosing
+        : "";
 
   const showAvatars = phase !== "idle" || (agentA !== null && agentB !== null);
   const isMatchActive = agentA !== null && agentB !== null;
 
-  /* When no match is active and we're idle, show waiting state */
   if (!isMatchActive && phase === "idle") {
     return (
       <div className={styles.battleStage}>

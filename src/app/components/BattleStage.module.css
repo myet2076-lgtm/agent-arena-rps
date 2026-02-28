@@ -99,23 +99,14 @@
 }
 
 .slotReel {
-  animation: slotCycle 0.15s steps(3) infinite;
   display: block;
   line-height: 1.2;
-}
-
-.slotReelRight {
-  animation: slotCycleAlt 0.18s steps(3) infinite;
 }
 
 .choosingVs {
   font-family: var(--font-arcade);
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.4);
-}
-
-.choosing .battleStage {
-  animation: subtleShake 0.3s linear infinite;
 }
 
 /* ── Reveal ───────────────────────────────────────────── */
@@ -182,17 +173,21 @@
   animation: clashRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Fix #4: impactFlash now uses transform:scale instead of width/height */
 .impactFlash {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
+  width: 180px;
+  height: 180px;
+  margin-left: -90px;
+  margin-top: -90px;
   border-radius: 50%;
   background: radial-gradient(white 0%, rgba(255, 215, 0, 0.5) 40%, transparent 70%);
   animation: impactBurst 0.6s ease-out 0.4s forwards;
   pointer-events: none;
+  transform: scale(0);
+  opacity: 0;
 }
 
 /* ── Result ───────────────────────────────────────────── */
@@ -341,24 +336,17 @@
   animation: screenShake 0.3s ease-out;
 }
 
+/* Fix #2: subtle shake during choosing phase */
+.shakeChoosing {
+  animation: subtleShake 0.3s linear infinite;
+}
+
 /* ── Keyframes ────────────────────────────────────────── */
 
 @keyframes slamIn {
   0% { transform: scale(2); opacity: 0; }
   60% { transform: scale(0.95); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes slotCycle {
-  0% { content: "✊"; }
-  33.33% { content: "✋"; }
-  66.66% { content: "✌️"; }
-}
-
-@keyframes slotCycleAlt {
-  0% { content: "✌️"; }
-  33.33% { content: "✊"; }
-  66.66% { content: "✋"; }
 }
 
 @keyframes moveReveal {
@@ -384,10 +372,12 @@
   100% { transform: translateX(-10px); }
 }
 
+/* Fix #4: transform-based impactBurst instead of width/height */
 @keyframes impactBurst {
-  0% { width: 0; height: 0; opacity: 1; }
-  50% { width: 120px; height: 120px; opacity: 0.8; }
-  100% { width: 180px; height: 180px; opacity: 0; }
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1); opacity: 0.8; }
+  75% { transform: scale(1.5); opacity: 0.4; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
 
 @keyframes screenShake {
@@ -444,7 +434,6 @@
   .matchEndTitle,
   .matchEndDraw,
   .slotReel,
-  .slotReelRight,
   .moveDisplay,
   .clashMoveLeft,
   .clashMoveRight,
@@ -465,7 +454,8 @@
   }
 
   .shakeRoundAnnounce,
-  .shakeClash {
+  .shakeClash,
+  .shakeChoosing {
     animation: none !important;
   }
 }
