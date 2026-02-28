@@ -1,0 +1,47 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+}
+
+.panel {
+  width: min(700px, 100%);
+  max-height: min(84vh, 900px);
+  overflow: auto;
+  border-radius: 16px;
+  background: rgba(245, 247, 255, 0.96);
+  color: #121523;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.45);
+  position: relative;
+  padding: 1.35rem 1.2rem 1.25rem;
+}
+
+.close {
+  position: absolute;
+  right: 0.8rem;
+  top: 0.7rem;
+  border: none;
+  background: transparent;
+  color: #11162b;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.title {
+  font-size: clamp(1.15rem, 2.7vw, 1.4rem);
+  margin-bottom: 0.75rem;
+}
+
+.content {
+  font-size: 0.94rem;
+  line-height: 1.6;
+}

@@ -1,0 +1,16 @@
+.wrap {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.code {
+  margin: 0;
+  padding: 0.95rem;
+  border-radius: 10px;
+  background: #0f1426;
+  color: #ecf0ff;
+  border: 1px solid rgba(67, 83, 255, 0.32);
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}

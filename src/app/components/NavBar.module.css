@@ -63,7 +63,6 @@
   outline-offset: 2px;
 }
 
-/* Hamburger */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -96,6 +95,60 @@
   transform: translateY(-6px) rotate(-45deg);
 }
 
+.arenaHeader {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(9, 11, 24, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.arenaInner {
+  width: min(1200px, 100% - 2rem);
+  margin: 0 auto;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.arenaLogo {
+  color: #f7f8ff;
+  font-family: var(--font-serif);
+  font-size: clamp(1.08rem, 2.8vw, 1.28rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.waitBadge {
+  margin-left: auto;
+  padding: 0.36rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(67, 83, 255, 0.72);
+  background: rgba(67, 83, 255, 0.19);
+  color: rgba(233, 237, 255, 0.96);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.rulesBtn {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(249, 251, 255, 0.96);
+  border-radius: 10px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 300ms ease, border-color 300ms ease;
+}
+
+.rulesBtn:hover {
+  background: rgba(67, 83, 255, 0.22);
+  border-color: rgba(67, 83, 255, 0.8);
+}
+
 @media (max-width: 768px) {
   .hamburger {
     display: flex;
@@ -123,5 +176,21 @@
   .link {
     padding: 0.75rem 1rem;
     font-size: 1rem;
+  }
+
+  .arenaInner {
+    min-height: 62px;
+    width: min(1200px, 100% - 1rem);
+    gap: 0.5rem;
+  }
+
+  .waitBadge {
+    font-size: 0.73rem;
+    padding: 0.26rem 0.55rem;
+  }
+
+  .rulesBtn {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.78rem;
   }
 }

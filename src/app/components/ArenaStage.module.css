@@ -1,0 +1,67 @@
+.stage {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+
+.liveHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.liveHeader h2 {
+  color: rgba(249, 251, 255, 0.95);
+  font-size: clamp(1.05rem, 2.4vw, 1.28rem);
+  margin: 0;
+}
+
+.connection {
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  border: 1px solid transparent;
+}
+
+.connected {
+  color: #8ef7b4;
+  border-color: rgba(72, 207, 126, 0.6);
+  background: rgba(36, 129, 72, 0.22);
+}
+
+.disconnected {
+  color: #ffd498;
+  border-color: rgba(255, 164, 74, 0.5);
+  background: rgba(121, 64, 19, 0.24);
+}
+
+.state {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.waitingTitle {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.waitingMeta {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: -0.5rem;
+}
+
+.chatPlaceholder {
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  min-height: 80px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.64);
+  background: rgba(13, 17, 34, 0.62);
+}

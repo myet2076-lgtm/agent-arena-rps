@@ -13,9 +13,27 @@ const links = [
   { href: "/docs", label: "API Docs" },
 ] as const;
 
-export function NavBar(): React.JSX.Element {
+interface NavBarProps {
+  mode?: "default" | "arena";
+  waitingCount?: number;
+  onRulesClick?: () => void;
+}
+
+export function NavBar({ mode = "default", waitingCount = 0, onRulesClick }: NavBarProps): React.JSX.Element {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  if (mode === "arena") {
+    return (
+      <header className={styles.arenaHeader}>
+        <div className={styles.arenaInner}>
+          <div className={styles.arenaLogo}>⚔️ Agent Arena</div>
+          <div className={styles.waitBadge}>⏳ {waitingCount} agents waiting</div>
+          <button type="button" className={styles.rulesBtn} onClick={onRulesClick}>Rules</button>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className={styles.header}>
