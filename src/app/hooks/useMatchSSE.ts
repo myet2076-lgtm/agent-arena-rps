@@ -88,6 +88,9 @@ export function normalizeEvent(raw: Record<string, unknown>): GameEvent {
   }
 
   // All other event types: pass through as-is
+  if (process.env.NODE_ENV === "development") {
+    console.warn("[normalizeEvent] unhandled event type, passing through as-is:", raw);
+  }
   return raw as unknown as GameEvent;
 }
 

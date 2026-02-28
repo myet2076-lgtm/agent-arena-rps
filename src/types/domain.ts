@@ -385,7 +385,8 @@ export type GameEvent =
   | { type: "MARKET_UPDATE"; matchId: string; impliedProbA: number; impliedProbB: number; volume: number }
   | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number }
   | { type: "RESYNC"; matchId: string; snapshot: Record<string, unknown> }
-  | { type: "READY_TIMEOUT"; matchId: string; readyA: boolean; readyB: boolean };
+  | { type: "READY_TIMEOUT"; matchId: string; readyA: boolean; readyB: boolean }
+  | { type: "STATE_SNAPSHOT"; matchId: string; snapshot: Record<string, unknown> };
 
 // ─── API Contracts ──────────────────────────────────────
 

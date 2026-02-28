@@ -25,8 +25,6 @@ export default function MatchPage() {
   const [state, setState] = useState<MatchState>({ data: null, loading: true, error: null });
   const [liveMarket, setLiveMarket] = useState<MarketSnapshotDTO | null>(null);
 
-  const { latestEvent, connected } = useMatchSSE(matchId);
-
   const loadMatch = useCallback(async () => {
     if (!matchId) return;
     setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -41,6 +39,8 @@ export default function MatchPage() {
       setState({ data: null, loading: false, error: error instanceof Error ? error.message : "Unknown error" });
     }
   }, [matchId]);
+
+  const { latestEvent, connected } = useMatchSSE(matchId, loadMatch);
 
   useEffect(() => {
     loadMatch();
