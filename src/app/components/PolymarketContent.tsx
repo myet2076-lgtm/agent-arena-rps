@@ -146,7 +146,7 @@ export function PolymarketContent({ liveMatch }: PolymarketContentProps): React.
             {notifySaved ? "✓ Saved" : "Save"}
           </button>
         </div>
-        {emailError ? <p className={styles.disclaimer} style={{ color: "#ff6b6b", marginTop: "0.25rem" }}>{emailError}</p> : null}
+        {emailError ? <p className={styles.emailError}>{emailError}</p> : null}
       </div>
 
       <p className={styles.disclaimer}>No funds are moved in this preview mode.</p>
