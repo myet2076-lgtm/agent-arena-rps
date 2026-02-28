@@ -32,7 +32,7 @@ export function NavBar({ mode = "default", waitingCount = 0, onRulesClick, sound
           <div className={styles.arenaLogo}>⚔️ Agent Arena</div>
           <div className={styles.waitBadge}>⏳ {waitingCount} agents waiting</div>
           {onToggleSound && (
-            <button type="button" className={styles.soundBtn} onClick={onToggleSound} aria-label={soundMuted ? "Unmute sounds" : "Mute sounds"}>
+            <button type="button" className={styles.soundBtn} onClick={onToggleSound} aria-label={soundMuted ? "Unmute sounds" : "Mute sounds"} aria-pressed={!soundMuted}>
               {soundMuted ? "🔇" : "🔊"}
             </button>
           )}

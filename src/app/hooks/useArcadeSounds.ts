@@ -69,11 +69,21 @@ export function useArcadeSounds(): ArcadeSounds {
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (ctxRef.current?.state !== "closed") {
+        ctxRef.current?.close();
+      }
+    };
+  }, []);
+
   const getCtx = useCallback((): AudioContext | null => {
     if (typeof window === "undefined") return null;
     if (!ctxRef.current) {
       try {
-        ctxRef.current = new AudioContext();
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return null;
+        ctxRef.current = new AC();
       } catch {
         return null;
       }

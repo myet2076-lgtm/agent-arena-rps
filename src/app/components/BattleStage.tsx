@@ -192,7 +192,7 @@ export function BattleStage({ animState, agentA, agentB, waitingCount, playSound
         playSound("roundAnnounce");
         break;
       case "choosing":
-        playSound("choosing");
+        // Entry sound removed; tick loop handles choosing sound
         break;
       case "reveal":
         playSound("reveal");
@@ -200,26 +200,31 @@ export function BattleStage({ animState, agentA, agentB, waitingCount, playSound
       case "clash":
         playSound("clash");
         break;
-      case "result": {
-        if (outcome === RoundOutcome.DRAW) {
-          playSound("draw");
-        } else if (outcome) {
-          playSound("ko");
-        }
+      case "result":
+        // Sound handled by dedicated outcome watcher useEffect
         break;
-      }
       case "match-end":
         playSound("winner");
         break;
     }
   }, [phase, outcome, playSound]);
 
+  // Play result sound when outcome arrives (may come after phase transition)
+  useEffect(() => {
+    if (phase !== "result" || !outcome || !playSound) return;
+    if (outcome === RoundOutcome.DRAW) {
+      playSound("draw");
+    } else {
+      playSound("ko");
+    }
+  }, [outcome, phase, playSound]);
+
   // Choosing tick sound loop
   useEffect(() => {
     if (phase !== "choosing" || !playSound) return;
     const interval = setInterval(() => {
       playSound("choosing");
-    }, 200);
+    }, 300);
     return () => clearInterval(interval);
   }, [phase, playSound]);
 
