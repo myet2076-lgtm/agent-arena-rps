@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { MatchStatus, RoundOutcome, RoundPhase, type MatchDTO, type RoundDTO } from "@/types";
 import { useMatchSSE } from "@/app/hooks/useMatchSSE";
+import { useRoundAnimation } from "@/app/hooks/useRoundAnimation";
 import { ScoreBoard } from "./ScoreBoard";
+import { BattleStage } from "./BattleStage";
 import { RoundTimeline } from "./RoundTimeline";
 import styles from "./ArenaStage.module.css";
 
@@ -74,6 +76,7 @@ export function ArenaStage({ matchId, waitingCount }: ArenaStageProps): React.JS
   const [error, setError] = useState<string | null>(null);
 
   const { latestEvent, connected } = useMatchSSE(matchId);
+  const animState = useRoundAnimation(latestEvent, match?.agentA ?? null, match?.agentB ?? null);
 
   useEffect(() => {
     if (!matchId) {
@@ -206,6 +209,7 @@ export function ArenaStage({ matchId, waitingCount }: ArenaStageProps): React.JS
       {!loading && !error ? (
         <>
           <ScoreBoard match={match} />
+          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} waitingCount={waitingCount} />
           <RoundTimeline rounds={rounds} />
         </>
       ) : null}
