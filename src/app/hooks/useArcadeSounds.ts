@@ -71,8 +71,9 @@ export function useArcadeSounds(): ArcadeSounds {
 
   useEffect(() => {
     return () => {
-      if (ctxRef.current?.state !== "closed") {
-        ctxRef.current?.close();
+      const ctx = ctxRef.current;
+      if (ctx && ctx.state !== "closed") {
+        ctx.close();
       }
     };
   }, []);
