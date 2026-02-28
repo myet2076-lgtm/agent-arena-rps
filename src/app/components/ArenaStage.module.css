@@ -7,22 +7,6 @@
   position: relative;
 }
 
-/* Subtle CRT scanline on entire stage */
-.stage::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.04) 3px,
-    rgba(0, 0, 0, 0.04) 6px
-  );
-  border-radius: 12px;
-  z-index: 0;
-}
 
 .liveHeader {
   display: flex;
@@ -36,7 +20,7 @@
 .liveHeader h2 {
   color: rgba(249, 251, 255, 0.95);
   font-family: var(--font-arcade);
-  font-size: clamp(0.55rem, 1.4vw, 0.7rem);
+  font-size: clamp(0.7rem, 1.4vw, 0.7rem);
   margin: 0;
   letter-spacing: 0.02em;
 }
@@ -55,6 +39,7 @@
   border-color: rgba(72, 207, 126, 0.6);
   background: rgba(36, 129, 72, 0.22);
   animation: neonPulse 2s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .disconnected {

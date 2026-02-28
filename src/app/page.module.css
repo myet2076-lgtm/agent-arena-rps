@@ -3,7 +3,7 @@
   background: #050710;
   position: relative;
   overflow: hidden;
-  animation: crtFlicker 8s infinite;
+  
 }
 
 .backdrop {
@@ -30,6 +30,7 @@
     rgba(0, 0, 0, 0.08) 4px
   );
   z-index: 1;
+  animation: crtFlicker 8s infinite;
 }
 
 .mainContent {
@@ -67,7 +68,7 @@
 .modalTable th {
   background: rgba(0, 240, 255, 0.08);
   font-family: var(--font-arcade);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   color: var(--neon-cyan);
 }

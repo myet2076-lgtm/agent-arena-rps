@@ -21,7 +21,7 @@
   font-family: var(--font-arcade);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
 }
@@ -52,14 +52,14 @@
 .versus {
   color: var(--neon-gold);
   font-family: var(--font-arcade);
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
 }
 
 .outcome {
   font-family: var(--font-arcade);
   font-weight: 400;
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   letter-spacing: 0.04em;
 }
 
@@ -114,7 +114,7 @@
 
 .koText {
   font-family: var(--font-arcade);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   color: var(--neon-magenta);
   text-shadow: 0 0 10px var(--neon-magenta-glow);
   animation: slamIn 0.5s ease-out;
@@ -123,7 +123,7 @@
 
 .drawText {
   font-family: var(--font-arcade);
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   color: var(--neon-gold);
   text-shadow: 0 0 8px var(--neon-gold-glow);
 }
@@ -136,7 +136,7 @@
   text-align: center;
   background: rgba(10, 14, 28, 0.6);
   font-family: var(--font-arcade);
-  font-size: 0.55rem;
+  font-size: 0.65rem;
 }
 
 @keyframes slideIn {

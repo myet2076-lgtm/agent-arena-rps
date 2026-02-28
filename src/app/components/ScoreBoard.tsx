@@ -14,9 +14,9 @@ function eloFromId(id: string): number {
 export function ScoreBoard({ match }: ScoreBoardProps) {
   const leader = match.scoreA === match.scoreB ? "TIE" : match.scoreA > match.scoreB ? "A" : "B";
   const winnerSide = match.winnerId ? (match.winnerId === match.agentA ? "A" : "B") : null;
-  const total = match.scoreA + match.scoreB || 1;
-  const pctA = Math.round((match.scoreA / total) * 100);
-  const pctB = Math.round((match.scoreB / total) * 100);
+  const total = match.scoreA + match.scoreB;
+  const pctA = total === 0 ? 50 : Math.round((match.scoreA / total) * 100);
+  const pctB = total === 0 ? 50 : Math.round((match.scoreB / total) * 100);
 
   return (
     <section className={styles.wrap}>

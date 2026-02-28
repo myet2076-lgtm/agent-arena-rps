@@ -10,21 +10,6 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Scanline overlay on HUD */
-.wrap::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.1) 2px,
-    rgba(0, 0, 0, 0.1) 4px
-  );
-}
 
 .side {
   background: rgba(13, 17, 34, 0.7);
@@ -46,7 +31,11 @@
 
 .headline {
   font-family: var(--font-arcade);
-  font-size: clamp(0.5rem, 1.2vw, 0.7rem);
+  font-size: clamp(0.65rem, 1.2vw, 0.7rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.9);
   letter-spacing: 0.02em;
@@ -77,6 +66,7 @@
     0 0 10px var(--neon-cyan-glow),
     0 0 30px var(--neon-cyan-dim);
   animation: neonPulse 1.5s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .pulseMagenta {
@@ -85,6 +75,7 @@
     0 0 10px var(--neon-magenta-glow),
     0 0 30px var(--neon-magenta-dim);
   animation: neonPulse 1.5s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .hpBar {
@@ -134,11 +125,12 @@
     0 0 10px var(--neon-gold-glow),
     0 0 30px rgba(255, 215, 0, 0.3);
   animation: neonPulse 2s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .format {
   font-family: var(--font-arcade);
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 999px;
   padding: 0.25rem 0.6rem;
@@ -152,7 +144,7 @@
 .crown {
   margin-top: 0.5rem;
   font-family: var(--font-arcade);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 400;
   color: var(--neon-gold);
   text-shadow: 0 0 12px var(--neon-gold-glow);
@@ -170,7 +162,7 @@
   }
 
   .headline {
-    font-size: 0.5rem;
+    font-size: 0.6rem;
   }
 
   .score {

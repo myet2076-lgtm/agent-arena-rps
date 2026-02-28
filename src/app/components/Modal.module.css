@@ -49,7 +49,7 @@
   background: rgba(255, 45, 120, 0.08);
   color: var(--neon-magenta);
   font-family: var(--font-arcade);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -68,7 +68,7 @@
 
 .title {
   font-family: var(--font-arcade);
-  font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+  font-size: clamp(0.75rem, 1.5vw, 0.75rem);
   color: var(--neon-cyan);
   text-shadow: 0 0 10px var(--neon-cyan-dim);
   margin-bottom: 0.75rem;
