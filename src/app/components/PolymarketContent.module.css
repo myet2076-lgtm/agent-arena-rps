@@ -248,6 +248,10 @@
     flex-direction: column;
   }
 
+  .emailError {
+    font-size: 0.75rem;
+  }
+
   .sideBtn {
     min-width: unset;
     width: 100%;
@@ -257,8 +261,16 @@
     flex-direction: column;
   }
 
+  .emailError {
+    font-size: 0.75rem;
+  }
+
   .notifyRow {
     flex-direction: column;
+  }
+
+  .emailError {
+    font-size: 0.75rem;
   }
 }
 
