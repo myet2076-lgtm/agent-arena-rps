@@ -235,3 +235,51 @@
   0%, 84% { opacity: 1; }
   100% { opacity: 0; visibility: hidden; }
 }
+
+/* ── Phase 3: Power Line + Collision Flash ────────────── */
+
+.powerLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--neon-cyan) 30%, var(--neon-magenta) 70%, transparent 100%);
+  box-shadow: 0 0 12px var(--neon-cyan), 0 0 24px var(--neon-magenta);
+  opacity: 0;
+  animation: powerSweep 5s ease forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes powerSweep {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 0.8; }
+  55% { top: 100%; opacity: 0.6; }
+  60% { opacity: 0; }
+  100% { opacity: 0; top: 100%; }
+}
+
+.collisionFlash {
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+  animation: collisionFlashAnim 5s ease forwards;
+}
+
+@keyframes collisionFlashAnim {
+  0%, 59% { opacity: 0; }
+  60% { opacity: 0.7; }
+  64% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .powerLine,
+  .collisionFlash {
+    animation: none !important;
+    display: none;
+  }
+}

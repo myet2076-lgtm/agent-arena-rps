@@ -10,6 +10,7 @@ import { RoundTimeline } from "./RoundTimeline";
 import styles from "./ArenaStage.module.css";
 
 interface ArenaStageProps {
+  playSound?: (sound: import("@/app/hooks/useArcadeSounds").SoundName) => void;
   matchId: string | null;
   waitingCount: number;
 }
@@ -69,7 +70,7 @@ function toRoundDTO(matchId: string, round: MatchDetailRound): RoundDTO {
   };
 }
 
-export function ArenaStage({ matchId, waitingCount }: ArenaStageProps): React.JSX.Element {
+export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps): React.JSX.Element {
   const [match, setMatch] = useState<MatchDTO | null>(null);
   const [rounds, setRounds] = useState<RoundDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -209,7 +210,7 @@ export function ArenaStage({ matchId, waitingCount }: ArenaStageProps): React.JS
       {!loading && !error ? (
         <>
           <ScoreBoard match={match} />
-          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} waitingCount={waitingCount} />
+          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} waitingCount={waitingCount} playSound={playSound} />
           <RoundTimeline rounds={rounds} />
         </>
       ) : null}

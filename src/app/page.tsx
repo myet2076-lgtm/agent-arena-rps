@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MatchStatus } from "@/types";
 import { NavBar } from "@/app/components/NavBar";
+import { useArcadeSounds } from "@/app/hooks/useArcadeSounds";
 import { ArenaStage } from "@/app/components/ArenaStage";
 import { IntroAnimation } from "@/app/components/IntroAnimation";
 import { SideMenu } from "@/app/components/SideMenu";
@@ -70,6 +71,7 @@ function modalTitle(modal: ModalType): string {
 }
 
 export default function HomePage(): React.JSX.Element {
+  const { play: playSound, muted: soundMuted, toggleMute: toggleSound } = useArcadeSounds();
   const [showIntro, setShowIntro] = useState(true);
   const [menuCollapsed, setMenuCollapsed] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalType>("none");
@@ -166,10 +168,10 @@ export default function HomePage(): React.JSX.Element {
 
       <div className={styles.backdrop} />
 
-      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} />
+      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} soundMuted={soundMuted} onToggleSound={toggleSound} />
 
       <div className={styles.mainContent}>
-        <ArenaStage matchId={runningMatch?.id ?? null} waitingCount={queueCount} />
+        <ArenaStage matchId={runningMatch?.id ?? null} waitingCount={queueCount} playSound={playSound} />
       </div>
 
       <div className={styles.sideMenuWrap}>

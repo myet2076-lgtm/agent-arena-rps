@@ -205,3 +205,24 @@
     font-size: 0.65rem;
   }
 }
+
+/* ── Phase 3: Sound Toggle Button ─────────────────────── */
+
+.soundBtn {
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  background: rgba(0, 240, 255, 0.06);
+  color: var(--neon-cyan);
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+  font-family: var(--font-arcade);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  line-height: 1;
+}
+
+.soundBtn:hover {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+}

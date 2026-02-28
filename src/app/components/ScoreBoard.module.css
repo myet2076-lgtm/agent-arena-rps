@@ -185,3 +185,54 @@
     animation: none !important;
   }
 }
+
+/* ── Phase 3: Score Glow + HP Shimmer ─────────────────── */
+
+.scoreGlowCyan {
+  text-shadow:
+    0 0 15px var(--neon-cyan),
+    0 0 40px var(--neon-cyan-glow),
+    0 0 80px var(--neon-cyan-dim);
+  animation: scoreNeonPulse 1s ease-out;
+}
+
+.scoreGlowMagenta {
+  text-shadow:
+    0 0 15px var(--neon-magenta),
+    0 0 40px var(--neon-magenta-glow),
+    0 0 80px var(--neon-magenta-dim);
+  animation: scoreNeonPulse 1s ease-out;
+}
+
+@keyframes scoreNeonPulse {
+  0% { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+
+.hpShimmer {
+  background-size: 200% 100%;
+  animation: hpShimmerAnim 2s linear infinite;
+}
+
+.hpFillA.hpShimmer {
+  background: linear-gradient(90deg, var(--neon-cyan), rgba(0,240,255,0.5), var(--neon-cyan));
+  background-size: 200% 100%;
+}
+
+.hpFillB.hpShimmer {
+  background: linear-gradient(90deg, var(--neon-magenta), rgba(255,45,120,0.5), var(--neon-magenta));
+  background-size: 200% 100%;
+}
+
+@keyframes hpShimmerAnim {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scoreGlowCyan,
+  .scoreGlowMagenta,
+  .hpShimmer {
+    animation: none !important;
+  }
+}

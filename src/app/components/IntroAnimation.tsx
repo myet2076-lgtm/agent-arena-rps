@@ -13,6 +13,8 @@ export function IntroAnimation({ visible, onSkip }: IntroAnimationProps): React.
   return (
     <div className={styles.overlay} aria-hidden="true">
       <div className={styles.gridGlow} />
+      <div className={styles.powerLine} />
+      <div className={styles.collisionFlash} />
       <div className={`${styles.bots} ${styles.shakeOnClash}`}>
         <div className={`${styles.bot} ${styles.botA}`}>
           <span className={styles.eye} />

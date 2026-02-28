@@ -14,22 +14,24 @@ function eloFromId(id: string): number {
   return 1450 + hash;
 }
 
-/** Animated score that ticks up/down to target */
-function useAnimatedScore(target: number): { display: number; bumping: boolean } {
+function useAnimatedScore(target: number): { display: number; bumping: boolean; glowing: boolean } {
   const [display, setDisplay] = useState(target);
   const [bumping, setBumping] = useState(false);
+  const [glowing, setGlowing] = useState(false);
   const prevRef = useRef(target);
 
   useEffect(() => {
     if (target === prevRef.current) return;
     prevRef.current = target;
     setBumping(true);
+    setGlowing(true);
     setDisplay(target);
-    const t = setTimeout(() => setBumping(false), 400);
-    return () => clearTimeout(t);
+    const t1 = setTimeout(() => setBumping(false), 400);
+    const t2 = setTimeout(() => setGlowing(false), 1000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [target]);
 
-  return { display, bumping };
+  return { display, bumping, glowing };
 }
 
 export function ScoreBoard({ match }: ScoreBoardProps) {
@@ -42,15 +44,17 @@ export function ScoreBoard({ match }: ScoreBoardProps) {
   const scoreA = useAnimatedScore(match.scoreA);
   const scoreB = useAnimatedScore(match.scoreB);
 
+  const isActive = !match.winnerId;
+
   return (
     <section className={styles.wrap}>
       <div className={`${styles.side} ${styles.left}`}>
         <div className={styles.headline}>🤖 {match.agentA}</div>
-        <div className={`${styles.score} ${leader === "A" ? styles.pulseCyan : ""} ${scoreA.bumping ? styles.scoreBump : ""}`}>
+        <div className={`${styles.score} ${leader === "A" ? styles.pulseCyan : ""} ${scoreA.bumping ? styles.scoreBump : ""} ${scoreA.glowing ? styles.scoreGlowCyan : ""}`}>
           {scoreA.display}
         </div>
         <div className={styles.hpBar}>
-          <div className={`${styles.hpFill} ${styles.hpFillA}`} style={{ width: `${pctA}%` }} />
+          <div className={`${styles.hpFill} ${styles.hpFillA} ${isActive ? styles.hpShimmer : ""}`} style={{ width: `${pctA}%` }} />
         </div>
         <div className={styles.meta}>Wins: {match.winsA}</div>
         <div className={styles.meta}>ELO {eloFromId(match.agentA)}</div>
@@ -64,11 +68,11 @@ export function ScoreBoard({ match }: ScoreBoardProps) {
 
       <div className={`${styles.side} ${styles.right}`}>
         <div className={styles.headline}>🤖 {match.agentB}</div>
-        <div className={`${styles.score} ${leader === "B" ? styles.pulseMagenta : ""} ${scoreB.bumping ? styles.scoreBump : ""}`}>
+        <div className={`${styles.score} ${leader === "B" ? styles.pulseMagenta : ""} ${scoreB.bumping ? styles.scoreBump : ""} ${scoreB.glowing ? styles.scoreGlowMagenta : ""}`}>
           {scoreB.display}
         </div>
         <div className={styles.hpBar}>
-          <div className={`${styles.hpFill} ${styles.hpFillB}`} style={{ width: `${pctB}%` }} />
+          <div className={`${styles.hpFill} ${styles.hpFillB} ${isActive ? styles.hpShimmer : ""}`} style={{ width: `${pctB}%` }} />
         </div>
         <div className={styles.meta}>Wins: {match.winsB}</div>
         <div className={styles.meta}>ELO {eloFromId(match.agentB)}</div>

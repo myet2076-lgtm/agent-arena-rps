@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Move, RoundOutcome } from "@/types";
 import type { AnimationPhase, RoundAnimationState } from "@/app/hooks/useRoundAnimation";
+import type { SoundName } from "@/app/hooks/useArcadeSounds";
 import styles from "./BattleStage.module.css";
 
 interface BattleStageProps {
@@ -10,6 +11,7 @@ interface BattleStageProps {
   agentA: string | null;
   agentB: string | null;
   waitingCount: number;
+  playSound?: (sound: SoundName) => void;
 }
 
 const MOVE_EMOJI: Record<Move, string> = {
@@ -44,7 +46,9 @@ function Avatar({ side, phase, outcome }: { side: "left" | "right"; phase: Anima
     base,
     isIdle ? styles.avatarIdle : "",
     isLoser ? styles.avatarDim : "",
+    isLoser ? styles.avatarTilt : "",
     isWinner ? styles.avatarWin : "",
+    isWinner ? styles.avatarBrightPulse : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -119,6 +123,7 @@ function ClashContent({ moveA, moveB }: { moveA: Move | null; moveB: Move | null
     <div className={styles.clashArea}>
       <span className={styles.clashMoveLeft}>{moveA ? MOVE_EMOJI[moveA] : "❓"}</span>
       <div className={styles.impactFlash} />
+      <div className={styles.clashRadial} />
       <span className={styles.clashMoveRight}>{moveB ? MOVE_EMOJI[moveB] : "❓"}</span>
     </div>
   );
@@ -126,6 +131,7 @@ function ClashContent({ moveA, moveB }: { moveA: Move | null; moveB: Move | null
 
 function ResultContent({ moveA, moveB, outcome }: { moveA: Move | null; moveB: Move | null; outcome: RoundOutcome | null }) {
   const { text, isDraw } = outcomeLabel(outcome);
+  const ws = winnerSide(outcome);
   return (
     <div className={styles.resultArea}>
       <div className={styles.resultMoves}>
@@ -136,6 +142,17 @@ function ResultContent({ moveA, moveB, outcome }: { moveA: Move | null; moveB: M
       <div className={`${styles.resultText} ${isDraw ? styles.resultDraw : styles.resultKO}`}>
         {text}
       </div>
+      {ws && (
+        <div className={styles.resultConfetti}>
+          {Array.from({ length: 10 }, (_, i) => (
+            <div
+              key={i}
+              className={`${styles.resultConfettiPiece} ${ws === "A" ? styles.confettiLeft : styles.confettiRight}`}
+              style={{ ["--ci" as string]: i } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -160,10 +177,52 @@ function MatchEndContent({ winnerId, winnerName }: { winnerId: string | null; wi
   );
 }
 
-export function BattleStage({ animState, agentA, agentB, waitingCount }: BattleStageProps): React.JSX.Element {
+export function BattleStage({ animState, agentA, agentB, waitingCount, playSound }: BattleStageProps): React.JSX.Element {
   const { phase, roundNo, moveA, moveB, outcome, winnerId, winnerName } = animState;
+  const prevPhaseRef = useRef<AnimationPhase>("idle");
 
-  /* Fix #5: simple conditional instead of useMemo; Fix #2: shakeChoosing during choosing */
+  // Sound integration: play sounds on phase transitions
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (!playSound || prev === phase) return;
+
+    switch (phase) {
+      case "round-announce":
+        playSound("roundAnnounce");
+        break;
+      case "choosing":
+        playSound("choosing");
+        break;
+      case "reveal":
+        playSound("reveal");
+        break;
+      case "clash":
+        playSound("clash");
+        break;
+      case "result": {
+        if (outcome === RoundOutcome.DRAW) {
+          playSound("draw");
+        } else if (outcome) {
+          playSound("ko");
+        }
+        break;
+      }
+      case "match-end":
+        playSound("winner");
+        break;
+    }
+  }, [phase, outcome, playSound]);
+
+  // Choosing tick sound loop
+  useEffect(() => {
+    if (phase !== "choosing" || !playSound) return;
+    const interval = setInterval(() => {
+      playSound("choosing");
+    }, 200);
+    return () => clearInterval(interval);
+  }, [phase, playSound]);
+
   const shakeClass = phase === "round-announce"
     ? styles.shakeRoundAnnounce
     : phase === "clash"
