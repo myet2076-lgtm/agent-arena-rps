@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RoundOutcome, type GameEvent } from "@/types";
+import { RoundOutcome, SSE_EVENT_TYPES, type GameEvent } from "@/types";
 
 interface UseMatchSSEResult {
   events: GameEvent[];
@@ -21,10 +21,10 @@ const MAX_EVENTS = 200;
  *
  * This adapter bridges the contract without changing the backend API.
  */
-function normalizeEvent(raw: Record<string, unknown>): GameEvent {
+export function normalizeEvent(raw: Record<string, unknown>): GameEvent {
   const type = raw.type as string;
 
-  if (type === "ROUND_RESULT") {
+  if (type === SSE_EVENT_TYPES.ROUND_RESULT) {
     // Map `round` -> `roundNo` (backend sends `round`, frontend expects `roundNo`)
     const roundNo = (raw.roundNo ?? raw.round ?? 0) as number;
 
@@ -75,7 +75,7 @@ function normalizeEvent(raw: Record<string, unknown>): GameEvent {
     };
   }
 
-  if (type === "MATCH_FINISHED") {
+  if (type === SSE_EVENT_TYPES.MATCH_FINISHED) {
     return {
       type: "MATCH_FINISHED",
       matchId: raw.matchId as string,
@@ -91,7 +91,7 @@ function normalizeEvent(raw: Record<string, unknown>): GameEvent {
   return raw as unknown as GameEvent;
 }
 
-export function useMatchSSE(matchId: string | null): UseMatchSSEResult {
+export function useMatchSSE(matchId: string | null, onResync?: () => void): UseMatchSSEResult {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [latestEvent, setLatestEvent] = useState<GameEvent | null>(null);
   const [connected, setConnected] = useState(false);
@@ -179,6 +179,8 @@ export function useMatchSSE(matchId: string | null): UseMatchSSEResult {
           const next = [...prev, normalized];
           return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next;
         });
+        // Trigger re-fetch for RESYNC/STATE_SNAPSHOT
+        onResync?.();
       } catch {
         // ignore
       }
@@ -201,12 +203,12 @@ export function useMatchSSE(matchId: string | null): UseMatchSSEResult {
 
       // Core events the frontend actively renders
       const activeEventTypes: Array<GameEvent["type"]> = [
-        "MATCH_STARTED",
-        "ROUND_COMMIT",
-        "ROUND_RESULT",
-        "MATCH_FINISHED",
-        "MARKET_UPDATE",
-        "VOTE_UPDATE",
+        SSE_EVENT_TYPES.MATCH_STARTED,
+        SSE_EVENT_TYPES.ROUND_COMMIT,
+        SSE_EVENT_TYPES.ROUND_RESULT,
+        SSE_EVENT_TYPES.MATCH_FINISHED,
+        SSE_EVENT_TYPES.MARKET_UPDATE,
+        SSE_EVENT_TYPES.VOTE_UPDATE,
       ];
 
       for (const eventType of activeEventTypes) {
@@ -216,10 +218,10 @@ export function useMatchSSE(matchId: string | null): UseMatchSSEResult {
       // Fix #2: Additional event listeners for backend-emitted events
       // Logged/acknowledged but don't drive visual state
       const infoEventTypes = [
-        "MATCH_START",
-        "ROUND_START",
-        "BOTH_COMMITTED",
-        "READY_TIMEOUT",
+        SSE_EVENT_TYPES.MATCH_START,
+        SSE_EVENT_TYPES.ROUND_START,
+        SSE_EVENT_TYPES.BOTH_COMMITTED,
+        SSE_EVENT_TYPES.READY_TIMEOUT,
       ];
 
       for (const eventType of infoEventTypes) {
@@ -227,8 +229,8 @@ export function useMatchSSE(matchId: string | null): UseMatchSSEResult {
       }
 
       // RESYNC and STATE_SNAPSHOT trigger a data refresh
-      source.addEventListener("RESYNC", onResyncEvent as EventListener);
-      source.addEventListener("STATE_SNAPSHOT", onResyncEvent as EventListener);
+      source.addEventListener(SSE_EVENT_TYPES.RESYNC, onResyncEvent as EventListener);
+      source.addEventListener(SSE_EVENT_TYPES.STATE_SNAPSHOT, onResyncEvent as EventListener);
 
       source.onerror = () => {
         if (cancelled) return;
@@ -246,7 +248,7 @@ export function useMatchSSE(matchId: string | null): UseMatchSSEResult {
       clearReconnect();
       cleanupSource();
     };
-  }, [matchId]);
+  }, [matchId, onResync]);
 
   return { events, latestEvent, connected };
 }

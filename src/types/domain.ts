@@ -353,6 +353,25 @@ export interface MatchSummary {
   topHighlights: HighlightRound[];
 }
 
+// ─── SSE Event Type Constants ───────────────────────────
+
+export const SSE_EVENT_TYPES = {
+  MATCH_START: "MATCH_START",
+  MATCH_STARTED: "MATCH_STARTED",
+  ROUND_START: "ROUND_START",
+  ROUND_COMMIT: "ROUND_COMMIT",
+  BOTH_COMMITTED: "BOTH_COMMITTED",
+  ROUND_RESULT: "ROUND_RESULT",
+  MATCH_FINISHED: "MATCH_FINISHED",
+  MARKET_UPDATE: "MARKET_UPDATE",
+  VOTE_UPDATE: "VOTE_UPDATE",
+  RESYNC: "RESYNC",
+  READY_TIMEOUT: "READY_TIMEOUT",
+  STATE_SNAPSHOT: "STATE_SNAPSHOT",
+} as const;
+
+export type SSEEventType = (typeof SSE_EVENT_TYPES)[keyof typeof SSE_EVENT_TYPES];
+
 // ─── Events (for Realtime Channel) ─────────────────────
 
 export type GameEvent =

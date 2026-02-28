@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MatchStatus, RoundOutcome, RoundPhase, type MatchDTO, type RoundDTO } from "@/types";
 import { useMatchSSE } from "@/app/hooks/useMatchSSE";
 import { useRoundAnimation } from "@/app/hooks/useRoundAnimation";
@@ -76,7 +76,9 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { latestEvent, connected } = useMatchSSE(matchId);
+  const [reloadKey, setReloadKey] = useState(0);
+  const handleResync = useCallback(() => setReloadKey((k) => k + 1), []);
+  const { latestEvent, connected } = useMatchSSE(matchId, handleResync);
   const animState = useRoundAnimation(latestEvent, match?.agentA ?? null, match?.agentB ?? null);
 
   useEffect(() => {
@@ -114,7 +116,7 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
     }
 
     void loadDetail();
-  }, [matchId]);
+  }, [matchId, reloadKey]);
 
   useEffect(() => {
     if (!latestEvent || !matchId) {
