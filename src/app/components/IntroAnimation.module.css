@@ -283,3 +283,49 @@
     display: none;
   }
 }
+
+/* ── RPS Icon Cycle ────────────── */
+
+.rpsIcons {
+  position: absolute;
+  top: 15%; left: 50%; transform: translateX(-50%);
+  display: flex;
+  gap: clamp(1.5rem, 6vw, 4rem);
+  z-index: 10;
+}
+
+.rpsIcon {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  opacity: 0;
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
+  animation: rpsFlash 5s ease forwards;
+}
+
+.iconRock {
+  animation-delay: 0s;
+}
+
+.iconScissors {
+  animation-delay: 0.25s;
+}
+
+.iconPaper {
+  animation-delay: 0.5s;
+}
+
+@keyframes rpsFlash {
+  0% { opacity: 0; transform: scale(0.3) rotate(-20deg); }
+  8% { opacity: 1; transform: scale(1.15) rotate(5deg); }
+  16% { opacity: 1; transform: scale(1) rotate(0deg); }
+  55% { opacity: 1; transform: scale(1) rotate(0deg); }
+  62% { opacity: 0.8; transform: scale(1.1); }
+  70% { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpsIcon {
+    animation: none !important;
+    opacity: 1;
+  }
+}

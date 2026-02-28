@@ -15,6 +15,11 @@ export function IntroAnimation({ visible, onSkip }: IntroAnimationProps): React.
       <div className={styles.gridGlow} />
       <div className={styles.powerLine} />
       <div className={styles.collisionFlash} />
+      <div className={styles.rpsIcons}>
+        <span className={`${styles.rpsIcon} ${styles.iconRock}`}>✊</span>
+        <span className={`${styles.rpsIcon} ${styles.iconScissors}`}>✌️</span>
+        <span className={`${styles.rpsIcon} ${styles.iconPaper}`}>✋</span>
+      </div>
       <div className={`${styles.bots} ${styles.shakeOnClash}`}>
         <div className={`${styles.bot} ${styles.botA}`}>
           <span className={styles.eye} />
