@@ -226,3 +226,35 @@
   border-color: var(--neon-cyan);
   box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
 }
+
+/* ── Phase 4: Predict Button ──────────────────────── */
+
+.predictBtn {
+  border: 1px solid rgba(138, 43, 226, 0.4);
+  background: rgba(138, 43, 226, 0.08);
+  color: #c084fc;
+  border-radius: 10px;
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-arcade);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.predictBtn:hover {
+  background: rgba(138, 43, 226, 0.16);
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(138, 43, 226, 0.25);
+}
+
+.predictBtn:focus-visible {
+  outline: 2px solid #c084fc;
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .predictBtn {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.65rem;
+  }
+}

@@ -17,11 +17,12 @@ interface NavBarProps {
   mode?: "default" | "arena";
   waitingCount?: number;
   onRulesClick?: () => void;
+  onPredictClick?: () => void;
   soundMuted?: boolean;
   onToggleSound?: () => void;
 }
 
-export function NavBar({ mode = "default", waitingCount = 0, onRulesClick, soundMuted, onToggleSound }: NavBarProps): React.JSX.Element {
+export function NavBar({ mode = "default", waitingCount = 0, onRulesClick, onPredictClick, soundMuted, onToggleSound }: NavBarProps): React.JSX.Element {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -35,6 +36,9 @@ export function NavBar({ mode = "default", waitingCount = 0, onRulesClick, sound
             <button type="button" className={styles.soundBtn} onClick={onToggleSound} aria-label={soundMuted ? "Unmute sounds" : "Mute sounds"} aria-pressed={!soundMuted}>
               {soundMuted ? "🔇" : "🔊"}
             </button>
+          )}
+          {onPredictClick && (
+            <button type="button" className={styles.predictBtn} onClick={onPredictClick}>🔮 Predict</button>
           )}
           <button type="button" className={styles.rulesBtn} onClick={onRulesClick}>Rules</button>
         </div>

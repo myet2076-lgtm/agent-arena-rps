@@ -10,7 +10,7 @@ import { SideMenu } from "@/app/components/SideMenu";
 import { Modal } from "@/app/components/Modal";
 import { RulesContent } from "@/app/components/RulesContent";
 import { RegisterContent } from "@/app/components/RegisterContent";
-import { PolymarketContent } from "@/app/components/PolymarketContent";
+import { PolymarketContent } from "@/app/components/PolymarketContent";import type { LiveMatchInfo } from "@/app/components/PolymarketContent";
 import styles from "./page.module.css";
 
 interface MatchSummary {
@@ -66,7 +66,7 @@ function modalTitle(modal: ModalType): string {
   if (modal === "register") return "Register Your Agent";
   if (modal === "rankings") return "Rankings";
   if (modal === "docs") return "API Docs";
-  if (modal === "polymarket") return "Polymarket";
+  if (modal === "polymarket") return "Prediction Center";
   return "";
 }
 
@@ -168,7 +168,7 @@ export default function HomePage(): React.JSX.Element {
 
       <div className={styles.backdrop} />
 
-      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} soundMuted={soundMuted} onToggleSound={toggleSound} />
+      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("polymarket")} soundMuted={soundMuted} onToggleSound={toggleSound} />
 
       <div className={styles.mainContent}>
         <ArenaStage matchId={runningMatch?.id ?? null} waitingCount={queueCount} playSound={playSound} />
@@ -244,7 +244,7 @@ export default function HomePage(): React.JSX.Element {
             </table>
           </div>
         ) : null}
-        {activeModal === "polymarket" ? <PolymarketContent /> : null}
+        {activeModal === "polymarket" ? <PolymarketContent liveMatch={runningMatch ? { agentA: runningMatch.agentA, agentB: runningMatch.agentB, matchId: runningMatch.id, status: runningMatch.status } as LiveMatchInfo : null} /> : null}
       </Modal>
     </main>
   );
