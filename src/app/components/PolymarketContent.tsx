@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PredictionDraft } from "@/types/prediction";
 import type { MatchStatus } from "@/types";
 import styles from "./PolymarketContent.module.css";
@@ -20,6 +20,8 @@ function formatName(id: string): string {
   return id.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const isValidEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const confidenceLevels: PredictionDraft["confidence"][] = ["low", "medium", "high"];
 
 export function PolymarketContent({ liveMatch }: PolymarketContentProps): React.JSX.Element {
@@ -31,6 +33,20 @@ export function PolymarketContent({ liveMatch }: PolymarketContentProps): React.
   });
   const [email, setEmail] = useState("");
   const [notifySaved, setNotifySaved] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const notifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync draft.matchId when liveMatch changes
+  useEffect(() => {
+    setDraft(prev => ({ ...prev, matchId: liveMatch?.matchId ?? null, side: null }));
+  }, [liveMatch?.matchId]);
+
+  // Cleanup notify timer on unmount
+  useEffect(() => {
+    return () => {
+      if (notifyTimerRef.current) clearTimeout(notifyTimerRef.current);
+    };
+  }, []);
 
   function selectSide(side: "A" | "B"): void {
     setDraft((prev) => ({ ...prev, side: prev.side === side ? null : side, matchId: liveMatch?.matchId ?? null }));
@@ -41,9 +57,14 @@ export function PolymarketContent({ liveMatch }: PolymarketContentProps): React.
   }
 
   function handleNotify(): void {
+    setEmailError(null);
+    if (email && !isValidEmail(email)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
     setDraft((prev) => ({ ...prev, email: email || undefined }));
     setNotifySaved(true);
-    setTimeout(() => setNotifySaved(false), 3000);
+    notifyTimerRef.current = setTimeout(() => setNotifySaved(false), 3000);
   }
 
   const hasMatch = !!liveMatch;
@@ -118,13 +139,14 @@ export function PolymarketContent({ liveMatch }: PolymarketContentProps): React.
             className={styles.emailInput}
             placeholder="email (optional)"
             value={email}
-            onChange={(e) => { setEmail(e.target.value); setNotifySaved(false); }}
+            onChange={(e) => { setEmail(e.target.value); setNotifySaved(false); setEmailError(null); }}
             aria-label="Email for notification"
           />
           <button type="button" className={styles.notifyBtn} onClick={handleNotify}>
             {notifySaved ? "✓ Saved" : "Save"}
           </button>
         </div>
+        {emailError ? <p className={styles.disclaimer} style={{ color: "#ff6b6b", marginTop: "0.25rem" }}>{emailError}</p> : null}
       </div>
 
       <p className={styles.disclaimer}>No funds are moved in this preview mode.</p>

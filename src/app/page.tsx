@@ -10,7 +10,8 @@ import { SideMenu } from "@/app/components/SideMenu";
 import { Modal } from "@/app/components/Modal";
 import { RulesContent } from "@/app/components/RulesContent";
 import { RegisterContent } from "@/app/components/RegisterContent";
-import { PolymarketContent } from "@/app/components/PolymarketContent";import type { LiveMatchInfo } from "@/app/components/PolymarketContent";
+import { PolymarketContent } from "@/app/components/PolymarketContent";
+import type { LiveMatchInfo } from "@/app/components/PolymarketContent";
 import styles from "./page.module.css";
 
 interface MatchSummary {
@@ -244,7 +245,7 @@ export default function HomePage(): React.JSX.Element {
             </table>
           </div>
         ) : null}
-        {activeModal === "polymarket" ? <PolymarketContent liveMatch={runningMatch ? { agentA: runningMatch.agentA, agentB: runningMatch.agentB, matchId: runningMatch.id, status: runningMatch.status } as LiveMatchInfo : null} /> : null}
+        {activeModal === "polymarket" ? <PolymarketContent liveMatch={runningMatch ? { agentA: runningMatch.agentA, agentB: runningMatch.agentB, matchId: runningMatch.id, status: runningMatch.status } : null} /> : null}
       </Modal>
     </main>
   );
