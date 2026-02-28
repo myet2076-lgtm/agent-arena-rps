@@ -204,18 +204,22 @@ export function BattleStage({ animState, agentA, agentB, waitingCount, playSound
         // Sound handled by dedicated outcome watcher useEffect
         break;
       case "match-end":
-        playSound("winner");
+        // Winner sound handled by dedicated useEffect below
         break;
     }
   }, [phase, outcome, playSound]);
 
-  // Play result sound when outcome arrives (may come after phase transition)
+  // Play outcome sounds — single source of truth for ko/draw/winner
   useEffect(() => {
-    if (phase !== "result" || !outcome || !playSound) return;
-    if (outcome === RoundOutcome.DRAW) {
-      playSound("draw");
-    } else {
-      playSound("ko");
+    if (!playSound) return;
+    if (phase === "result" && outcome) {
+      if (outcome === RoundOutcome.DRAW) {
+        playSound("draw");
+      } else {
+        playSound("ko");
+      }
+    } else if (phase === "match-end") {
+      playSound("winner");
     }
   }, [outcome, phase, playSound]);
 
