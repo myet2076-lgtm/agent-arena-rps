@@ -31,7 +31,7 @@
 
 .headline {
   font-family: var(--font-arcade);
-  font-size: clamp(0.65rem, 1.2vw, 0.7rem);
+  font-size: clamp(0.55rem, 1.5vw, 0.8rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -20,7 +20,7 @@
 .liveHeader h2 {
   color: rgba(249, 251, 255, 0.95);
   font-family: var(--font-arcade);
-  font-size: clamp(0.7rem, 1.4vw, 0.7rem);
+  font-size: clamp(0.6rem, 1.8vw, 0.85rem);
   margin: 0;
   letter-spacing: 0.02em;
 }

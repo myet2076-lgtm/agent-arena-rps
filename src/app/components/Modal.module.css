@@ -68,7 +68,7 @@
 
 .title {
   font-family: var(--font-arcade);
-  font-size: clamp(0.75rem, 1.5vw, 0.75rem);
+  font-size: clamp(0.65rem, 2vw, 0.9rem);
   color: var(--neon-cyan);
   text-shadow: 0 0 10px var(--neon-cyan-dim);
   margin-bottom: 0.75rem;

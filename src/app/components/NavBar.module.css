@@ -119,7 +119,7 @@
 
 .arenaLogo {
   font-family: var(--font-arcade);
-  font-size: clamp(0.75rem, 1.5vw, 0.85rem);
+  font-size: clamp(0.65rem, 2vw, 0.95rem);
   font-weight: 400;
   letter-spacing: 0.02em;
   color: var(--neon-cyan);

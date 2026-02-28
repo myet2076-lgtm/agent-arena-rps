@@ -114,7 +114,7 @@
   position: absolute;
   bottom: 18vh;
   font-family: var(--font-arcade);
-  font-size: clamp(0.75rem, 1.4vw, 0.9rem);
+  font-size: clamp(0.65rem, 1.8vw, 0.95rem);
   color: var(--neon-cyan);
   letter-spacing: 0.12em;
   text-transform: uppercase;
