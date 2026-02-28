@@ -1,43 +1,55 @@
 :root {
-  --bg: #ffffff;
-  --bg-secondary: #f8f8fa;
-  --bg-section: #f3f4f6;
-  --bg-dark: #1a1a2e;
-  --card: #ffffff;
-  --border: #eaeaea;
-  --text: #1a1a2e;
-  --text-secondary: #888888;
-  --text-caption: #999999;
+  --bg: #070910;
+  --bg-secondary: rgba(13, 17, 34, 0.85);
+  --bg-section: #0b1020;
+  --bg-dark: #050710;
+  --card: rgba(13, 17, 34, 0.9);
+  --border: rgba(255, 255, 255, 0.1);
+  --text: #e8ecf8;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-caption: rgba(255, 255, 255, 0.4);
   --accent: #4353FF;
-  --accent-light: #eef0ff;
+  --accent-light: rgba(67, 83, 255, 0.15);
   --accent-hover: #3240cc;
-  --tag-bg: #f0f0f0;
-  --tag-text: #666666;
+  --tag-bg: rgba(255, 255, 255, 0.08);
+  --tag-text: rgba(255, 255, 255, 0.6);
   --success: #22c55e;
-  --success-light: #f0fdf4;
+  --success-light: rgba(34, 197, 94, 0.12);
   --danger: #ef4444;
-  --danger-light: #fef2f2;
+  --danger-light: rgba(239, 68, 68, 0.12);
   --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --gold: #d4a017;
+  --warning-light: rgba(245, 158, 11, 0.12);
+  --gold: #ffd700;
   --silver: #9ca3af;
   --bronze: #b45309;
+
+  /* Arcade neon palette */
+  --neon-cyan: #00f0ff;
+  --neon-cyan-dim: rgba(0, 240, 255, 0.4);
+  --neon-cyan-glow: rgba(0, 240, 255, 0.6);
+  --neon-magenta: #ff2d78;
+  --neon-magenta-dim: rgba(255, 45, 120, 0.4);
+  --neon-magenta-glow: rgba(255, 45, 120, 0.6);
+  --neon-gold: #ffd700;
+  --neon-gold-glow: rgba(255, 215, 0, 0.6);
+
   --gradient-start: #667eea;
   --gradient-end: #764ba2;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
   --color-white: #ffffff;
   --color-black: #000000;
-  --color-overlay: rgba(0, 0, 0, 0.5);
-  --color-overlay-light: rgba(255, 255, 255, 0.9);
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-overlay-light: rgba(13, 17, 34, 0.92);
   --color-hero-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.55) 100%);
-  --color-nav-bg: rgba(26, 26, 46, 0.6);
-  --color-text-on-dark: rgba(255, 255, 255, 0.8);
+  --color-nav-bg: rgba(9, 11, 22, 0.85);
+  --color-text-on-dark: rgba(255, 255, 255, 0.9);
   --color-text-on-dark-muted: rgba(255, 255, 255, 0.75);
   --color-text-on-dark-faint: rgba(255, 255, 255, 0.4);
   --font-serif: var(--font-playfair), Georgia, 'Times New Roman', serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-arcade: var(--font-pixel), 'Courier New', monospace;
 }
 
 * {
@@ -75,11 +87,11 @@ a {
 }
 
 a:hover {
-  color: var(--accent);
+  color: var(--neon-cyan);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--neon-cyan);
   outline-offset: 2px;
 }
 
@@ -112,12 +124,104 @@ a:hover {
   animation: slideIn 300ms ease-out;
 }
 
+/* === Scanline overlay utility === */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  z-index: 1;
+}
+
+/* === Neon text utilities === */
+.neonCyan {
+  color: var(--neon-cyan);
+  text-shadow:
+    0 0 7px var(--neon-cyan-glow),
+    0 0 20px var(--neon-cyan-dim),
+    0 0 42px rgba(0, 240, 255, 0.2);
+}
+
+.neonMagenta {
+  color: var(--neon-magenta);
+  text-shadow:
+    0 0 7px var(--neon-magenta-glow),
+    0 0 20px var(--neon-magenta-dim),
+    0 0 42px rgba(255, 45, 120, 0.2);
+}
+
+.neonGold {
+  color: var(--neon-gold);
+  text-shadow:
+    0 0 7px var(--neon-gold-glow),
+    0 0 20px rgba(255, 215, 0, 0.4);
+}
+
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(0, 240, 255, 0); }
 }
 
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(4px, -2px); }
+  30% { transform: translate(-3px, -1px); }
+  40% { transform: translate(3px, 1px); }
+  50% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-1px, 1px); }
+  80% { transform: translate(1px, -1px); }
+  90% { transform: translate(-1px, 0); }
+}
+
+@keyframes crtFlicker {
+  0% { opacity: 1; }
+  3% { opacity: 0.97; }
+  6% { opacity: 1; }
+  89% { opacity: 1; }
+  92% { opacity: 0.98; }
+  95% { opacity: 1; }
+}
+
+@keyframes neonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes slamIn {
+  0% { transform: scale(2.5); opacity: 0; }
+  60% { transform: scale(0.9); opacity: 1; }
+  80% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes insertCoin {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

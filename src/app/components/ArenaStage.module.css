@@ -4,6 +4,24 @@
   display: grid;
   gap: 1rem;
   padding-bottom: 1rem;
+  position: relative;
+}
+
+/* Subtle CRT scanline on entire stage */
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.04) 3px,
+    rgba(0, 0, 0, 0.04) 6px
+  );
+  border-radius: 12px;
+  z-index: 0;
 }
 
 .liveHeader {
@@ -11,18 +29,23 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.7rem;
+  position: relative;
+  z-index: 1;
 }
 
 .liveHeader h2 {
   color: rgba(249, 251, 255, 0.95);
-  font-size: clamp(1.05rem, 2.4vw, 1.28rem);
+  font-family: var(--font-arcade);
+  font-size: clamp(0.55rem, 1.4vw, 0.7rem);
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .connection {
   padding: 0.22rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
+  font-family: var(--font-arcade);
   letter-spacing: 0.06em;
   border: 1px solid transparent;
 }
@@ -31,6 +54,7 @@
   color: #8ef7b4;
   border-color: rgba(72, 207, 126, 0.6);
   background: rgba(36, 129, 72, 0.22);
+  animation: neonPulse 2s ease-in-out infinite;
 }
 
 .disconnected {
@@ -41,27 +65,37 @@
 
 .state {
   color: rgba(255, 255, 255, 0.82);
+  position: relative;
+  z-index: 1;
 }
 
 .waitingTitle {
-  color: rgba(255, 255, 255, 0.95);
-  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-family: var(--font-arcade);
+  color: var(--neon-cyan);
+  font-size: clamp(0.7rem, 2vw, 1rem);
   text-align: center;
-  margin-top: 2rem;
+  margin-top: 3rem;
+  text-shadow:
+    0 0 10px var(--neon-cyan-glow),
+    0 0 30px var(--neon-cyan-dim);
+  animation: insertCoin 1.5s ease-in-out infinite;
 }
 
 .waitingMeta {
   text-align: center;
-  color: rgba(255, 255, 255, 0.72);
-  margin-top: -0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
 }
 
 .chatPlaceholder {
   border-radius: 14px;
-  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border: 1px dashed rgba(0, 240, 255, 0.2);
   min-height: 80px;
   display: grid;
   place-items: center;
-  color: rgba(255, 255, 255, 0.64);
-  background: rgba(13, 17, 34, 0.62);
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(13, 17, 34, 0.5);
+  position: relative;
+  z-index: 1;
 }

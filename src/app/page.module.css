@@ -1,8 +1,9 @@
 .page {
   min-height: 100dvh;
-  background: #070910;
+  background: #050710;
   position: relative;
   overflow: hidden;
+  animation: crtFlicker 8s infinite;
 }
 
 .backdrop {
@@ -10,9 +11,25 @@
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at 16% 18%, rgba(59, 78, 238, 0.25), transparent 44%),
-    radial-gradient(circle at 86% 75%, rgba(255, 74, 148, 0.16), transparent 46%),
-    linear-gradient(180deg, #0b1020 0%, #05070f 100%);
+    radial-gradient(circle at 16% 18%, rgba(0, 240, 255, 0.15), transparent 44%),
+    radial-gradient(circle at 86% 75%, rgba(255, 45, 120, 0.1), transparent 46%),
+    linear-gradient(180deg, #070910 0%, #030508 100%);
+}
+
+/* Scanline overlay on entire page */
+.backdrop::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  z-index: 1;
 }
 
 .mainContent {
@@ -41,13 +58,18 @@
 
 .modalTable th,
 .modalTable td {
-  border: 1px solid rgba(18, 22, 43, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.15);
   text-align: left;
   padding: 0.55rem 0.6rem;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .modalTable th {
-  background: rgba(20, 28, 65, 0.08);
+  background: rgba(0, 240, 255, 0.08);
+  font-family: var(--font-arcade);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
 }
 
 @media (max-width: 940px) {

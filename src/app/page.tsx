@@ -162,7 +162,7 @@ export default function HomePage(): React.JSX.Element {
 
   return (
     <main className={styles.page}>
-      <IntroAnimation visible={showIntro} />
+      <IntroAnimation visible={showIntro} onSkip={() => setShowIntro(false)} />
 
       <div className={styles.backdrop} />
 

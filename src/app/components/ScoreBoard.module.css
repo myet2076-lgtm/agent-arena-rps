@@ -3,52 +3,118 @@
   grid-template-columns: 1fr auto 1fr;
   gap: 1.5rem;
   align-items: stretch;
-  background: var(--bg);
+  background: rgba(8, 10, 22, 0.92);
   border-radius: 12px;
   padding: 2rem 1.5rem;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Scanline overlay on HUD */
+.wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
 }
 
 .side {
-  background: var(--bg-secondary);
+  background: rgba(13, 17, 34, 0.7);
   border-radius: 10px;
   padding: 1.5rem;
   text-align: center;
+  position: relative;
 }
 
 .left {
-  border-top: 3px solid var(--accent);
+  border-top: 3px solid var(--neon-cyan);
+  box-shadow: 0 -4px 20px rgba(0, 240, 255, 0.15);
 }
 
 .right {
-  border-top: 3px solid var(--text-secondary);
+  border-top: 3px solid var(--neon-magenta);
+  box-shadow: 0 -4px 20px rgba(255, 45, 120, 0.15);
 }
 
 .headline {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text);
+  font-family: var(--font-arcade);
+  font-size: clamp(0.5rem, 1.2vw, 0.7rem);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.02em;
+}
+
+.left .headline {
+  text-shadow: 0 0 10px var(--neon-cyan-dim);
+  color: var(--neon-cyan);
+}
+
+.right .headline {
+  text-shadow: 0 0 10px var(--neon-magenta-dim);
+  color: var(--neon-magenta);
 }
 
 .score {
-  font-family: var(--font-serif);
-  font-size: clamp(2.5rem, 8vw, 4rem);
-  font-weight: 800;
+  font-family: var(--font-arcade);
+  font-size: clamp(2rem, 7vw, 3.5rem);
+  font-weight: 400;
   line-height: 1;
   margin: 0.75rem 0;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .pulseCyan {
-  color: var(--accent);
+  color: var(--neon-cyan);
+  text-shadow:
+    0 0 10px var(--neon-cyan-glow),
+    0 0 30px var(--neon-cyan-dim);
+  animation: neonPulse 1.5s ease-in-out infinite;
 }
 
 .pulseMagenta {
-  color: var(--text);
+  color: var(--neon-magenta);
+  text-shadow:
+    0 0 10px var(--neon-magenta-glow),
+    0 0 30px var(--neon-magenta-dim);
+  animation: neonPulse 1.5s ease-in-out infinite;
+}
+
+.hpBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  margin: 0.5rem 0;
+  overflow: hidden;
+}
+
+.hpFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.hpFillA {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+}
+
+.hpFillB {
+  background: var(--neon-magenta);
+  box-shadow: 0 0 8px var(--neon-magenta-glow);
 }
 
 .meta {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
 }
 
 .center {
@@ -59,38 +125,55 @@
 }
 
 .vs {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-secondary);
+  font-family: var(--font-arcade);
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-weight: 400;
+  color: var(--neon-gold);
   text-align: center;
+  text-shadow:
+    0 0 10px var(--neon-gold-glow),
+    0 0 30px rgba(255, 215, 0, 0.3);
+  animation: neonPulse 2s ease-in-out infinite;
 }
 
 .format {
-  font-size: 0.75rem;
-  border: 1px solid var(--border);
+  font-family: var(--font-arcade);
+  font-size: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 999px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.6rem;
   text-align: center;
-  color: var(--text-caption);
-  background: var(--card);
+  color: var(--neon-gold);
+  background: rgba(255, 215, 0, 0.08);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-weight: 600;
 }
 
 .crown {
   margin-top: 0.5rem;
-  font-weight: 600;
-  color: var(--gold);
+  font-family: var(--font-arcade);
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: var(--neon-gold);
+  text-shadow: 0 0 12px var(--neon-gold-glow);
+  animation: slamIn 0.5s ease-out;
 }
 
 @media (max-width: 720px) {
   .wrap {
     grid-template-columns: 1fr;
+    padding: 1.2rem 1rem;
   }
 
   .center {
     order: -1;
+  }
+
+  .headline {
+    font-size: 0.5rem;
+  }
+
+  .score {
+    font-size: 1.8rem;
   }
 }

@@ -20,6 +20,11 @@ function outcomeLabel(outcome: RoundOutcome | null): string {
   return "B forfeits";
 }
 
+function isDecisive(outcome: RoundOutcome | null): boolean {
+  return outcome === RoundOutcome.WIN_A || outcome === RoundOutcome.WIN_B ||
+    outcome === RoundOutcome.FORFEIT_A || outcome === RoundOutcome.FORFEIT_B;
+}
+
 export function RoundTimeline({ rounds }: RoundTimelineProps) {
   const ordered = rounds.slice().sort((a, b) => a.roundNo - b.roundNo);
 
@@ -37,6 +42,8 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
               ? styles.bWin
               : styles.draw;
 
+        const isDraw = round.outcome === RoundOutcome.DRAW;
+
         return (
           <article
             key={round.id}
@@ -47,11 +54,15 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
             <div className={styles.content}>
               <div className={styles.moves}>
                 <span>{round.moveA ? moveMap[round.moveA] : "?"}</span>
-                <span className={styles.versus}>vs</span>
+                <span className={styles.versus}>VS</span>
                 <span>{round.moveB ? moveMap[round.moveB] : "?"}</span>
               </div>
 
               <div className={styles.outcome}>{outcomeLabel(round.outcome)}</div>
+
+              {isDecisive(round.outcome) && <div className={styles.koText}>K.O.</div>}
+              {isDraw && <div className={styles.drawText}>DRAW</div>}
+
               <div className={styles.points}>+{round.pointsA} / +{round.pointsB} points</div>
 
               {(round.predictionBonusA || round.predictionBonusB) && (

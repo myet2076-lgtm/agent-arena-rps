@@ -1,6 +1,8 @@
 .timeline {
   display: grid;
   gap: 0.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .row {
@@ -9,77 +11,132 @@
   gap: 0.75rem;
   padding: 0.85rem 1rem;
   border-radius: 10px;
-  background: var(--bg-secondary);
+  background: rgba(10, 14, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   animation: slideIn 300ms ease both;
+  transition: border-color 300ms ease;
 }
 
 .roundNo {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-family: var(--font-arcade);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
 }
 
 .content {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .moves {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   align-items: center;
-  font-size: 1.15rem;
+  font-size: 1.4rem;
+}
+
+.moves > span:first-child,
+.moves > span:last-child {
+  animation: revealMove 0.4s ease-out both;
+}
+
+@keyframes revealMove {
+  0% { transform: scale(0) rotateY(90deg); opacity: 0; }
+  60% { transform: scale(1.15) rotateY(0deg); opacity: 1; }
+  100% { transform: scale(1) rotateY(0deg); opacity: 1; }
 }
 
 .versus {
-  color: var(--text-caption);
-  font-size: 0.8rem;
+  color: var(--neon-gold);
+  font-family: var(--font-arcade);
+  font-size: 0.5rem;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
 }
 
 .outcome {
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-family: var(--font-arcade);
+  font-weight: 400;
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
 }
 
 .points {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
 }
 
 .flag {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .predictionBonus {
-  background: var(--warning-light);
-  border-left: 3px solid var(--gold);
+  background: rgba(255, 215, 0, 0.08);
+  border-color: rgba(255, 215, 0, 0.3);
+  border-left: 3px solid var(--neon-gold);
 }
 
 .predictionBonus .flag {
-  color: var(--gold);
+  color: var(--neon-gold);
   font-weight: 600;
 }
 
 .aWin {
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--neon-cyan);
+  box-shadow: inset 2px 0 12px rgba(0, 240, 255, 0.08);
+}
+
+.aWin .outcome {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px var(--neon-cyan-dim);
 }
 
 .bWin {
-  border-left: 3px solid var(--text-secondary);
+  border-left: 3px solid var(--neon-magenta);
+  box-shadow: inset 2px 0 12px rgba(255, 45, 120, 0.08);
+}
+
+.bWin .outcome {
+  color: var(--neon-magenta);
+  text-shadow: 0 0 8px var(--neon-magenta-dim);
 }
 
 .draw {
-  border-left: 3px solid var(--border);
+  border-left: 3px solid rgba(255, 215, 0, 0.5);
+}
+
+.draw .outcome {
+  color: var(--neon-gold);
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+}
+
+.koText {
+  font-family: var(--font-arcade);
+  font-size: 0.6rem;
+  color: var(--neon-magenta);
+  text-shadow: 0 0 10px var(--neon-magenta-glow);
+  animation: slamIn 0.5s ease-out;
+  margin-top: 0.15rem;
+}
+
+.drawText {
+  font-family: var(--font-arcade);
+  font-size: 0.55rem;
+  color: var(--neon-gold);
+  text-shadow: 0 0 8px var(--neon-gold-glow);
 }
 
 .empty {
   padding: 2rem;
-  border: 1px dashed var(--border);
+  border: 1px dashed rgba(0, 240, 255, 0.2);
   border-radius: 10px;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.4);
   text-align: center;
-  background: var(--bg-secondary);
+  background: rgba(10, 14, 28, 0.6);
+  font-family: var(--font-arcade);
+  font-size: 0.55rem;
 }
 
 @keyframes slideIn {

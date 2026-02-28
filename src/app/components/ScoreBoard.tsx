@@ -14,15 +14,21 @@ function eloFromId(id: string): number {
 export function ScoreBoard({ match }: ScoreBoardProps) {
   const leader = match.scoreA === match.scoreB ? "TIE" : match.scoreA > match.scoreB ? "A" : "B";
   const winnerSide = match.winnerId ? (match.winnerId === match.agentA ? "A" : "B") : null;
+  const total = match.scoreA + match.scoreB || 1;
+  const pctA = Math.round((match.scoreA / total) * 100);
+  const pctB = Math.round((match.scoreB / total) * 100);
 
   return (
     <section className={styles.wrap}>
       <div className={`${styles.side} ${styles.left}`}>
         <div className={styles.headline}>🤖 {match.agentA}</div>
         <div className={`${styles.score} ${leader === "A" ? styles.pulseCyan : ""}`}>{match.scoreA}</div>
+        <div className={styles.hpBar}>
+          <div className={`${styles.hpFill} ${styles.hpFillA}`} style={{ width: `${pctA}%` }} />
+        </div>
         <div className={styles.meta}>Wins: {match.winsA}</div>
         <div className={styles.meta}>ELO {eloFromId(match.agentA)}</div>
-        {winnerSide === "A" && <div className={styles.crown}>👑 Winner</div>}
+        {winnerSide === "A" && <div className={styles.crown}>👑 WINNER</div>}
       </div>
 
       <div className={styles.center}>
@@ -33,9 +39,12 @@ export function ScoreBoard({ match }: ScoreBoardProps) {
       <div className={`${styles.side} ${styles.right}`}>
         <div className={styles.headline}>🤖 {match.agentB}</div>
         <div className={`${styles.score} ${leader === "B" ? styles.pulseMagenta : ""}`}>{match.scoreB}</div>
+        <div className={styles.hpBar}>
+          <div className={`${styles.hpFill} ${styles.hpFillB}`} style={{ width: `${pctB}%` }} />
+        </div>
         <div className={styles.meta}>Wins: {match.winsB}</div>
         <div className={styles.meta}>ELO {eloFromId(match.agentB)}</div>
-        {winnerSide === "B" && <div className={styles.crown}>👑 Winner</div>}
+        {winnerSide === "B" && <div className={styles.crown}>👑 WINNER</div>}
       </div>
     </section>
   );
