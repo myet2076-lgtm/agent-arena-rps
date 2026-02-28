@@ -1,3 +1,4 @@
+// NOTE: This page is also available as a modal in the main arena page. Kept as a standalone route for external links.
 "use client";
 
 import { useEffect, useMemo, useState } from "react";

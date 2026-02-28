@@ -1,3 +1,4 @@
+// NOTE: This page is also available as a modal in the main arena page. Kept as a standalone route for external links.
 import { NavBar } from "@/app/components/NavBar";
 import styles from "./docs.module.css";
 
