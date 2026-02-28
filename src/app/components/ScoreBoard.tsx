@@ -16,7 +16,7 @@ export function ScoreBoard({ match }: ScoreBoardProps) {
   const winnerSide = match.winnerId ? (match.winnerId === match.agentA ? "A" : "B") : null;
   const total = match.scoreA + match.scoreB;
   const pctA = total === 0 ? 50 : Math.round((match.scoreA / total) * 100);
-  const pctB = total === 0 ? 50 : Math.round((match.scoreB / total) * 100);
+  const pctB = total === 0 ? 50 : 100 - pctA;
 
   return (
     <section className={styles.wrap}>
