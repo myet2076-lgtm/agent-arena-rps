@@ -1,3 +1,4 @@
+import Image from "next/image";
 import styles from "./IntroAnimation.module.css";
 
 interface IntroAnimationProps {
@@ -16,9 +17,9 @@ export function IntroAnimation({ visible, onSkip }: IntroAnimationProps): React.
       <div className={styles.powerLine} />
       <div className={styles.collisionFlash} />
       <div className={styles.rpsIcons}>
-        <span className={`${styles.rpsIcon} ${styles.iconRock}`}>✊</span>
-        <span className={`${styles.rpsIcon} ${styles.iconScissors}`}>✌️</span>
-        <span className={`${styles.rpsIcon} ${styles.iconPaper}`}>✋</span>
+        <span className={`${styles.rpsIcon} ${styles.iconRock}`}><Image src="/icons/rock.svg" alt="rock" width={48} height={48} style={{imageRendering:"pixelated"}} unoptimized /></span>
+        <span className={`${styles.rpsIcon} ${styles.iconScissors}`}><Image src="/icons/scissors.svg" alt="scissors" width={48} height={48} style={{imageRendering:"pixelated"}} unoptimized /></span>
+        <span className={`${styles.rpsIcon} ${styles.iconPaper}`}><Image src="/icons/paper.svg" alt="paper" width={48} height={48} style={{imageRendering:"pixelated"}} unoptimized /></span>
       </div>
       <div className={`${styles.bots} ${styles.shakeOnClash}`}>
         <div className={`${styles.bot} ${styles.botA}`}>

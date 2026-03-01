@@ -1,6 +1,7 @@
 import { Move, type RoundDTO, RoundOutcome } from "@/types";
 import styles from "./RoundTimeline.module.css";
 
+import { MoveIcon } from "./MoveIcon";
 interface RoundTimelineProps {
   rounds: RoundDTO[];
 }
@@ -53,9 +54,9 @@ export function RoundTimeline({ rounds }: RoundTimelineProps) {
             <div className={styles.roundNo}>R{round.roundNo}</div>
             <div className={styles.content}>
               <div className={styles.moves}>
-                <span>{round.moveA ? moveMap[round.moveA] : "?"}</span>
+                <span>{round.moveA ? <MoveIcon move={round.moveA} size={24} /> : "?"}</span>
                 <span className={styles.versus}>VS</span>
-                <span>{round.moveB ? moveMap[round.moveB] : "?"}</span>
+                <span>{round.moveB ? <MoveIcon move={round.moveB} size={24} /> : "?"}</span>
               </div>
 
               <div className={styles.outcome}>{outcomeLabel(round.outcome)}</div>

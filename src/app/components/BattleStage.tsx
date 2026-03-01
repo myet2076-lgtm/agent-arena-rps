@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Move, RoundOutcome } from "@/types";
+import { MoveIcon } from "./MoveIcon";
 import type { AnimationPhase, RoundAnimationState } from "@/app/hooks/useRoundAnimation";
 import type { SoundName } from "@/app/hooks/useArcadeSounds";
 import styles from "./BattleStage.module.css";
@@ -22,7 +23,7 @@ const MOVE_EMOJI: Record<Move, string> = {
   [Move.SCISSORS]: "✌️",
 };
 
-const SLOT_ITEMS = ["✊", "✋", "✌️"];
+const SLOT_ITEMS = [Move.ROCK, Move.PAPER, Move.SCISSORS];
 
 function outcomeLabel(outcome: RoundOutcome | null): { text: string; isDraw: boolean } {
   if (!outcome) return { text: "", isDraw: false };
@@ -95,11 +96,11 @@ function ChoosingContent() {
   return (
     <div className={styles.choosingArea}>
       <div className={styles.slotMachine}>
-        <span className={styles.slotReel}>{SLOT_ITEMS[indexA]}</span>
+        <span className={styles.slotReel}><MoveIcon move={SLOT_ITEMS[indexA]} size={48} /></span>
       </div>
       <span className={styles.choosingVs}>VS</span>
       <div className={styles.slotMachine}>
-        <span className={styles.slotReel}>{SLOT_ITEMS[indexB]}</span>
+        <span className={styles.slotReel}><MoveIcon move={SLOT_ITEMS[indexB]} size={48} /></span>
       </div>
     </div>
   );
@@ -109,12 +110,12 @@ function RevealContent({ moveA, moveB }: { moveA: Move | null; moveB: Move | nul
   return (
     <div className={styles.revealArea}>
       <span className={`${styles.moveDisplay} ${styles.moveRevealLeft}`}>
-        {moveA ? MOVE_EMOJI[moveA] : "❓"}
+        {moveA ? <MoveIcon move={moveA} size={48} /> : <span>❓</span>}
       </span>
       <div className={`${styles.revealFlash} ${styles.flashLeft}`} />
       <div className={`${styles.revealFlash} ${styles.flashRight}`} />
       <span className={`${styles.moveDisplay} ${styles.moveRevealRight}`}>
-        {moveB ? MOVE_EMOJI[moveB] : "❓"}
+        {moveB ? <MoveIcon move={moveB} size={48} /> : <span>❓</span>}
       </span>
     </div>
   );
@@ -123,10 +124,10 @@ function RevealContent({ moveA, moveB }: { moveA: Move | null; moveB: Move | nul
 function ClashContent({ moveA, moveB }: { moveA: Move | null; moveB: Move | null }) {
   return (
     <div className={styles.clashArea}>
-      <span className={styles.clashMoveLeft}>{moveA ? MOVE_EMOJI[moveA] : "❓"}</span>
+      <span className={styles.clashMoveLeft}>{moveA ? <MoveIcon move={moveA} size={48} /> : <span>❓</span>}</span>
       <div className={styles.impactFlash} />
       <div className={styles.clashRadial} />
-      <span className={styles.clashMoveRight}>{moveB ? MOVE_EMOJI[moveB] : "❓"}</span>
+      <span className={styles.clashMoveRight}>{moveB ? <MoveIcon move={moveB} size={48} /> : <span>❓</span>}</span>
     </div>
   );
 }
@@ -137,9 +138,9 @@ function ResultContent({ moveA, moveB, outcome }: { moveA: Move | null; moveB: M
   return (
     <div className={styles.resultArea}>
       <div className={styles.resultMoves}>
-        <span>{moveA ? MOVE_EMOJI[moveA] : "❓"}</span>
+        <span>{moveA ? <MoveIcon move={moveA} size={48} /> : <span>❓</span>}</span>
         <span className={styles.resultVs}>VS</span>
-        <span>{moveB ? MOVE_EMOJI[moveB] : "❓"}</span>
+        <span>{moveB ? <MoveIcon move={moveB} size={48} /> : <span>❓</span>}</span>
       </div>
       <div className={`${styles.resultText} ${isDraw ? styles.resultDraw : styles.resultKO}`}>
         {text}
