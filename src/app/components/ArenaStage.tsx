@@ -211,7 +211,7 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
       {!loading && !error ? (
         <>
           <ScoreBoard match={match} />
-          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} waitingCount={waitingCount} playSound={playSound} />
+          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={(match as any).agentAName ?? match.agentA} agentBName={(match as any).agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} />
           <RoundTimeline rounds={rounds} />
         </>
       ) : null}

@@ -10,6 +10,8 @@ interface BattleStageProps {
   animState: RoundAnimationState;
   agentA: string | null;
   agentB: string | null;
+  agentAName?: string | null;
+  agentBName?: string | null;
   waitingCount: number;
   playSound?: (sound: SoundName) => void;
 }
@@ -157,27 +159,68 @@ function ResultContent({ moveA, moveB, outcome }: { moveA: Move | null; moveB: M
   );
 }
 
-function MatchEndContent({ winnerId, winnerName }: { winnerId: string | null; winnerName: string | null }) {
-  const confettiPieces = Array.from({ length: 8 }, (_, i) => (
-    <div key={i} className={styles.confettiPiece} />
-  ));
+function Fireworks() {
+  const colors = ["#ff2d78", "#00f0ff", "#ffd700", "#c084fc", "#39ff14", "#ff6b35"];
+  const clusters = Array.from({ length: 6 }, (_, ci) => {
+    const cx = 10 + Math.random() * 80;
+    const cy = 10 + Math.random() * 60;
+    const particles = Array.from({ length: 12 }, (_, pi) => {
+      const angle = (pi / 12) * Math.PI * 2;
+      const dist = 60 + Math.random() * 100;
+      const fx = Math.cos(angle) * dist;
+      const fy = Math.sin(angle) * dist;
+      const color = colors[(ci + pi) % colors.length];
+      return (
+        <div
+          key={pi}
+          className={styles.firework}
+          style={{
+            "--fx": `${fx}px`,
+            "--fy": `${fy}px`,
+            background: color,
+            boxShadow: `0 0 6px ${color}`,
+            animationDelay: `${0.6 + ci * 0.3}s`,
+          } as React.CSSProperties}
+        />
+      );
+    });
+    return (
+      <div
+        key={ci}
+        className={styles.fireworkCluster}
+        style={{ left: `${cx}%`, top: `${cy}%`, animationDelay: `${ci * 0.3}s` }}
+      >
+        {particles}
+      </div>
+    );
+  });
+  return <div className={styles.fireworksOverlay}>{clusters}</div>;
+}
 
+function MatchEndContent({ winnerId, winnerName }: { winnerId: string | null; winnerName: string | null }) {
   return (
-    <div className={styles.matchEndOverlay}>
-      {winnerId ? (
-        <>
-          <div className={styles.matchEndTitle}>🏆 WINNER</div>
-          <div className={styles.matchEndName}>{winnerName ?? winnerId}</div>
-        </>
-      ) : (
-        <div className={styles.matchEndDraw}>DRAW MATCH</div>
-      )}
-      <div className={styles.confetti}>{confettiPieces}</div>
-    </div>
+    <>
+      <Fireworks />
+      <div className={styles.matchEndOverlay}>
+        {winnerId ? (
+          <>
+            <div className={styles.matchEndTitle}>🏆 WINNER 🏆</div>
+            <div className={styles.matchEndName}>{winnerName ?? winnerId}</div>
+          </>
+        ) : (
+          <div className={styles.matchEndDraw}>DRAW MATCH</div>
+        )}
+        <div className={styles.confetti}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <div key={i} className={styles.confettiPiece} />
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
-export function BattleStage({ animState, agentA, agentB, waitingCount, playSound }: BattleStageProps): React.JSX.Element {
+export function BattleStage({ animState, agentA, agentB, agentAName, agentBName, waitingCount, playSound }: BattleStageProps): React.JSX.Element {
   const { phase, roundNo, moveA, moveB, outcome, winnerId, winnerName } = animState;
   const prevPhaseRef = useRef<AnimationPhase>("idle");
 
@@ -266,7 +309,7 @@ export function BattleStage({ animState, agentA, agentB, waitingCount, playSound
       case "result":
         return <ResultContent moveA={moveA} moveB={moveB} outcome={outcome} />;
       case "match-end":
-        return <MatchEndContent winnerId={winnerId} winnerName={winnerName} />;
+        return <MatchEndContent winnerId={winnerId} winnerName={winnerId === agentA ? (agentAName ?? winnerName) : winnerId === agentB ? (agentBName ?? winnerName) : winnerName} />;
       default:
         return null;
     }
