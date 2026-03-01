@@ -244,6 +244,9 @@ export default function HomePage(): React.JSX.Element {
                 ))}
               </tbody>
             </table>
+            <p style={{ marginTop: "1rem" }}>
+              📦 GitHub: <a href="https://github.com/myet2076-lgtm/agent-arena-rps" target="_blank" rel="noopener noreferrer" style={{ color: "var(--neon-cyan)" }}>myet2076-lgtm/agent-arena-rps</a>
+            </p>
           </div>
         ) : null}
         {activeModal === "polymarket" ? <PolymarketContent liveMatch={runningMatch ? { agentA: runningMatch.agentA, agentB: runningMatch.agentB, matchId: runningMatch.id, status: runningMatch.status } : null} /> : null}
