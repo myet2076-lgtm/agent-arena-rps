@@ -142,6 +142,9 @@ export function transitionToReveal(matchId: string, roundNo: number): Match | nu
   const match = db.getMatch(matchId);
   if (!match) return null;
 
+  // Guard: prevent duplicate transition if already in REVEAL
+  if (match.currentPhase === ("REVEAL" as MatchPhase)) return null;
+
   clearTimer(matchId, "COMMIT", roundNo);
   const deadline = new Date(Date.now() + REVEAL_SEC * 1000);
   const updated = db.updateMatch({
@@ -445,6 +448,8 @@ function handleReadyTimeout(matchId: string): void {
     readyB: match.readyB,
   }]);
 
+  houseBotMatchCleanup(matchId);
+
   emitDomainEvent({ type: "READY_TIMEOUT", matchId });
 }
 
@@ -648,6 +653,19 @@ function finishMatch(match: Match): void {
       eloChangeB: ratingB.delta,
       eloUpdatedAt: new Date(),
     });
+    // Emit MATCH_FINISHED event AFTER ELO is computed
+    const updatedMatch = db.getMatch(match.id)!;
+    db.appendEvents(match.id, [{
+      type: "MATCH_FINISHED",
+      matchId: match.id,
+      winnerId: updatedMatch.winnerId,
+      finalScoreA: updatedMatch.scoreA,
+      finalScoreB: updatedMatch.scoreB,
+      eloChangeA: updatedMatch.eloChangeA,
+      eloChangeB: updatedMatch.eloChangeB,
+    }]);
+
+    emitDomainEvent({ type: "MATCH_FINISHED", matchId: match.id });
   }).catch(() => {
     // ELO calculation failed — set null, retry in 5s
     db.updateMatch({
@@ -656,21 +674,21 @@ function finishMatch(match: Match): void {
       eloChangeB: null,
       eloUpdatedAt: null,
     });
+
+    // Still emit MATCH_FINISHED even on ELO failure
+    db.appendEvents(match.id, [{
+      type: "MATCH_FINISHED",
+      matchId: match.id,
+      winnerId: match.winnerId,
+      finalScoreA: match.scoreA,
+      finalScoreB: match.scoreB,
+      eloChangeA: null,
+      eloChangeB: null,
+    }]);
+
+    emitDomainEvent({ type: "MATCH_FINISHED", matchId: match.id });
     setTimeout(() => retryEloUpdate(match.id), 5000);
   });
-
-  // Emit MATCH_FINISHED event (synchronous, uses current match state)
-  db.appendEvents(match.id, [{
-    type: "MATCH_FINISHED",
-    matchId: match.id,
-    winnerId: match.winnerId,
-    finalScoreA: match.scoreA,
-    finalScoreB: match.scoreB,
-    eloChangeA: match.eloChangeA,
-    eloChangeB: match.eloChangeB,
-  }]);
-
-  emitDomainEvent({ type: "MATCH_FINISHED", matchId: match.id });
 }
 
 async function retryEloUpdate(matchId: string): Promise<void> {

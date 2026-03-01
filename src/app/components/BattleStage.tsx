@@ -15,7 +15,6 @@ interface BattleStageProps {
   agentBName?: string | null;
   waitingCount: number;
   playSound?: (sound: SoundName) => void;
-  watchAgentId?: string | null;
 }
 
 const SLOT_ITEMS = [Move.ROCK, Move.PAPER, Move.SCISSORS];
@@ -222,7 +221,7 @@ function MatchEndContent({ winnerId, winnerName, eloChange }: { winnerId: string
   );
 }
 
-export function BattleStage({ animState, agentA, agentB, agentAName, agentBName, waitingCount, playSound, watchAgentId }: BattleStageProps): React.JSX.Element {
+export function BattleStage({ animState, agentA, agentB, agentAName, agentBName, waitingCount, playSound }: BattleStageProps): React.JSX.Element {
   const { phase, roundNo, moveA, moveB, outcome, winnerId, winnerName } = animState;
   const prevPhaseRef = useRef<AnimationPhase>("idle");
 

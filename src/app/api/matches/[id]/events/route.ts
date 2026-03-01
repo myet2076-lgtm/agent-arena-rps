@@ -74,6 +74,8 @@ function formatEventForPerspective(
       winnerName: winnerAgent?.name ?? event.winnerId ?? null,
       finalScoreA: event.finalScoreA,
       finalScoreB: event.finalScoreB,
+      eloChangeA: event.eloChangeA ?? null,
+      eloChangeB: event.eloChangeB ?? null,
     };
   }
 

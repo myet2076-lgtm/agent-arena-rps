@@ -752,3 +752,15 @@
   80% { transform: translate(1px, 0); }
   100% { transform: translate(0, 0); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .winnerPulse {
+    animation: none;
+  }
+  .matchEndNameHuge {
+    animation: none;
+  }
+  .shakeMatchEnd {
+    animation: none;
+  }
+}

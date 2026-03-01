@@ -197,7 +197,7 @@ function HomePageInner(): React.JSX.Element {
         {runningMatch ? (
           <ArenaStage matchId={runningMatch.id} waitingCount={queueCount} playSound={playSound} watchAgentId={watchAgentId} />
         ) : (
-          <ClientDemoStage waitingCount={queueCount} playSound={playSound} watchAgentId={watchAgentId} />
+          <ClientDemoStage waitingCount={queueCount} playSound={playSound} />
         )}
       </div>
 

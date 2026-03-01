@@ -142,8 +142,13 @@ function triggerHouseBotMatch(): void {
   // Ensure house bot agent exists
   ensureHouseBotAgent();
 
-  // Ensure house bot is in QUALIFIED status
+  // Skip if house bot is already in a match or queued
   const bot = db.getAgent(HOUSE_BOT_ID);
+  if (bot && (bot.status === AgentStatus.IN_MATCH || bot.status === AgentStatus.QUEUED)) {
+    return;
+  }
+
+  // Ensure house bot is in QUALIFIED status
   if (bot && bot.status !== AgentStatus.QUALIFIED && bot.status !== AgentStatus.POST_MATCH) {
     db.updateAgent({ ...bot, status: AgentStatus.QUALIFIED, updatedAt: new Date() });
   }

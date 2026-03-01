@@ -212,7 +212,7 @@ export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId }: A
       {!loading && !error ? (
         <>
           <ScoreBoard match={match} isDemo={match.id.startsWith("demo-")} watchAgentId={watchAgentId} />
-          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={match.agentAName ?? match.agentA} agentBName={match.agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} watchAgentId={watchAgentId} />
+          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={match.agentAName ?? match.agentA} agentBName={match.agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} />
           <RoundTimeline rounds={rounds} />
         </>
       ) : null}
