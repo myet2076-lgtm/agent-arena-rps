@@ -36,10 +36,14 @@ function formatEventForPerspective(
         score: { you: isA ? event.scoreA : event.scoreB, opponent: isA ? event.scoreB : event.scoreA },
       };
     }
-    // Viewer
+    // Viewer — include outcome + points directly
     return {
       type: event.type,
       round: event.roundNo,
+      roundNo: event.roundNo,
+      outcome: event.outcome ?? null,
+      pointsA: event.pointsA ?? 0,
+      pointsB: event.pointsB ?? 0,
       moveA: event.moveA ?? null,
       moveB: event.moveB ?? null,
       winner: event.winner ?? null,
