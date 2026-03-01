@@ -49,7 +49,7 @@ export const POST = handleApiError(async (req: Request) => {
     throw new ApiError(400, "INVALID_INPUT", "description must be 500 characters or less");
   }
   if (typeof body.avatarUrl === "string" && (body.avatarUrl.length > 2048 || !/^https:\/\//.test(body.avatarUrl))) {
-    throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be a valid HTTP(S) URL under 2048 chars");
+    throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be a valid HTTPS URL under 2048 chars");
   }
 
   let agent = db.getAgentByName(name);
@@ -74,7 +74,7 @@ export const POST = handleApiError(async (req: Request) => {
     const authorEmail = body.authorEmail as string | undefined;
     if (typeof authorEmail === "string" && authorEmail.length > 0) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail)) {
-        throw new ApiError(400, "INVALID_NAME", "authorEmail must be a valid email address");
+        throw new ApiError(400, "INVALID_INPUT", "authorEmail must be a valid email address");
       }
       const agentsByEmail = db.listAgents().filter((a: AgentRecord) => a.authorEmail === authorEmail);
       if (agentsByEmail.length >= 5) {
@@ -173,9 +173,13 @@ export const POST = handleApiError(async (req: Request) => {
 
   if (rawKey) {
     response.apiKey = rawKey;
-    response.message = "Agent registered, qualified, and queued. Save your apiKey — it won't be shown again.";
+    response.message = queueResult
+      ? "Agent registered, qualified, and queued. Save your apiKey — it won't be shown again."
+      : "Agent registered and qualified. Save your apiKey — it won't be shown again.";
   } else {
-    response.message = "Agent re-queued for next match.";
+    response.message = queueResult
+      ? "Agent re-queued for next match."
+      : `Agent status is ${agent.status} — not eligible for queue right now.`;
   }
 
   if (queueResult) {
