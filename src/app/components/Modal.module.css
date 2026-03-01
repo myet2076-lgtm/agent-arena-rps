@@ -77,7 +77,8 @@
 }
 
 .content {
-  font-size: 0.94rem;
+  font-family: var(--font-arcade);
+  font-size: 0.8rem;
   line-height: 1.6;
   position: relative;
   z-index: 1;
