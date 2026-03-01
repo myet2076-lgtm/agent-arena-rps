@@ -712,6 +712,15 @@ async function retryEloUpdate(matchId: string): Promise<void> {
       eloChangeB: ratingB.delta,
       eloUpdatedAt: now,
     });
+
+    // Emit ELO_UPDATED event so SSE clients see the real ELO changes
+    db.appendEvents(matchId, [{
+      type: "ELO_UPDATED",
+      matchId,
+      eloChangeA: ratingA.delta,
+      eloChangeB: ratingB.delta,
+    }]);
+    emitDomainEvent({ type: "MATCH_FINISHED", matchId });
   } catch {
     // Silent failure on retry
   }
@@ -721,10 +730,14 @@ async function retryEloUpdate(matchId: string): Promise<void> {
  * Reset all scheduler state (for testing).
  */
 export function resetScheduler(): void {
-  for (const timer of activeTimers.values()) {
-    clearTimeout(timer);
+  try {
+    for (const timer of activeTimers.values()) {
+      clearTimeout(timer);
+    }
+    activeTimers.clear();
+    resolvedReady.clear();
+    resolvedRounds.clear();
+  } catch {
+    // Module-level const bindings may not be initialized yet due to circular import TDZ
   }
-  activeTimers.clear();
-  resolvedReady.clear();
-  resolvedRounds.clear();
 }

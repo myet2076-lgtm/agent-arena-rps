@@ -388,7 +388,8 @@ export type GameEvent =
   | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number }
   | { type: "RESYNC"; matchId: string; snapshot: Record<string, unknown> }
   | { type: "READY_TIMEOUT"; matchId: string; readyA: boolean; readyB: boolean }
-  | { type: "STATE_SNAPSHOT"; matchId: string; snapshot: Record<string, unknown> };
+  | { type: "STATE_SNAPSHOT"; matchId: string; snapshot: Record<string, unknown> }
+  | { type: "ELO_UPDATED"; matchId: string; eloChangeA: number; eloChangeB: number };
 
 // ─── API Contracts ──────────────────────────────────────
 
