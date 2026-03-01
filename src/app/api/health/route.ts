@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // Test bare minimum - just types import
     const { RULES } = await import("@/types");
-    return NextResponse.json({ ok: true, rules: !!RULES });
+    const { db } = await import("@/lib/server/in-memory-db");
+    await db.ensureLoaded();
+    return NextResponse.json({ ok: true, rules: !!RULES, agents: db.agentCount() });
   } catch (e: unknown) {
-    return NextResponse.json({ ok: false, error: String(e), stack: (e as Error)?.stack?.slice(0, 500) }, { status: 500 });
+    return NextResponse.json({ ok: false, error: String(e), stack: (e as Error)?.stack?.slice(0, 1000) }, { status: 500 });
   }
 }
