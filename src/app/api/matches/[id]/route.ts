@@ -49,6 +49,8 @@ export const GET = handleApiError(async (
     seasonId: match.seasonId,
     agentA: match.agentA,
     agentB: match.agentB,
+    agentAName: agentA?.name ?? match.agentA,
+    agentBName: agentB?.name ?? match.agentB,
     status: match.status,
     format: match.format,
     scoreA: match.scoreA,

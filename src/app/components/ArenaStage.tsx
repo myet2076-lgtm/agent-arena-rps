@@ -184,7 +184,7 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
       return `Waiting for next match... ${waitingCount} agents in queue`;
     }
 
-    return `Live: ${match.agentA} vs ${match.agentB}`;
+    return `Live: ${(match as any).agentAName ?? match.agentA} vs ${(match as any).agentBName ?? match.agentB}`;
   }, [match, waitingCount]);
 
   if (!matchId || !match) {

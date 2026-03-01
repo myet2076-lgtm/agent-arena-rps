@@ -38,7 +38,7 @@ export function NavBar({ mode = "default", waitingCount = 0, onRulesClick, onPre
             </button>
           )}
           {onPredictClick && (
-            <button type="button" className={styles.predictBtn} onClick={onPredictClick}>🔮 Predict</button>
+            <button type="button" className={styles.predictBtn} onClick={onPredictClick}>🤖 Register</button>
           )}
           <button type="button" className={styles.rulesBtn} onClick={onRulesClick}>Rules</button>
         </div>

@@ -170,7 +170,7 @@ export default function HomePage(): React.JSX.Element {
 
       <div className={styles.backdrop} />
 
-      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("polymarket")} soundMuted={soundMuted} onToggleSound={toggleSound} />
+      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("register")} soundMuted={soundMuted} onToggleSound={toggleSound} />
 
       <div className={styles.mainContent}>
         <ArenaStage matchId={runningMatch?.id ?? null} waitingCount={queueCount} playSound={playSound} />
