@@ -48,7 +48,7 @@ export const POST = handleApiError(async (req: Request) => {
   if (typeof body.description === "string" && body.description.length > 500) {
     throw new ApiError(400, "INVALID_INPUT", "description must be 500 characters or less");
   }
-  if (typeof body.avatarUrl === "string" && (body.avatarUrl.length > 2048 || !/^https?:\/\//.test(body.avatarUrl))) {
+  if (typeof body.avatarUrl === "string" && (body.avatarUrl.length > 2048 || !/^https:\/\//.test(body.avatarUrl))) {
     throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be a valid HTTP(S) URL under 2048 chars");
   }
 
@@ -94,9 +94,9 @@ export const POST = handleApiError(async (req: Request) => {
       keyHash,
       status: AgentStatus.REGISTERED,
       elo: 1500,
-      description: body.description ?? undefined,
-      authorEmail: authorEmail ?? undefined,
-      avatarUrl: body.avatarUrl ?? undefined,
+      description: typeof body.description === 'string' ? body.description.slice(0, 500) : undefined,
+      authorEmail: typeof authorEmail === 'string' ? authorEmail : undefined,
+      avatarUrl: typeof body.avatarUrl === 'string' ? body.avatarUrl : undefined,
       createdAt: nowDate,
       updatedAt: nowDate,
       queueCooldownUntil: null,
