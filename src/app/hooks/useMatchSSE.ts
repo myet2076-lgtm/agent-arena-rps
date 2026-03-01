@@ -21,7 +21,7 @@ const MAX_EVENTS = 200;
  *
  * This adapter bridges the contract without changing the backend API.
  */
-export function normalizeEvent(raw: Record<string, unknown>): GameEvent {
+export function normalizeEvent(raw: Record<string, unknown>, agentA?: string | null, agentB?: string | null): GameEvent {
   const type = raw.type as string;
 
   if (type === SSE_EVENT_TYPES.ROUND_RESULT) {
@@ -32,9 +32,9 @@ export function normalizeEvent(raw: Record<string, unknown>): GameEvent {
     let outcome = raw.outcome as RoundOutcome | undefined;
     if (!outcome && raw.winner !== undefined) {
       const winner = raw.winner as string | null;
-      if (winner === "A" || winner === "agentA") {
+      if (winner === "A" || winner === "agentA" || (agentA && winner === agentA)) {
         outcome = RoundOutcome.WIN_A;
-      } else if (winner === "B" || winner === "agentB") {
+      } else if (winner === "B" || winner === "agentB" || (agentB && winner === agentB)) {
         outcome = RoundOutcome.WIN_B;
       } else if (winner === null || winner === "draw" || winner === "DRAW") {
         outcome = RoundOutcome.DRAW;
@@ -94,7 +94,7 @@ export function normalizeEvent(raw: Record<string, unknown>): GameEvent {
   return raw as unknown as GameEvent;
 }
 
-export function useMatchSSE(matchId: string | null, onResync?: () => void): UseMatchSSEResult {
+export function useMatchSSE(matchId: string | null, onResync?: () => void, agentA?: string | null, agentB?: string | null): UseMatchSSEResult {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [latestEvent, setLatestEvent] = useState<GameEvent | null>(null);
   const [connected, setConnected] = useState(false);
@@ -146,7 +146,7 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void): UseM
     const onEventMessage = (raw: MessageEvent<string>) => {
       try {
         const parsed = JSON.parse(raw.data) as Record<string, unknown>;
-        const normalized = normalizeEvent(parsed);
+        const normalized = normalizeEvent(parsed, agentA, agentB);
         setLatestEvent(normalized);
         setEvents((prev) => {
           const next = [...prev, normalized];
@@ -176,7 +176,7 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void): UseM
         if (process.env.NODE_ENV === "development") {
           console.debug("[SSE] resync/snapshot", parsed);
         }
-        const normalized = normalizeEvent(parsed);
+        const normalized = normalizeEvent(parsed, agentA, agentB);
         setLatestEvent(normalized);
         setEvents((prev) => {
           const next = [...prev, normalized];

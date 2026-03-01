@@ -78,7 +78,7 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
 
   const [reloadKey, setReloadKey] = useState(0);
   const handleResync = useCallback(() => setReloadKey((k) => k + 1), []);
-  const { latestEvent, connected } = useMatchSSE(matchId, handleResync);
+  const { latestEvent, connected } = useMatchSSE(matchId, handleResync, match?.agentA ?? null, match?.agentB ?? null);
   const animState = useRoundAnimation(latestEvent, match?.agentA ?? null, match?.agentB ?? null);
 
   useEffect(() => {
