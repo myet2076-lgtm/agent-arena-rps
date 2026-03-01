@@ -65,8 +65,33 @@ export function useArcadeSounds(): ArcadeSounds {
     setMuted(true);
   }, []);
 
+  // iOS Safari: unlock AudioContext on first user touch
   useEffect(() => {
+    const unlock = () => {
+      if (!ctxRef.current) {
+        try {
+          const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+          if (AC) ctxRef.current = new AC();
+        } catch { /* ignore */ }
+      }
+      const ctx = ctxRef.current;
+      if (ctx && ctx.state === "suspended") {
+        void ctx.resume();
+      }
+      // Play silent buffer to fully unlock on iOS
+      if (ctx && ctx.state === "running") {
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+      }
+    };
+    document.addEventListener("touchend", unlock, { once: true });
+    document.addEventListener("click", unlock, { once: true });
     return () => {
+      document.removeEventListener("touchend", unlock);
+      document.removeEventListener("click", unlock);
       const ctx = ctxRef.current;
       if (ctx && ctx.state !== "closed") {
         ctx.close();
