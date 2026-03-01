@@ -5,6 +5,7 @@ import { MatchStatus } from "@/types";
 import { NavBar } from "@/app/components/NavBar";
 import { useArcadeSounds } from "@/app/hooks/useArcadeSounds";
 import { ArenaStage } from "@/app/components/ArenaStage";
+import { ClientDemoStage } from "@/app/components/ClientDemoStage";
 import { IntroAnimation } from "@/app/components/IntroAnimation";
 import { SideMenu } from "@/app/components/SideMenu";
 import { Modal } from "@/app/components/Modal";
