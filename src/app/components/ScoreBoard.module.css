@@ -239,7 +239,7 @@
 
 .demoBadge {
   font-family: var(--font-arcade);
-  font-size: 0.55rem;
+  font-size: 0.85rem;
   color: var(--neon-gold);
   text-shadow: 0 0 8px var(--neon-gold-glow);
   text-align: center;
