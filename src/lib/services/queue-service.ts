@@ -15,7 +15,7 @@ const ANTI_ABUSE_WINDOW_MS = 5 * 60_000; // 5 minutes
 const ANTI_ABUSE_MAX_CYCLES = 3;
 const ANTI_ABUSE_COOLDOWN_MS = 5 * 60_000; // 5 min cooldown
 
-const HOUSE_BOT_DELAY_MS = 10_000; // 10 seconds before house bot match
+const HOUSE_BOT_DELAY_MS = 5_000; // 5 seconds before house bot match
 let houseBotTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Track join/leave cycles per agent: agentId -> timestamps of joins
