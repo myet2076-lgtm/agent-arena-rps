@@ -163,6 +163,40 @@ describe("normalizeEvent", () => {
     });
   });
 
+
+    it("derives outcome from pointsA/B when winner is unknown agentId", () => {
+      const result = normalizeEvent({
+        type: SSE_EVENT_TYPES.ROUND_RESULT,
+        matchId: "m1",
+        round: 2,
+        winner: "some-unknown-agent-id",
+        scoreA: 1,
+        scoreB: 2,
+        pointsA: 0,
+        pointsB: 1,
+        moveA: null,
+        moveB: null,
+        predictionBonusA: false,
+        predictionBonusB: false,
+      });
+      if (result.type !== "ROUND_RESULT") throw new Error("wrong type");
+      expect(result.outcome).toBe(RoundOutcome.WIN_B);
+    });
+
+    it("falls back to DRAW when winner is unknown and no points data", () => {
+      const result = normalizeEvent({
+        type: SSE_EVENT_TYPES.ROUND_RESULT,
+        matchId: "m1",
+        round: 3,
+        winner: "mystery-bot",
+        scoreA: 1,
+        scoreB: 1,
+        predictionBonusA: false,
+        predictionBonusB: false,
+      });
+      if (result.type !== "ROUND_RESULT") throw new Error("wrong type");
+      expect(result.outcome).toBe(RoundOutcome.DRAW);
+    });
   describe("MATCH_FINISHED", () => {
     it("maps winnerId from winnerId field", () => {
       const result = normalizeEvent({

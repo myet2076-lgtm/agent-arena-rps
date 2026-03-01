@@ -54,11 +54,21 @@ export function normalizeEvent(raw: Record<string, unknown>, agentA?: string | n
           outcome = RoundOutcome.WIN_B;
         }
       } else if (winner) {
-        // Unknown winner ID and no move data — leave null, use SSE outcome field
-        outcome = undefined;
+        // Unknown winner ID, no move data — use score delta as last resort
+        const sA = raw.scoreA as number | undefined;
+        const sB = raw.scoreB as number | undefined;
+        const pA = raw.pointsA as number | undefined;
+        const pB = raw.pointsB as number | undefined;
+        if (pA !== undefined && pB !== undefined) {
+          outcome = pA > pB ? RoundOutcome.WIN_A : pB > pA ? RoundOutcome.WIN_B : RoundOutcome.DRAW;
+        } else if (sA !== undefined && sB !== undefined) {
+          // Can't reliably determine from cumulative scores; default DRAW
+          outcome = RoundOutcome.DRAW;
+        } else {
+          outcome = RoundOutcome.DRAW;
+        }
       }
     }
-    // Only fall back to DRAW if outcome is still null AND no SSE outcome was provided
     outcome = outcome ?? RoundOutcome.DRAW;
 
     // Map pointsA/B - backend may not send them; derive from outcome
