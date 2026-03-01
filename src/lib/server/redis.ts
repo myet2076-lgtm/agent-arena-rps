@@ -119,3 +119,14 @@ export async function loadFromRedis(): Promise<Record<string, unknown> | null> {
     return null;
   }
 }
+
+export async function testRedisConnection(): Promise<{ connected: boolean; error?: string; url?: string }> {
+  const r = getRedis();
+  if (!r) return { connected: false, error: "No Redis client (missing env vars)", url: cleanEnvValue(process.env.UPSTASH_REDIS_REST_URL)?.slice(0, 40) };
+  try {
+    await r.ping();
+    return { connected: true };
+  } catch (e: unknown) {
+    return { connected: false, error: String(e).slice(0, 200) };
+  }
+}
