@@ -139,14 +139,24 @@ export function useArcadeSounds(): ArcadeSounds {
   const toggleMute = useCallback(() => {
     setMuted((prev) => {
       const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, String(next));
-      } catch {
-        // ignore
-      }
       if (!next) {
+        // Unmuting: create + resume AudioContext inside this click handler
+        // so the browser treats it as user-gesture-initiated
         const ctx = getCtx();
-        if (ctx?.state === "suspended") void ctx.resume();
+        if (ctx) {
+          if (ctx.state === "suspended") {
+            void ctx.resume().then(() => {
+              // Play a tiny inaudible blip to fully unlock the context
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              g.gain.setValueAtTime(0.001, ctx.currentTime);
+              g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01);
+              osc.connect(g).connect(ctx.destination);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.01);
+            });
+          }
+        }
       }
       return next;
     });
