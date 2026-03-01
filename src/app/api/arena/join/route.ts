@@ -41,8 +41,15 @@ export const POST = handleApiError(async (req: Request) => {
   if (name.length < 3 || name.length > 32) {
     throw new ApiError(400, "INVALID_NAME", "name must be 3-32 characters");
   }
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*$/.test(name)) {
-    throw new ApiError(400, "INVALID_NAME", "name must start with alphanumeric and contain only letters, digits, and hyphens");
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9]*(-[a-zA-Z0-9]+)*$/.test(name)) {
+    throw new ApiError(400, "INVALID_NAME", "name must start with alphanumeric, no trailing/consecutive hyphens");
+  }
+
+  if (typeof body.description === "string" && body.description.length > 500) {
+    throw new ApiError(400, "INVALID_INPUT", "description must be 500 characters or less");
+  }
+  if (typeof body.avatarUrl === "string" && (body.avatarUrl.length > 2048 || !/^https?:\/\//.test(body.avatarUrl))) {
+    throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be a valid HTTP(S) URL under 2048 chars");
   }
 
   let agent = db.getAgentByName(name);
@@ -102,6 +109,11 @@ export const POST = handleApiError(async (req: Request) => {
       qualifiedAt: null,
       lastQualFailAt: null,
     } as AgentRecord;
+
+    // Guard against slug collision (e.g., "abc" and "abc-" both slug to "abc")
+    if (db.getAgent(agentId)) {
+      throw new ApiError(409, "NAME_TAKEN", "An agent with a similar name already exists (ID collision).");
+    }
 
     db.createAgent(agent);
     recordIpRegistration(ip);

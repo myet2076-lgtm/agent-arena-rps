@@ -74,3 +74,38 @@ describe("POST /api/arena/join", () => {
     expect(data.status).toBe("QUEUED");
   });
 });
+
+  it("rejects name with trailing hyphen", async () => {
+    const res = await POST(makeRequest({ name: "TestBot-" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects name with consecutive hyphens", async () => {
+    const res = await POST(makeRequest({ name: "Test--Bot" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects too-long description", async () => {
+    const name = `DescBot-${Date.now()}`;
+    const res = await POST(makeRequest({ name, description: "x".repeat(501) }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects invalid avatarUrl", async () => {
+    const name = `AvatarBot-${Date.now()}`;
+    const res = await POST(makeRequest({ name, avatarUrl: "javascript:alert(1)" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("handles slug collision gracefully", async () => {
+    // "Abc" and "abc" would slug to same ID
+    const ts = Date.now();
+    const res1 = await POST(makeRequest({ name: `SlugA${ts}` }));
+    expect(res1.status).toBe(201);
+    // Same name different case — getAgentByName is case-sensitive so different name
+    // but slug would be identical => should hit ID collision guard
+    // Actually getAgentByName("slugA123") won't find "SlugA123" so it tries to create
+    const res2 = await POST(makeRequest({ name: `sluga${ts}` }));
+    const data2 = await res2.json();
+    expect(res2.status).toBe(409);
+  });
