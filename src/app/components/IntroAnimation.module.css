@@ -170,7 +170,7 @@
 
 @keyframes typeWriter {
   from { width: 0; }
-  to { width: 17ch; }
+  to { width: 20ch; }
 }
 
 @keyframes blinkCaret {
