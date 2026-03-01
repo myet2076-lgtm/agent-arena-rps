@@ -17,12 +17,6 @@ interface BattleStageProps {
   playSound?: (sound: SoundName) => void;
 }
 
-const MOVE_EMOJI: Record<Move, string> = {
-  [Move.ROCK]: "✊",
-  [Move.PAPER]: "✋",
-  [Move.SCISSORS]: "✌️",
-};
-
 const SLOT_ITEMS = [Move.ROCK, Move.PAPER, Move.SCISSORS];
 
 function outcomeLabel(outcome: RoundOutcome | null): { text: string; isDraw: boolean } {

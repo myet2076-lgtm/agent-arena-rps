@@ -184,7 +184,7 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
       return `Waiting for next match... ${waitingCount} agents in queue`;
     }
 
-    return `${(match as any).agentAName ?? match.agentA} vs ${(match as any).agentBName ?? match.agentB}`;
+    return `${match.agentAName ?? match.agentA} vs ${match.agentBName ?? match.agentB}`;
   }, [match, waitingCount]);
 
   if (!matchId || !match) {
@@ -211,7 +211,7 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
       {!loading && !error ? (
         <>
           <ScoreBoard match={match} isDemo={match.id.startsWith("demo-")} />
-          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={(match as any).agentAName ?? match.agentA} agentBName={(match as any).agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} />
+          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={match.agentAName ?? match.agentA} agentBName={match.agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} />
           <RoundTimeline rounds={rounds} />
         </>
       ) : null}

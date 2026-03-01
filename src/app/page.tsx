@@ -180,7 +180,6 @@ export default function HomePage(): React.JSX.Element {
         <SideMenu
           collapsed={menuCollapsed}
           onToggle={() => setMenuCollapsed((value) => !value)}
-          onOpenRegister={() => setActiveModal("register")}
           onOpenRankings={() => setActiveModal("rankings")}
           onOpenDocs={() => setActiveModal("docs")}
           onOpenPolymarket={() => setActiveModal("polymarket")}

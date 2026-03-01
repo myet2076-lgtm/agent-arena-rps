@@ -13,7 +13,7 @@ export type Serialized<T> = {
           : T[K];
 };
 
-export type MatchDTO = Serialized<Match>;
+export type MatchDTO = Serialized<Match> & { agentAName?: string; agentBName?: string };
 export type RoundDTO = Serialized<Round>;
 export type MarketSnapshotDTO = Serialized<MarketSnapshot>;
 

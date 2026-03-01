@@ -50,7 +50,7 @@ export function ScoreBoard({ match, isDemo }: ScoreBoardProps) {
   return (
     <section className={styles.wrap}>
       <div className={`${styles.side} ${styles.left}`}>
-        <div className={styles.headline}>🤖 {(match as any).agentAName ?? match.agentA}</div>
+        <div className={styles.headline}>🤖 {match.agentAName ?? match.agentA}</div>
         <div className={`${styles.score} ${leader === "A" ? styles.pulseCyan : ""} ${scoreA.bumping ? styles.scoreBump : ""} ${scoreA.glowing ? styles.scoreGlowCyan : ""}`}>
           {scoreA.display}
         </div>
@@ -68,7 +68,7 @@ export function ScoreBoard({ match, isDemo }: ScoreBoardProps) {
       </div>
 
       <div className={`${styles.side} ${styles.right}`}>
-        <div className={styles.headline}>🤖 {(match as any).agentBName ?? match.agentB}</div>
+        <div className={styles.headline}>🤖 {match.agentBName ?? match.agentB}</div>
         <div className={`${styles.score} ${leader === "B" ? styles.pulseMagenta : ""} ${scoreB.bumping ? styles.scoreBump : ""} ${scoreB.glowing ? styles.scoreGlowMagenta : ""}`}>
           {scoreB.display}
         </div>

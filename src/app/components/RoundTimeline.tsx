@@ -6,12 +6,6 @@ interface RoundTimelineProps {
   rounds: RoundDTO[];
 }
 
-const moveMap: Record<Move, string> = {
-  [Move.ROCK]: "✊",
-  [Move.PAPER]: "✋",
-  [Move.SCISSORS]: "✌️",
-};
-
 function outcomeLabel(outcome: RoundOutcome | null): string {
   if (!outcome) return "Pending";
   if (outcome === RoundOutcome.WIN_A) return "Agent A wins";

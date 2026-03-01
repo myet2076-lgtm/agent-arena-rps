@@ -3,7 +3,6 @@ import styles from "./SideMenu.module.css";
 interface SideMenuProps {
   collapsed: boolean;
   onToggle: () => void;
-  onOpenRegister: () => void;
   onOpenRankings: () => void;
   onOpenDocs: () => void;
   onOpenPolymarket: () => void;
@@ -12,7 +11,6 @@ interface SideMenuProps {
 export function SideMenu({
   collapsed,
   onToggle,
-  onOpenRegister,
   onOpenRankings,
   onOpenDocs,
   onOpenPolymarket,

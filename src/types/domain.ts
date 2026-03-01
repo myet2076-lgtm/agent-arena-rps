@@ -148,6 +148,8 @@ export type MatchPhase =
 
 export interface Match {
   id: string;
+  agentAName?: string;
+  agentBName?: string;
   seasonId: string;
   agentA: string;  // agent id
   agentB: string;  // agent id
