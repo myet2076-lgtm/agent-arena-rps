@@ -1,7 +1,7 @@
 .score {
   font-weight: 700;
   font-size: 1.1rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;

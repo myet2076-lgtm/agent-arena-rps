@@ -9,7 +9,7 @@
 }
 
 .panel h3 {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: 1.15rem;
   font-weight: 700;
 }
@@ -37,7 +37,7 @@
 }
 
 .stats strong {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: 1.1rem;
 }
 
@@ -59,7 +59,7 @@
 .round {
   color: var(--text-secondary);
   font-size: 0.85rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-weight: 600;
 }
 

@@ -29,7 +29,7 @@
 }
 
 .heroTitle {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: clamp(1.8rem, 4vw, 2.5rem);
   font-weight: 800;
   color: var(--color-white);
@@ -114,7 +114,7 @@
 }
 
 .podiumCard strong {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: 1.1rem;
 }
 
@@ -156,7 +156,7 @@
 }
 
 .table th {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   color: var(--text-secondary);
   background: var(--bg-secondary);
   font-weight: 600;

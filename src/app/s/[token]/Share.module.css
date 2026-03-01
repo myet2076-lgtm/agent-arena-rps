@@ -31,13 +31,13 @@
 
 .card h1 {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: 1.75rem;
   font-weight: 800;
 }
 
 .score {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: clamp(2.5rem, 8vw, 3.5rem);
   font-weight: 800;
   letter-spacing: 2px;

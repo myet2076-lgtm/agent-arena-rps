@@ -37,7 +37,7 @@
 }
 
 .cardValue {
-  font-family: var(--font-serif);
+  font-family: var(--font-arcade);
   font-size: 1rem;
   font-weight: 600;
   color: var(--text);
