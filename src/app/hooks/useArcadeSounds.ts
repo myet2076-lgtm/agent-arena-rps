@@ -162,29 +162,25 @@ export function useArcadeSounds(): ArcadeSounds {
   );
 
   const toggleMute = useCallback(() => {
-    setMuted((prev) => {
-      const next = !prev;
-      if (!next) {
-        // Unmuting: create + resume AudioContext inside this click handler
-        // so the browser treats it as user-gesture-initiated
-        const ctx = getCtx();
-        if (ctx) {
-          if (ctx.state === "suspended") {
-            void ctx.resume().then(() => {
-              // Play a tiny inaudible blip to fully unlock the context
-              const osc = ctx.createOscillator();
-              const g = ctx.createGain();
-              g.gain.setValueAtTime(0.001, ctx.currentTime);
-              g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01);
-              osc.connect(g).connect(ctx.destination);
-              osc.start();
-              osc.stop(ctx.currentTime + 0.01);
-            });
-          }
-        }
+    // MUST create/resume AudioContext synchronously in this click/touch handler
+    // iOS Safari rejects async creation
+    const willUnmute = mutedRef.current;
+    if (willUnmute) {
+      // Synchronously ensure AudioContext exists and is running
+      const ctx = getCtx();
+      if (ctx && ctx.state === "suspended") {
+        void ctx.resume();
       }
-      return next;
-    });
+      // Play silent buffer synchronously to fully unlock on iOS
+      if (ctx) {
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+      }
+    }
+    setMuted((prev) => !prev);
   }, [getCtx]);
 
   return { play, muted, toggleMute };
