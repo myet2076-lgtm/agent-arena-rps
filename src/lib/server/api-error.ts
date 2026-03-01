@@ -54,7 +54,7 @@ export function handleApiError(
       console.error("[API Error]", err);
 
       return NextResponse.json(
-        { error: "INTERNAL_ERROR", message: String(err), details: { stack: (err as Error)?.stack?.slice(0, 500) } },
+        { error: "INTERNAL_ERROR", message: "An unexpected error occurred", details: {} },
         { status: 500 },
       );
     }

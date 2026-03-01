@@ -65,7 +65,12 @@ export async function authenticateByKey(
 
   await db.ensureLoaded();
   const keyHash = hashApiKey(apiKey);
-  const agent = db.getAgentByKeyHash(keyHash);
+  let agent = db.getAgentByKeyHash(keyHash);
+  if (!agent) {
+    // Warm instance may have stale state — force reload from Redis and retry
+    await db.forceReload();
+    agent = db.getAgentByKeyHash(keyHash);
+  }
   if (!agent) {
     return { valid: false, error: "Invalid API key" };
   }
