@@ -296,7 +296,6 @@ let _loaded = false;
 let _loadPromise: Promise<void> | null = null;
 
 async function _doLoad(): Promise<void> {
-  if (_loaded) return;
   const state = await loadFromRedis();
   if (state && Object.keys(state).length > 0) {
     loadState(state);
@@ -306,8 +305,11 @@ async function _doLoad(): Promise<void> {
 
 export const db = {
   async ensureLoaded(): Promise<void> {
-    if (_loaded) return;
-    if (!_loadPromise) _loadPromise = _doLoad();
+    // Always reload from Redis on each request — Vercel reuses warm instances
+    // whose in-memory state may be stale relative to other instances.
+    if (!_loadPromise) {
+      _loadPromise = _doLoad().finally(() => { _loadPromise = null; });
+    }
     await _loadPromise;
   },
   async flush(): Promise<void> {
