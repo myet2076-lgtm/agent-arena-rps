@@ -8,10 +8,15 @@ import { db } from "@/lib/server/in-memory-db";
 import { ApiError } from "@/lib/server/api-error";
 import { AgentStatus, type QueueEntry } from "@/types";
 import { emitDomainEvent } from "./event-bus";
+import { ensureHouseBotAgent, HOUSE_BOT_ID, isHouseBot } from "./house-bot-player";
+import { tryMatch as matchmakerTryMatch } from "./matchmaker";
 
 const ANTI_ABUSE_WINDOW_MS = 5 * 60_000; // 5 minutes
 const ANTI_ABUSE_MAX_CYCLES = 3;
 const ANTI_ABUSE_COOLDOWN_MS = 5 * 60_000; // 5 min cooldown
+
+const HOUSE_BOT_DELAY_MS = 10_000; // 10 seconds before house bot match
+let houseBotTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Track join/leave cycles per agent: agentId -> timestamps of joins
 const joinCycles = new Map<string, number[]>();
@@ -92,11 +97,80 @@ export function joinQueue(agentId: string): { position: number; estimatedWaitSec
   // Signal that queue changed — event bus wiring will trigger matchmaker
   emitDomainEvent({ type: "QUEUE_JOINED", matchId: "" });
 
+  // House bot auto-match: if only 1 agent waiting after join, start 10s timer
+  scheduleHouseBotIfNeeded();
+
   return {
     position,
     estimatedWaitSec: position * 30, // rough estimate
     queueId: entry.id,
   };
+}
+
+/** Cancel any pending house bot timer (called when a second real agent joins) */
+export function cancelHouseBotTimer(): void {
+  if (houseBotTimer) {
+    clearTimeout(houseBotTimer);
+    houseBotTimer = null;
+  }
+}
+
+function scheduleHouseBotIfNeeded(): void {
+  const waiting = db.listQueueEntries("WAITING");
+  const realWaiting = waiting.filter((e) => !isHouseBot(e.agentId));
+
+  if (realWaiting.length === 1) {
+    // Only 1 real agent — schedule house bot after delay
+    cancelHouseBotTimer();
+    houseBotTimer = setTimeout(() => {
+      houseBotTimer = null;
+      triggerHouseBotMatch();
+    }, HOUSE_BOT_DELAY_MS);
+  } else if (realWaiting.length >= 2) {
+    // Multiple agents — cancel house bot, let normal matchmaking handle it
+    cancelHouseBotTimer();
+  }
+}
+
+function triggerHouseBotMatch(): void {
+  const waiting = db.listQueueEntries("WAITING");
+  const realWaiting = waiting.filter((e) => !isHouseBot(e.agentId));
+
+  // Double-check: still only 1 real agent waiting
+  if (realWaiting.length !== 1) return;
+
+  // Ensure house bot agent exists
+  ensureHouseBotAgent();
+
+  // Ensure house bot is in QUALIFIED status
+  const bot = db.getAgent(HOUSE_BOT_ID);
+  if (bot && bot.status !== AgentStatus.QUALIFIED && bot.status !== AgentStatus.POST_MATCH) {
+    db.updateAgent({ ...bot, status: AgentStatus.QUALIFIED, updatedAt: new Date() });
+  }
+
+  // Add house bot to queue
+  const existingEntry = db.getQueueEntryByAgent(HOUSE_BOT_ID);
+  if (!existingEntry) {
+    const now = new Date();
+    const entry: QueueEntry = {
+      id: randomUUID(),
+      agentId: HOUSE_BOT_ID,
+      joinedAt: now,
+      lastActivityAt: now,
+      lastSSEPing: null,
+      lastPollTimestamp: now,
+      sseDisconnectedAt: null,
+      status: "WAITING",
+    };
+    db.createQueueEntry(entry);
+    const botAgent = db.getAgent(HOUSE_BOT_ID);
+    if (botAgent) {
+      db.updateAgent({ ...botAgent, status: AgentStatus.QUEUED, updatedAt: now });
+    }
+  }
+
+  // Trigger matchmaker
+  matchmakerTryMatch();
 }
 
 export function leaveQueue(agentId: string): {
@@ -257,4 +331,5 @@ export function getPublicQueue(): {
 /** Reset anti-abuse tracking (for testing) */
 export function resetQueueService(): void {
   joinCycles.clear();
+  cancelHouseBotTimer();
 }

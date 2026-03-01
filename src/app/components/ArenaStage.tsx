@@ -13,6 +13,7 @@ interface ArenaStageProps {
   playSound?: (sound: import("@/app/hooks/useArcadeSounds").SoundName) => void;
   matchId: string | null;
   waitingCount: number;
+  watchAgentId?: string | null;
 }
 
 interface MatchDetailRound {
@@ -70,7 +71,7 @@ function toRoundDTO(matchId: string, round: MatchDetailRound): RoundDTO {
   };
 }
 
-export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps): React.JSX.Element {
+export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId }: ArenaStageProps): React.JSX.Element {
   const [match, setMatch] = useState<MatchDTO | null>(null);
   const [rounds, setRounds] = useState<RoundDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -210,8 +211,8 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
 
       {!loading && !error ? (
         <>
-          <ScoreBoard match={match} isDemo={match.id.startsWith("demo-")} />
-          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={match.agentAName ?? match.agentA} agentBName={match.agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} />
+          <ScoreBoard match={match} isDemo={match.id.startsWith("demo-")} watchAgentId={watchAgentId} />
+          <BattleStage animState={animState} agentA={match.agentA} agentB={match.agentB} agentAName={match.agentAName ?? match.agentA} agentBName={match.agentBName ?? match.agentB} waitingCount={waitingCount} playSound={playSound} watchAgentId={watchAgentId} />
           <RoundTimeline rounds={rounds} />
         </>
       ) : null}

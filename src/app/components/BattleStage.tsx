@@ -15,6 +15,7 @@ interface BattleStageProps {
   agentBName?: string | null;
   waitingCount: number;
   playSound?: (sound: SoundName) => void;
+  watchAgentId?: string | null;
 }
 
 const SLOT_ITEMS = [Move.ROCK, Move.PAPER, Move.SCISSORS];
@@ -156,12 +157,12 @@ function ResultContent({ moveA, moveB, outcome }: { moveA: Move | null; moveB: M
 
 function Fireworks() {
   const colors = ["#ff2d78", "#00f0ff", "#ffd700", "#c084fc", "#39ff14", "#ff6b35"];
-  const clusters = Array.from({ length: 6 }, (_, ci) => {
-    const cx = 10 + Math.random() * 80;
-    const cy = 10 + Math.random() * 60;
+  const clusters = Array.from({ length: 12 }, (_, ci) => {
+    const cx = 5 + Math.random() * 90;
+    const cy = 5 + Math.random() * 70;
     const particles = Array.from({ length: 12 }, (_, pi) => {
       const angle = (pi / 12) * Math.PI * 2;
-      const dist = 60 + Math.random() * 100;
+      const dist = 60 + Math.random() * 120;
       const fx = Math.cos(angle) * dist;
       const fy = Math.sin(angle) * dist;
       const color = colors[(ci + pi) % colors.length];
@@ -173,8 +174,8 @@ function Fireworks() {
             "--fx": `${fx}px`,
             "--fy": `${fy}px`,
             background: color,
-            boxShadow: `0 0 6px ${color}`,
-            animationDelay: `${0.6 + ci * 0.3}s`,
+            boxShadow: `0 0 8px ${color}`,
+            animationDelay: `${0.4 + ci * 0.2}s`,
           } as React.CSSProperties}
         />
       );
@@ -183,7 +184,7 @@ function Fireworks() {
       <div
         key={ci}
         className={styles.fireworkCluster}
-        style={{ left: `${cx}%`, top: `${cy}%`, animationDelay: `${ci * 0.3}s` }}
+        style={{ left: `${cx}%`, top: `${cy}%`, animationDelay: `${ci * 0.2}s` }}
       >
         {particles}
       </div>
@@ -192,15 +193,21 @@ function Fireworks() {
   return <div className={styles.fireworksOverlay}>{clusters}</div>;
 }
 
-function MatchEndContent({ winnerId, winnerName }: { winnerId: string | null; winnerName: string | null }) {
+function MatchEndContent({ winnerId, winnerName, eloChange }: { winnerId: string | null; winnerName: string | null; eloChange?: number | null }) {
   return (
     <>
       <Fireworks />
+      <div className={styles.victoryOverlay} />
       <div className={styles.matchEndOverlay}>
         {winnerId ? (
           <>
-            <div className={styles.matchEndTitle}>🏆 WINNER 🏆</div>
-            <div className={styles.matchEndName}>{winnerName ?? winnerId}</div>
+            <div className={styles.winnerPulse}>WINNER!</div>
+            <div className={styles.matchEndNameHuge}>{winnerName ?? winnerId}</div>
+            {eloChange != null && (
+              <div className={styles.eloChange}>
+                {eloChange >= 0 ? `+${eloChange}` : `${eloChange}`} ELO
+              </div>
+            )}
           </>
         ) : (
           <div className={styles.matchEndDraw}>DRAW MATCH</div>
@@ -215,7 +222,7 @@ function MatchEndContent({ winnerId, winnerName }: { winnerId: string | null; wi
   );
 }
 
-export function BattleStage({ animState, agentA, agentB, agentAName, agentBName, waitingCount, playSound }: BattleStageProps): React.JSX.Element {
+export function BattleStage({ animState, agentA, agentB, agentAName, agentBName, waitingCount, playSound, watchAgentId }: BattleStageProps): React.JSX.Element {
   const { phase, roundNo, moveA, moveB, outcome, winnerId, winnerName } = animState;
   const prevPhaseRef = useRef<AnimationPhase>("idle");
 
@@ -276,7 +283,9 @@ export function BattleStage({ animState, agentA, agentB, agentAName, agentBName,
       ? styles.shakeClash
       : phase === "choosing"
         ? styles.shakeChoosing
-        : "";
+        : phase === "match-end"
+          ? styles.shakeMatchEnd
+          : "";
 
   const showAvatars = phase !== "idle" || (agentA !== null && agentB !== null);
   const isMatchActive = agentA !== null && agentB !== null;
@@ -304,7 +313,7 @@ export function BattleStage({ animState, agentA, agentB, agentAName, agentBName,
       case "result":
         return <ResultContent moveA={moveA} moveB={moveB} outcome={outcome} />;
       case "match-end":
-        return <MatchEndContent winnerId={winnerId} winnerName={winnerId === agentA ? (agentAName ?? winnerName) : winnerId === agentB ? (agentBName ?? winnerName) : winnerName} />;
+        return <MatchEndContent winnerId={winnerId} winnerName={winnerId === agentA ? (agentAName ?? winnerName) : winnerId === agentB ? (agentBName ?? winnerName) : winnerName} eloChange={animState.eloChange} />;
       default:
         return null;
     }

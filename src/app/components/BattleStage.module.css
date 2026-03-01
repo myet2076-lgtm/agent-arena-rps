@@ -647,3 +647,108 @@
     opacity: 1;
   }
 }
+
+/* ── Enhanced Victory Effects ─────────────────────────── */
+
+.victoryOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 5;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.winnerPulse {
+  font-family: var(--font-arcade);
+  font-size: 1.2rem;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  animation: winnerPulseAnim 0.8s ease-in-out infinite;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes winnerPulseAnim {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 40px rgba(255, 215, 0, 0.4);
+  }
+}
+
+.matchEndNameHuge {
+  font-family: var(--font-arcade);
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ffd700;
+  text-align: center;
+  text-shadow:
+    0 0 10px rgba(255, 215, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.5),
+    0 0 40px rgba(255, 215, 0, 0.3),
+    0 0 80px rgba(255, 215, 0, 0.15);
+  animation: nameGlow 2s ease-in-out infinite;
+}
+
+@keyframes nameGlow {
+  0%, 100% {
+    text-shadow:
+      0 0 10px rgba(255, 215, 0, 0.8),
+      0 0 20px rgba(255, 215, 0, 0.5),
+      0 0 40px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    text-shadow:
+      0 0 15px rgba(255, 215, 0, 1),
+      0 0 30px rgba(255, 215, 0, 0.7),
+      0 0 60px rgba(255, 215, 0, 0.4),
+      0 0 100px rgba(255, 215, 0, 0.2);
+  }
+}
+
+.eloChange {
+  font-family: var(--font-arcade);
+  font-size: 1.4rem;
+  color: #39ff14;
+  margin-top: 0.5rem;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.6);
+  animation: eloSlideIn 0.6s ease-out 0.3s both;
+}
+
+@keyframes eloSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shakeMatchEnd {
+  animation: screenShake 0.6s ease-out;
+}
+
+@keyframes screenShake {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(4px, -2px); }
+  30% { transform: translate(-3px, -1px); }
+  40% { transform: translate(3px, 1px); }
+  50% { transform: translate(-2px, 1px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-1px, 0); }
+  80% { transform: translate(1px, 0); }
+  100% { transform: translate(0, 0); }
+}

@@ -12,6 +12,7 @@ import styles from "./ArenaStage.module.css";
 interface ClientDemoStageProps {
   playSound?: (sound: SoundName) => void;
   waitingCount: number;
+  watchAgentId?: string | null;
 }
 
 export function ClientDemoStage({ playSound, waitingCount }: ClientDemoStageProps) {

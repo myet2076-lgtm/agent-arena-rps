@@ -7,6 +7,7 @@ import styles from "./ScoreBoard.module.css";
 interface ScoreBoardProps {
   match: Match | MatchDTO;
   isDemo?: boolean;
+  watchAgentId?: string | null;
 }
 
 function eloFromId(id: string): number {
@@ -35,7 +36,7 @@ function useAnimatedScore(target: number): { display: number; bumping: boolean; 
   return { display, bumping, glowing };
 }
 
-export function ScoreBoard({ match, isDemo }: ScoreBoardProps) {
+export function ScoreBoard({ match, isDemo, watchAgentId }: ScoreBoardProps) {
   const leader = match.scoreA === match.scoreB ? "TIE" : match.scoreA > match.scoreB ? "A" : "B";
   const winnerSide = match.winnerId ? (match.winnerId === match.agentA ? "A" : "B") : null;
   const total = match.scoreA + match.scoreB;
@@ -50,6 +51,7 @@ export function ScoreBoard({ match, isDemo }: ScoreBoardProps) {
   return (
     <section className={styles.wrap}>
       <div className={`${styles.side} ${styles.left}`}>
+        {watchAgentId === match.agentA && <div className={styles.yourAgent}>YOUR AGENT</div>}
         <div className={styles.headline}>🤖 {match.agentAName ?? match.agentA}</div>
         <div className={`${styles.score} ${leader === "A" ? styles.pulseCyan : ""} ${scoreA.bumping ? styles.scoreBump : ""} ${scoreA.glowing ? styles.scoreGlowCyan : ""}`}>
           {scoreA.display}
@@ -68,6 +70,7 @@ export function ScoreBoard({ match, isDemo }: ScoreBoardProps) {
       </div>
 
       <div className={`${styles.side} ${styles.right}`}>
+        {watchAgentId === match.agentB && <div className={styles.yourAgent}>YOUR AGENT</div>}
         <div className={styles.headline}>🤖 {match.agentBName ?? match.agentB}</div>
         <div className={`${styles.score} ${leader === "B" ? styles.pulseMagenta : ""} ${scoreB.bumping ? styles.scoreBump : ""} ${scoreB.glowing ? styles.scoreGlowMagenta : ""}`}>
           {scoreB.display}

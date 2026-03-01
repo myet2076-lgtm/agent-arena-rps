@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { MatchStatus } from "@/types";
 import { NavBar } from "@/app/components/NavBar";
 import { useArcadeSounds } from "@/app/hooks/useArcadeSounds";
@@ -72,8 +73,10 @@ function modalTitle(modal: ModalType): string {
   return "";
 }
 
-export default function HomePage(): React.JSX.Element {
+function HomePageInner(): React.JSX.Element {
   const { play: playSound, muted: soundMuted, toggleMute: toggleSound } = useArcadeSounds();
+  const searchParams = useSearchParams();
+  const watchAgentId = searchParams.get("watch");
   const [showIntro, setShowIntro] = useState(true);
   const [menuCollapsed, setMenuCollapsed] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalType>("none");
@@ -162,8 +165,25 @@ export default function HomePage(): React.JSX.Element {
 
   const runningMatch = useMemo(() => {
     const running = visibleMatches.filter((match) => match.status === MatchStatus.RUNNING);
+    // If watching a specific agent, prioritize their match
+    if (watchAgentId) {
+      const watchedMatch = running.find(
+        (m) => m.agentA === watchAgentId || m.agentB === watchAgentId
+      );
+      if (watchedMatch) return watchedMatch;
+    }
     return running.find((m) => m.id.startsWith("demo-")) ?? running[running.length - 1] ?? null;
-  }, [visibleMatches]);
+  }, [visibleMatches, watchAgentId]);
+
+  // Resolve watched agent name
+  const watchedAgentName = useMemo(() => {
+    if (!watchAgentId) return null;
+    const match = matches.find(
+      (m) => m.agentA === watchAgentId || m.agentB === watchAgentId
+    );
+    if (!match) return watchAgentId.replace(/^agent-/, "").replace(/[-_]/g, " ");
+    return watchAgentId.replace(/^agent-/, "").replace(/[-_]/g, " ");
+  }, [watchAgentId, matches]);
 
   return (
     <main className={styles.page}>
@@ -171,13 +191,13 @@ export default function HomePage(): React.JSX.Element {
 
       <div className={styles.backdrop} />
 
-      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("register")} soundMuted={soundMuted} onToggleSound={toggleSound} />
+      <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("register")} soundMuted={soundMuted} onToggleSound={toggleSound} watchAgentName={watchedAgentName} />
 
       <div className={styles.mainContent}>
         {runningMatch ? (
-          <ArenaStage matchId={runningMatch.id} waitingCount={queueCount} playSound={playSound} />
+          <ArenaStage matchId={runningMatch.id} waitingCount={queueCount} playSound={playSound} watchAgentId={watchAgentId} />
         ) : (
-          <ClientDemoStage waitingCount={queueCount} playSound={playSound} />
+          <ClientDemoStage waitingCount={queueCount} playSound={playSound} watchAgentId={watchAgentId} />
         )}
       </div>
 
@@ -256,5 +276,13 @@ export default function HomePage(): React.JSX.Element {
         {activeModal === "polymarket" ? <PolymarketContent liveMatch={runningMatch ? { agentA: runningMatch.agentA, agentB: runningMatch.agentB, matchId: runningMatch.id, status: runningMatch.status } : null} /> : null}
       </Modal>
     </main>
+  );
+}
+
+export default function HomePage(): React.JSX.Element {
+  return (
+    <Suspense>
+      <HomePageInner />
+    </Suspense>
   );
 }

@@ -8,6 +8,7 @@
 import { db } from "@/lib/server/in-memory-db";
 import { AgentStatus, type Match, MatchStatus, type MatchPhase, Move, RoundOutcome, RoundPhase, RULES } from "@/types";
 import { READY_CHECK_SEC, COMMIT_SEC, REVEAL_SEC, ROUND_INTERVAL_SEC, READY_FORFEIT_ELO } from "@/lib/config/timing";
+import { houseBotAutoReady, houseBotAutoCommit, houseBotAutoReveal, houseBotMatchCleanup } from "./house-bot-player";
 import { processRound } from "@/lib/engine/game-engine";
 import { checkMatchWinner } from "@/lib/engine/rules";
 import { updateEloRatings, type EloDataProvider } from "@/lib/ranking/elo";
@@ -101,6 +102,9 @@ export function startReadyCheck(matchId: string): void {
   setTimer(matchId, "READY_CHECK", undefined, READY_CHECK_SEC * 1000, () => {
     handleReadyTimeout(matchId);
   });
+
+  // House bot auto-ready
+  houseBotAutoReady(matchId);
 }
 
 /**
@@ -158,6 +162,9 @@ export function transitionToReveal(matchId: string, roundNo: number): Match | nu
     handleRevealTimeout(matchId, roundNo);
   });
 
+
+  // House bot auto-reveal
+  houseBotAutoReveal(matchId, roundNo);
   return updated;
 }
 
@@ -377,6 +384,9 @@ function transitionToCommit(matchId: string, roundNo: number): Match {
     handleCommitTimeout(matchId, roundNo);
   });
 
+
+  // House bot auto-commit
+  houseBotAutoCommit(matchId, roundNo);
   return updated;
 }
 
@@ -611,6 +621,8 @@ function handleRevealTimeout(matchId: string, roundNo: number): void {
  */
 function finishMatch(match: Match): void {
   const now = new Date();
+  // Clean up house bot state
+  houseBotMatchCleanup(match.id);
 
   // Step 1: Synchronously set agent status → POST_MATCH and match status
   const agentA = db.getAgent(match.agentA);

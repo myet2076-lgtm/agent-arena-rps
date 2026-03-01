@@ -198,6 +198,8 @@ export const POST = handleApiError(async (req: Request) => {
     response.position = queueResult.position;
     response.estimatedWaitSec = queueResult.estimatedWaitSec;
     response.queueId = queueResult.queueId;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://agent-arena-rps.vercel.app";
+    response.watchUrl = `${baseUrl}?watch=${agent.id}`;
   }
 
   return NextResponse.json(response, { status: isNewAgent ? 201 : 200 });

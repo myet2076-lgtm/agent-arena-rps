@@ -20,6 +20,7 @@ export interface RoundAnimationState {
   outcome: RoundOutcome | null;
   winnerId: string | null;
   winnerName: string | null;
+  eloChange: number | null;
 }
 
 const INITIAL_STATE: RoundAnimationState = {
@@ -30,6 +31,7 @@ const INITIAL_STATE: RoundAnimationState = {
   outcome: null,
   winnerId: null,
   winnerName: null,
+  eloChange: null,
 };
 
 /* Phase durations in ms */
@@ -39,7 +41,7 @@ const DURATIONS: Partial<Record<AnimationPhase, number>> = {
   reveal: 1000,
   clash: 1000,
   result: 1500,
-  "match-end": 4000,
+  "match-end": 6000,
 };
 
 /* Shorter durations when draining a backlog */
@@ -49,7 +51,7 @@ const FAST_DURATIONS: Partial<Record<AnimationPhase, number>> = {
   reveal: 300,
   clash: 400,
   result: 500,
-  "match-end": 4000,
+  "match-end": 6000,
 };
 
 function prefersReducedMotion(): boolean {
@@ -105,6 +107,7 @@ export function useRoundAnimation(
           outcome: evt.outcome,
           winnerId: evt.winner ?? null,
           winnerName: null,
+          eloChange: null,
         });
         schedule(() => drainNext(), fast ? 200 : 600);
         return;
@@ -118,6 +121,7 @@ export function useRoundAnimation(
         outcome: null,
         winnerId: null,
         winnerName: null,
+        eloChange: null,
       });
 
       let t = dur["round-announce"]!;
@@ -164,6 +168,10 @@ export function useRoundAnimation(
       const winnerName =
         (evt as any).winnerName ?? (evt.winnerId === agentA ? agentA : evt.winnerId === agentB ? agentB : null);
 
+      const eloChange = evt.winnerId
+        ? (evt.winnerId === agentA ? (evt as any).eloChangeA : (evt as any).eloChangeB) ?? null
+        : null;
+
       setState({
         phase: "match-end",
         roundNo: 0,
@@ -172,6 +180,7 @@ export function useRoundAnimation(
         outcome: null,
         winnerId: evt.winnerId,
         winnerName,
+        eloChange,
       });
 
       const duration = prefersReducedMotion() ? 1500 : DURATIONS["match-end"]!;
