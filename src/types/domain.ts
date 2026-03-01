@@ -370,6 +370,7 @@ export const SSE_EVENT_TYPES = {
   RESYNC: "RESYNC",
   READY_TIMEOUT: "READY_TIMEOUT",
   STATE_SNAPSHOT: "STATE_SNAPSHOT",
+  ELO_UPDATED: "ELO_UPDATED",
 } as const;
 
 export type SSEEventType = (typeof SSE_EVENT_TYPES)[keyof typeof SSE_EVENT_TYPES];

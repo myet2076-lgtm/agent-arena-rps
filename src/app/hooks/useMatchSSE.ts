@@ -243,6 +243,7 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
         SSE_EVENT_TYPES.ROUND_RESULT,
         SSE_EVENT_TYPES.MATCH_FINISHED,
         SSE_EVENT_TYPES.MARKET_UPDATE,
+        SSE_EVENT_TYPES.ELO_UPDATED,
         SSE_EVENT_TYPES.VOTE_UPDATE,
       ];
 
