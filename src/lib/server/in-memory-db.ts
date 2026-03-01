@@ -161,6 +161,20 @@ function getState(): Record<string, unknown> {
   };
 }
 
+
+/** Ensure Date fields survive Redis round-trip (may arrive as ISO strings) */
+function ensureDate(val: unknown): Date {
+  if (val instanceof Date) return val;
+  if (typeof val === "string" || typeof val === "number") return new Date(val);
+  return new Date();
+}
+
+function reviveDates<T extends Record<string, unknown>>(obj: T, fields: string[]): T {
+  for (const f of fields) {
+    if (f in obj) (obj as any)[f] = ensureDate((obj as any)[f]);
+  }
+  return obj;
+}
 function loadState(state: Record<string, unknown>): void {
   const s = state as any;
 
@@ -171,6 +185,7 @@ function loadState(state: Record<string, unknown>): void {
     agentsByName.clear();
     for (const [id, a] of Object.entries(s.agents)) {
       const agent = a as any;
+      reviveDates(agent, ["createdAt", "updatedAt"]);
       agents.set(id, agent);
       if (agent.keyHash) agentsByKeyHash.set(agent.keyHash, agent);
       if (agent.name) agentsByName.set(agent.name.toLowerCase(), agent);
@@ -180,7 +195,10 @@ function loadState(state: Record<string, unknown>): void {
   // Queue
   if (s.queueEntries) {
     queueEntries.clear();
-    for (const [id, e] of Object.entries(s.queueEntries)) queueEntries.set(id, e as any);
+    for (const [id, e] of Object.entries(s.queueEntries)) {
+      reviveDates(e as Record<string, unknown>, ["joinedAt", "readyCheckDeadline", "lastHeartbeat"]);
+      queueEntries.set(id, e as any);
+    }
   }
 
   // Qualification
@@ -192,7 +210,10 @@ function loadState(state: Record<string, unknown>): void {
   // Matches
   if (s.matches) {
     matches.clear();
-    for (const [id, m] of Object.entries(s.matches)) matches.set(id, m as any);
+    for (const [id, m] of Object.entries(s.matches)) {
+      reviveDates(m as Record<string, unknown>, ["createdAt", "updatedAt", "startedAt", "finishedAt", "readyCheckStartedAt", "eloUpdatedAt"]);
+      matches.set(id, m as any);
+    }
   }
 
   // Rounds
