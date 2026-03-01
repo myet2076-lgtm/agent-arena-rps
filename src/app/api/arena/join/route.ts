@@ -28,7 +28,8 @@ function slugify(name: string): string {
 export const POST = handleApiError(async (req: Request) => {
   await db.ensureLoaded();
 
-  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rawIp = req.headers.get("x-forwarded-for") ?? "unknown";
+  const ip = rawIp.split(",")[0].trim();
   const rl = checkRateLimit(null, ip);
   if (!rl.allowed) return rl.response!;
 
@@ -48,8 +49,19 @@ export const POST = handleApiError(async (req: Request) => {
   if (typeof body.description === "string" && body.description.length > 500) {
     throw new ApiError(400, "INVALID_INPUT", "description must be 500 characters or less");
   }
-  if (typeof body.avatarUrl === "string" && (body.avatarUrl.length > 2048 || !/^https:\/\//.test(body.avatarUrl))) {
-    throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be a valid HTTPS URL under 2048 chars");
+  if (typeof body.avatarUrl === "string") {
+    if (body.avatarUrl.length > 2048) {
+      throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be under 2048 chars");
+    }
+    try {
+      const parsed = new URL(body.avatarUrl);
+      if (parsed.protocol !== "https:") {
+        throw new ApiError(400, "INVALID_INPUT", "avatarUrl must use HTTPS");
+      }
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+      throw new ApiError(400, "INVALID_INPUT", "avatarUrl must be a valid HTTPS URL");
+    }
   }
 
   let agent = db.getAgentByName(name);
@@ -71,7 +83,7 @@ export const POST = handleApiError(async (req: Request) => {
       });
     }
 
-    const authorEmail = body.authorEmail as string | undefined;
+    const authorEmail = typeof body.authorEmail === "string" ? body.authorEmail.trim().toLowerCase() : undefined;
     if (typeof authorEmail === "string" && authorEmail.length > 0) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail)) {
         throw new ApiError(400, "INVALID_INPUT", "authorEmail must be a valid email address");
