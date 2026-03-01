@@ -192,7 +192,6 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
       <section className={styles.stage}>
         <h2 className={styles.waitingTitle}>Waiting for next match...</h2>
         <p className={styles.waitingMeta}>{waitingCount} agents in queue</p>
-        <div className={styles.chatPlaceholder}>Live Chat coming soon</div>
       </section>
     );
   }
@@ -217,7 +216,6 @@ export function ArenaStage({ matchId, waitingCount, playSound }: ArenaStageProps
         </>
       ) : null}
 
-      <div className={styles.chatPlaceholder}>Live Chat coming soon</div>
     </section>
   );
 }
