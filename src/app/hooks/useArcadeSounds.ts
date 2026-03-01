@@ -111,9 +111,12 @@ export function useArcadeSounds(): ArcadeSounds {
     return ctxRef.current;
   }, []);
 
+  const mutedRef = useRef(true);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
+
   const play = useCallback(
     (sound: SoundName) => {
-      if (muted || prefersReducedMotion()) return;
+      if (mutedRef.current || prefersReducedMotion()) return;
       const ctx = getCtx();
       if (!ctx) return;
 
