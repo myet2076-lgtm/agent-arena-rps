@@ -8,7 +8,24 @@
 import { db } from "@/lib/server/in-memory-db";
 import { AgentStatus, type Match, MatchStatus, type MatchPhase, Move, RoundOutcome, RoundPhase, RULES } from "@/types";
 import { READY_CHECK_SEC, COMMIT_SEC, REVEAL_SEC, ROUND_INTERVAL_SEC, READY_FORFEIT_ELO } from "@/lib/config/timing";
-import { houseBotAutoReady, houseBotAutoCommit, houseBotAutoReveal, houseBotMatchCleanup } from "./house-bot-player";
+// Lazy import to avoid circular dependency: queue-service → house-bot-player → match-scheduler
+let _houseBotModule: typeof import("./house-bot-player") | null = null;
+async function getHouseBotModule() {
+  if (!_houseBotModule) _houseBotModule = await import("./house-bot-player");
+  return _houseBotModule;
+}
+function houseBotAutoReady(matchId: string) {
+  getHouseBotModule().then(m => m.houseBotAutoReady(matchId)).catch(() => {});
+}
+function houseBotAutoCommit(matchId: string, roundNo: number) {
+  getHouseBotModule().then(m => m.houseBotAutoCommit(matchId, roundNo)).catch(() => {});
+}
+function houseBotAutoReveal(matchId: string, roundNo: number) {
+  getHouseBotModule().then(m => m.houseBotAutoReveal(matchId, roundNo)).catch(() => {});
+}
+function houseBotMatchCleanup(matchId: string) {
+  getHouseBotModule().then(m => m.houseBotMatchCleanup(matchId)).catch(() => {});
+}
 import { processRound } from "@/lib/engine/game-engine";
 import { checkMatchWinner } from "@/lib/engine/rules";
 import { updateEloRatings, type EloDataProvider } from "@/lib/ranking/elo";
