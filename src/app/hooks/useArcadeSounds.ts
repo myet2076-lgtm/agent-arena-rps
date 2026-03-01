@@ -61,28 +61,8 @@ export function useArcadeSounds(): ArcadeSounds {
   const ctxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const shouldUnmute = stored === "false";
-      setMuted(!shouldUnmute);
-      if (shouldUnmute) {
-        const resumeOnClick = () => {
-          if (!ctxRef.current) {
-            try {
-              const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-              if (AC) ctxRef.current = new AC();
-            } catch { /* ignore */ }
-          }
-          if (ctxRef.current?.state === "suspended") void ctxRef.current.resume();
-          document.removeEventListener("click", resumeOnClick);
-          document.removeEventListener("keydown", resumeOnClick);
-        };
-        document.addEventListener("click", resumeOnClick, { once: true });
-        document.addEventListener("keydown", resumeOnClick, { once: true });
-      }
-    } catch {
-      // ignore
-    }
+    // Always start muted on page load
+    setMuted(true);
   }, []);
 
   useEffect(() => {
