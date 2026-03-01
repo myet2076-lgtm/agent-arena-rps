@@ -13,12 +13,23 @@ const STATE_KEY = "arena:state:v1";
 
 let redis: Redis | null = null;
 
+function cleanEnvValue(val: string | undefined): string | undefined {
+  if (!val) return undefined;
+  // Strip wrapping quotes and accidental KEY= prefix
+  return val.replace(/^[A-Z_]+=/, "").replace(/^["']|["']$/g, "").trim() || undefined;
+}
+
 function getRedis(): Redis | null {
   if (redis) return redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanEnvValue(process.env.UPSTASH_REDIS_REST_URL);
+  const token = cleanEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  try {
+    redis = new Redis({ url, token });
+  } catch (e) {
+    console.error("[Redis] Failed to initialize:", e);
+    return null;
+  }
   return redis;
 }
 
