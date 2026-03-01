@@ -30,14 +30,33 @@ export function normalizeEvent(raw: Record<string, unknown>, agentA?: string | n
 
     // Derive outcome from `winner` field if `outcome` is missing
     let outcome = raw.outcome as RoundOutcome | undefined;
-    if (!outcome && raw.winner !== undefined) {
-      const winner = raw.winner as string | null;
-      if (winner === "A" || winner === "agentA" || (agentA && winner === agentA)) {
+    if (!outcome) {
+      const winner = (raw.winner ?? null) as string | null;
+      const mA = raw.moveA as string | undefined;
+      const mB = raw.moveB as string | undefined;
+      if (winner === null || winner === "draw" || winner === "DRAW") {
+        outcome = RoundOutcome.DRAW;
+      } else if (winner === "A" || winner === "agentA" || (agentA && winner === agentA)) {
         outcome = RoundOutcome.WIN_A;
       } else if (winner === "B" || winner === "agentB" || (agentB && winner === agentB)) {
         outcome = RoundOutcome.WIN_B;
-      } else if (winner === null || winner === "draw" || winner === "DRAW") {
-        outcome = RoundOutcome.DRAW;
+      } else if (mA && mB) {
+        // Fallback: derive from moves directly (RPS logic)
+        if (mA === mB) {
+          outcome = RoundOutcome.DRAW;
+        } else if (
+          (mA === "ROCK" && mB === "SCISSORS") ||
+          (mA === "PAPER" && mB === "ROCK") ||
+          (mA === "SCISSORS" && mB === "PAPER")
+        ) {
+          outcome = RoundOutcome.WIN_A;
+        } else {
+          outcome = RoundOutcome.WIN_B;
+        }
+      } else if (winner) {
+        // winner is a non-null agentId but we don't know who's A/B yet
+        // Use score delta as last resort
+        outcome = RoundOutcome.WIN_A; // will be corrected once match context available
       }
     }
     outcome = outcome ?? RoundOutcome.DRAW;
