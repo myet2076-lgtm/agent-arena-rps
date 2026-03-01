@@ -49,7 +49,7 @@
   --color-text-on-dark-faint: rgba(255, 255, 255, 0.4);
   --font-serif: var(--font-playfair), Georgia, 'Times New Roman', serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-arcade: var(--font-pixel), 'Courier New', monospace;
+  --font-arcade: 'Courier New', monospace;
 }
 
 * {
@@ -69,16 +69,17 @@ body {
 }
 
 body {
+  --font-arcade: var(--font-pixel, 'Courier New'), monospace;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-arcade);
+  font-family: var(--font-pixel, 'Courier New'), monospace;
   font-size: 0.75rem;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-arcade);
+  font-family: var(--font-pixel, 'Courier New'), monospace;
   line-height: 1.2;
 }
 
