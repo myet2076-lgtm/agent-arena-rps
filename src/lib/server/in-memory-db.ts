@@ -598,3 +598,14 @@ export const db = {
 if (!process.env.UPSTASH_REDIS_REST_URL) {
   initDevData();
 }
+
+// Auto-start demo match loop for local development (use global to survive HMR)
+if (!process.env.UPSTASH_REDIS_REST_URL) {
+  const g = globalThis as Record<string, unknown>;
+  if (!g.__demoStarted) {
+    g.__demoStarted = true;
+    import("@/lib/services/demo-match").then(({ startDemoLoop }) => {
+      setTimeout(() => startDemoLoop(), 3000);
+    }).catch((err) => console.error("[Demo] Failed to start demo loop:", err));
+  }
+}
