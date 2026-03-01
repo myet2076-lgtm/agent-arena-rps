@@ -6,6 +6,7 @@ import styles from "./ScoreBoard.module.css";
 
 interface ScoreBoardProps {
   match: Match | MatchDTO;
+  isDemo?: boolean;
 }
 
 function eloFromId(id: string): number {
@@ -34,7 +35,7 @@ function useAnimatedScore(target: number): { display: number; bumping: boolean; 
   return { display, bumping, glowing };
 }
 
-export function ScoreBoard({ match }: ScoreBoardProps) {
+export function ScoreBoard({ match, isDemo }: ScoreBoardProps) {
   const leader = match.scoreA === match.scoreB ? "TIE" : match.scoreA > match.scoreB ? "A" : "B";
   const winnerSide = match.winnerId ? (match.winnerId === match.agentA ? "A" : "B") : null;
   const total = match.scoreA + match.scoreB;
@@ -62,7 +63,7 @@ export function ScoreBoard({ match }: ScoreBoardProps) {
       </div>
 
       <div className={styles.center}>
-        <div className={styles.vs}>VS</div>
+        <>{isDemo && <div className={styles.demoBadge}>🎮 DEMO</div>}<div className={styles.vs}>VS</div></>
         <div className={styles.format}>{match.format}</div>
       </div>
 

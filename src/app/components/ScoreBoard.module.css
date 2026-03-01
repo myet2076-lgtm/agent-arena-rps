@@ -236,3 +236,18 @@
     animation: none !important;
   }
 }
+
+.demoBadge {
+  font-family: var(--font-arcade);
+  font-size: 0.55rem;
+  color: var(--neon-gold);
+  text-shadow: 0 0 8px var(--neon-gold-glow);
+  text-align: center;
+  letter-spacing: 0.1em;
+  animation: demoPulse 2s ease-in-out infinite;
+}
+
+@keyframes demoPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
