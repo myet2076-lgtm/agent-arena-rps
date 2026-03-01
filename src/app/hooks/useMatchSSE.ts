@@ -61,10 +61,12 @@ export function normalizeEvent(raw: Record<string, unknown>, agentA?: string | n
         const pB = raw.pointsB as number | undefined;
         if (pA !== undefined && pB !== undefined) {
           outcome = pA > pB ? RoundOutcome.WIN_A : pB > pA ? RoundOutcome.WIN_B : RoundOutcome.DRAW;
-        } else if (sA !== undefined && sB !== undefined) {
-          // Can't reliably determine from cumulative scores; default DRAW
-          outcome = RoundOutcome.DRAW;
         } else {
+          // No per-round points available; this path should not occur in production
+          // since backend now sends outcome + pointsA/B directly.
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[normalizeEvent] Unknown winner with no pointsA/B — defaulting to DRAW. winner:", winner);
+          }
           outcome = RoundOutcome.DRAW;
         }
       }
