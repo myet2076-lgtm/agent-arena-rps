@@ -160,7 +160,8 @@ export default function HomePage(): React.JSX.Element {
   }, [matches]);
 
   const runningMatch = useMemo(() => {
-    return visibleMatches.find((match) => match.status === MatchStatus.RUNNING) ?? null;
+    const running = visibleMatches.filter((match) => match.status === MatchStatus.RUNNING);
+    return running.find((m) => m.id.startsWith("demo-")) ?? running[running.length - 1] ?? null;
   }, [visibleMatches]);
 
   return (
