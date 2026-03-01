@@ -162,7 +162,7 @@ export function useRoundAnimation(
       animatingRef.current = true;
       clearTimers();
       const winnerName =
-        evt.winnerId === agentA ? agentA : evt.winnerId === agentB ? agentB : null;
+        (evt as any).winnerName ?? (evt.winnerId === agentA ? agentA : evt.winnerId === agentB ? agentB : null);
 
       setState({
         phase: "match-end",

@@ -67,9 +67,11 @@ function formatEventForPerspective(
         eloChange: isA ? (event.eloChangeA ?? 0) : (event.eloChangeB ?? 0),
       };
     }
+    const winnerAgent = event.winnerId ? db.getAgent(event.winnerId) : null;
     return {
       type: event.type,
       winner: event.winnerId,
+      winnerName: winnerAgent?.name ?? event.winnerId ?? null,
       finalScoreA: event.finalScoreA,
       finalScoreB: event.finalScoreB,
     };

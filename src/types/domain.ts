@@ -381,7 +381,7 @@ export type GameEvent =
   | { type: "BOTH_COMMITTED"; matchId: string; round: number; revealDeadline: string }
   | { type: "ROUND_COMMIT"; matchId: string; roundNo: number; agentId: string }
   | { type: "ROUND_RESULT"; matchId: string; roundNo: number; outcome: RoundOutcome; pointsA: number; pointsB: number; predictionBonusA: boolean; predictionBonusB: boolean; scoreA: number; scoreB: number; moveA?: Move | null; moveB?: Move | null; winner?: string | null }
-  | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; finalScoreA: number; finalScoreB: number; eloChangeA?: number | null; eloChangeB?: number | null }
+  | { type: "MATCH_FINISHED"; matchId: string; winnerId: string | null; winnerName?: string | null; finalScoreA: number; finalScoreB: number; eloChangeA?: number | null; eloChangeB?: number | null }
   | { type: "MARKET_UPDATE"; matchId: string; impliedProbA: number; impliedProbB: number; volume: number }
   | { type: "VOTE_UPDATE"; matchId: string; votesA: number; votesB: number }
   | { type: "RESYNC"; matchId: string; snapshot: Record<string, unknown> }

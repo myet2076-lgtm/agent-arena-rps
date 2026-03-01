@@ -99,6 +99,7 @@ export function normalizeEvent(raw: Record<string, unknown>, agentA?: string | n
       type: "MATCH_FINISHED",
       matchId: raw.matchId as string,
       winnerId: (raw.winnerId ?? raw.winner ?? null) as string | null,
+      winnerName: (raw.winnerName ?? null) as string | null,
       finalScoreA: (raw.finalScoreA ?? raw.scoreA ?? 0) as number,
       finalScoreB: (raw.finalScoreB ?? raw.scoreB ?? 0) as number,
       eloChangeA: (raw.eloChangeA ?? null) as number | null | undefined,
