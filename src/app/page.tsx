@@ -174,7 +174,11 @@ export default function HomePage(): React.JSX.Element {
       <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("register")} soundMuted={soundMuted} onToggleSound={toggleSound} />
 
       <div className={styles.mainContent}>
-        <ArenaStage matchId={runningMatch?.id ?? null} waitingCount={queueCount} playSound={playSound} />
+        {runningMatch ? (
+          <ArenaStage matchId={runningMatch.id} waitingCount={queueCount} playSound={playSound} />
+        ) : (
+          <ClientDemoStage waitingCount={queueCount} playSound={playSound} />
+        )}
       </div>
 
       <div className={styles.sideMenuWrap}>
