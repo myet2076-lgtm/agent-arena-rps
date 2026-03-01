@@ -102,3 +102,28 @@
       0 0 50px rgba(0, 240, 255, 0.1);
   }
 }
+
+@media (max-width: 940px) {
+  .wrap {
+    position: static;
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+  }
+
+  .toggle {
+    display: none;
+  }
+
+  .menuTitle {
+    display: none;
+  }
+
+  .item {
+    font-size: 0.65rem;
+    padding: 0.4rem 0.6rem;
+  }
+}

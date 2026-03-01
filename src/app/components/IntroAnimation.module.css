@@ -329,3 +329,13 @@
     opacity: 1;
   }
 }
+
+@media (max-width: 480px) {
+  .introWrap {
+    padding: 1rem 0.5rem;
+  }
+
+  .powerLine {
+    font-size: clamp(0.9rem, 3vw, 1.4rem) !important;
+  }
+}
