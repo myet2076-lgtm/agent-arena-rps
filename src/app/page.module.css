@@ -11,9 +11,8 @@
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at 16% 18%, rgba(0, 240, 255, 0.15), transparent 44%),
-    radial-gradient(circle at 86% 75%, rgba(255, 45, 120, 0.1), transparent 46%),
-    linear-gradient(180deg, #070910 0%, #030508 100%);
+    linear-gradient(180deg, rgba(5, 7, 16, 0.55) 0%, rgba(5, 7, 16, 0.75) 100%),
+    url('/bg-arena.jpg') center / cover no-repeat fixed;
 }
 
 /* Scanline overlay on entire page */
