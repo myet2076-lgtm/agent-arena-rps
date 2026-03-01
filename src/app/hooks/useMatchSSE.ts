@@ -54,11 +54,11 @@ export function normalizeEvent(raw: Record<string, unknown>, agentA?: string | n
           outcome = RoundOutcome.WIN_B;
         }
       } else if (winner) {
-        // winner is a non-null agentId but we don't know who's A/B yet
-        // Use score delta as last resort
-        outcome = RoundOutcome.WIN_A; // will be corrected once match context available
+        // Unknown winner ID and no move data — leave null, use SSE outcome field
+        outcome = undefined;
       }
     }
+    // Only fall back to DRAW if outcome is still null AND no SSE outcome was provided
     outcome = outcome ?? RoundOutcome.DRAW;
 
     // Map pointsA/B - backend may not send them; derive from outcome
