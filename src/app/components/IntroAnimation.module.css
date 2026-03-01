@@ -171,7 +171,7 @@
 
 @keyframes typeWriter {
   from { width: 0; }
-  to { width: 16ch; }
+  to { width: calc(16ch + 4px); }
 }
 
 @keyframes blinkCaret {
