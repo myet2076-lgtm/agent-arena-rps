@@ -36,7 +36,7 @@ export function SideMenu({
       <h2 className={styles.title}>Arena Menu</h2>
       <button type="button" className={styles.item} onClick={onOpenRankings}>🏆 Rankings</button>
       <button type="button" className={styles.item} onClick={onOpenDocs}>📄 Docs</button>
-      <button type="button" className={styles.item} onClick={onOpenPolymarket}>📊 Polymarket</button>
+      <button type="button" className={styles.item} onClick={onOpenPolymarket}>🔮 Prediction</button>
     </aside>
   );
 }
