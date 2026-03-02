@@ -311,7 +311,7 @@ export function getPublicQueue(): {
 
   // Find current running match
   const allRunning = db.listMatches().filter((m) => m.status.toString() === "RUNNING");
-  const runningMatch = allRunning.find((m) => m.id.startsWith("demo-")) ?? allRunning[allRunning.length - 1] ?? null;
+  const runningMatch = allRunning.find((m) => !m.id.startsWith("demo-")) ?? allRunning.find((m) => m.id.startsWith("demo-")) ?? null;
   let currentMatch = null;
   if (runningMatch) {
     const agentA = db.getAgent(runningMatch.agentA);
