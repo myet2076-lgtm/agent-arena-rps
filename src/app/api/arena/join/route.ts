@@ -16,6 +16,7 @@ import { checkRateLimit } from "@/lib/server/rate-limiter";
 import { checkIpRegistrationLimit, recordIpRegistration } from "@/lib/server/registration-tracker";
 import { joinQueue } from "@/lib/services/queue-service";
 import { AgentStatus, DEFAULT_AGENT_SETTINGS } from "@/types";
+import { stopDemoLoop } from "@/lib/services/demo-match";
 import type { AgentRecord } from "@/types";
 
 function slugify(name: string): string {
@@ -169,6 +170,7 @@ export const POST = handleApiError(async (req: Request) => {
     }
   }
 
+  stopDemoLoop();
   await db.flush();
 
   // Re-fetch final state

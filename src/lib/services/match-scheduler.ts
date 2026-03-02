@@ -27,6 +27,7 @@ function houseBotMatchCleanup(matchId: string) {
   getHouseBotModule().then(m => m.houseBotMatchCleanup(matchId)).catch(() => {});
 }
 import { processRound } from "@/lib/engine/game-engine";
+import { startDemoLoop } from "./demo-match";
 import { checkMatchWinner } from "@/lib/engine/rules";
 import { updateEloRatings, type EloDataProvider } from "@/lib/ranking/elo";
 import { emitDomainEvent } from "./event-bus";
@@ -641,6 +642,16 @@ function handleRevealTimeout(matchId: string, roundNo: number): void {
  * Atomically finalize a match (PRD §4.8): status, agent states, ELO — one logical operation.
  * Synchronous for status + agent transitions; ELO update is async but applied atomically.
  */
+function restartDemoIfIdle(): void {
+  // Check if any non-demo match is still running
+  const allMatches = db.listMatches();
+  const hasReal = allMatches.some((m) => m.status === "RUNNING" && !m.id.startsWith("demo-"));
+  if (!hasReal) {
+    console.log("[Scheduler] No real matches running, restarting demo loop");
+    void startDemoLoop();
+  }
+}
+
 function finishMatch(match: Match): void {
   const now = new Date();
   // Clean up house bot state
@@ -683,6 +694,8 @@ function finishMatch(match: Match): void {
     }]);
 
     emitDomainEvent({ type: "MATCH_FINISHED", matchId: match.id });
+    // Restart demo loop if no more real matches running
+    restartDemoIfIdle();
   }).catch(() => {
     // ELO calculation failed — set null, retry in 5s
     db.updateMatch({
@@ -704,6 +717,7 @@ function finishMatch(match: Match): void {
     }]);
 
     emitDomainEvent({ type: "MATCH_FINISHED", matchId: match.id });
+    restartDemoIfIdle();
     setTimeout(() => retryEloUpdate(match.id), 5000);
   });
 }
