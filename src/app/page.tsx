@@ -172,7 +172,7 @@ function HomePageInner(): React.JSX.Element {
       );
       if (watchedMatch) return watchedMatch;
     }
-    return running.find((m) => m.id.startsWith("demo-")) ?? running[running.length - 1] ?? null;
+    return running.find((m) => !m.id.startsWith("demo-")) ?? running.find((m) => m.id.startsWith("demo-")) ?? null;
   }, [visibleMatches, watchAgentId]);
 
   // Resolve watched agent name

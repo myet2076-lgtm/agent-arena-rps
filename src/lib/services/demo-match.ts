@@ -174,12 +174,28 @@ async function playDemoMatch(): Promise<void> {
   }
 }
 
+function hasRealRunningMatch(): boolean {
+  try {
+    const matches = db.listMatches();
+    return matches.some((m) => m.status === "RUNNING" && !m.id.startsWith("demo-"));
+  } catch {
+    return false;
+  }
+}
+
 export async function startDemoLoop(): Promise<void> {
   if (demoRunning) return;
   demoRunning = true;
   console.log("[Demo] Demo match loop started");
 
   while (demoRunning) {
+    // Pause demo loop while a real (non-demo) match is running
+    const realRunning = hasRealRunningMatch();
+    if (realRunning) {
+      console.log("[Demo] Real match in progress, pausing demo loop");
+      await sleep(5000);
+      continue;
+    }
     try {
       await playDemoMatch();
     } catch (err) {
