@@ -15,16 +15,16 @@ async function getHouseBotModule() {
   return _houseBotModule;
 }
 function houseBotAutoReady(matchId: string) {
-  getHouseBotModule().then(m => m.houseBotAutoReady(matchId)).catch(() => {});
+  getHouseBotModule().then(m => m.houseBotAutoReady(matchId)).catch((e) => console.error("[HouseBot] autoReady error:", e));
 }
 function houseBotAutoCommit(matchId: string, roundNo: number) {
-  getHouseBotModule().then(m => m.houseBotAutoCommit(matchId, roundNo)).catch(() => {});
+  getHouseBotModule().then(m => m.houseBotAutoCommit(matchId, roundNo)).catch((e) => console.error("[HouseBot] autoCommit error:", e));
 }
 function houseBotAutoReveal(matchId: string, roundNo: number) {
-  getHouseBotModule().then(m => m.houseBotAutoReveal(matchId, roundNo)).catch(() => {});
+  getHouseBotModule().then(m => m.houseBotAutoReveal(matchId, roundNo)).catch((e) => console.error("[HouseBot] autoReveal error:", e));
 }
 function houseBotMatchCleanup(matchId: string) {
-  getHouseBotModule().then(m => m.houseBotMatchCleanup(matchId)).catch(() => {});
+  getHouseBotModule().then(m => m.houseBotMatchCleanup(matchId)).catch((e) => console.error("[HouseBot] cleanup error:", e));
 }
 import { processRound } from "@/lib/engine/game-engine";
 import { startDemoLoop } from "./demo-match";
