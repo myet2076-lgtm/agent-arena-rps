@@ -177,7 +177,7 @@ async function playDemoMatch(): Promise<void> {
 function hasRealRunningMatch(): boolean {
   try {
     const matches = db.listMatches();
-    // Check for any active real match (RUNNING or in setup phases)
+    // Check for any active real match (RUNNING)
     return matches.some((m) => 
       !m.id.startsWith("demo-") && 
       m.status === "RUNNING"
