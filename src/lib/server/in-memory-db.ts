@@ -73,7 +73,7 @@ function seedMatch(matchId: string): Match {
     seasonId: "season-1",
     agentA: "agent-a",
     agentB: "agent-b",
-    status: MatchStatus.RUNNING,
+    status: MatchStatus.FINISHED,
     format: "BO7",
     scoreA: 0,
     scoreB: 0,
