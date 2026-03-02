@@ -121,15 +121,19 @@ export function houseBotAutoCommit(matchId: string, roundNo: number): void {
     db.upsertCommit(matchId, roundNo, HOUSE_BOT_ID, commitHash);
   }, 800);
 
-  // Auto-commit for opponent
+  // Auto-commit for opponent ONLY if they haven't already committed
   setTimeout(() => {
     const m = db.getMatch(matchId);
     if (!m || m.currentPhase !== "COMMIT" || m.currentRound !== roundNo) return;
-    db.upsertCommit(matchId, roundNo, opponentId, opponentHash);
+    const existingOpponentCommit = db.getCommit(matchId, roundNo, opponentId);
+    if (!existingOpponentCommit) {
+      db.upsertCommit(matchId, roundNo, opponentId, opponentHash);
+    }
 
     // Both committed now — transition
     const botCommit = db.getCommit(matchId, roundNo, HOUSE_BOT_ID);
-    if (botCommit) {
+    const oppCommit = db.getCommit(matchId, roundNo, opponentId);
+    if (botCommit && oppCommit) {
       transitionToReveal(matchId, roundNo);
     }
   }, 1200);
@@ -160,17 +164,22 @@ export function houseBotAutoReveal(matchId: string, roundNo: number): void {
     db.verifyRevealDirect(matchId, roundNo, HOUSE_BOT_ID);
   }, 600);
 
-  // Auto-reveal for opponent
+  // Auto-reveal for opponent ONLY if they haven't already revealed
   setTimeout(() => {
     const m = db.getMatch(matchId);
     if (!m || m.currentPhase !== "REVEAL" || m.currentRound !== roundNo) return;
-    if (opponentStored) {
+    const existingOpponentReveal = db.getReveal(matchId, roundNo, opponentId);
+    if (!existingOpponentReveal && opponentStored) {
       db.upsertReveal(matchId, roundNo, opponentId, opponentStored.move, opponentStored.salt);
       db.verifyRevealDirect(matchId, roundNo, opponentId);
     }
 
-    // Both revealed — resolve round
-    handleBothRevealed(matchId, roundNo);
+    // Only resolve if both actually revealed
+    const botReveal = db.getReveal(matchId, roundNo, HOUSE_BOT_ID);
+    const oppReveal = db.getReveal(matchId, roundNo, opponentId);
+    if (botReveal && oppReveal) {
+      handleBothRevealed(matchId, roundNo);
+    }
 
     // Clean up
     houseBotMoves.delete(`${matchId}:${roundNo}`);
