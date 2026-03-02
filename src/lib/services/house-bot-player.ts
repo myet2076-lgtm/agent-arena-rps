@@ -61,13 +61,21 @@ export function houseBotAutoReady(matchId: string): void {
   // Create a bot instance for this match
   activeBots.set(matchId, new HouseBot("medium"));
 
-  // Auto mark ready after small delay to feel natural
+  const opponentId = match.agentA === HOUSE_BOT_ID ? match.agentB : match.agentA;
+
+  // Auto mark ready for BOTH house bot and opponent
   setTimeout(() => {
     const m = db.getMatch(matchId);
     if (m && m.currentPhase === "READY_CHECK") {
       markReady(matchId, HOUSE_BOT_ID);
     }
   }, 500);
+  setTimeout(() => {
+    const m = db.getMatch(matchId);
+    if (m && m.currentPhase === "READY_CHECK") {
+      markReady(matchId, opponentId);
+    }
+  }, 800);
 }
 
 /**
@@ -99,19 +107,32 @@ export function houseBotAutoCommit(matchId: string, roundNo: number): void {
   // Store move+salt for reveal phase
   houseBotMoves.set(`${matchId}:${roundNo}`, { move, salt });
 
-  // Auto-commit after small delay
+  // Generate opponent's random move too
+  const MOVES: Move[] = [Move.ROCK, Move.PAPER, Move.SCISSORS];
+  const opponentMove = MOVES[Math.floor(Math.random() * 3)];
+  const opponentSalt = randomBytes(16).toString("hex");
+  const opponentHash = createHash("sha256").update(`${opponentMove}:${opponentSalt}`).digest("hex");
+  houseBotMoves.set(`${matchId}:${roundNo}:opponent`, { move: opponentMove, salt: opponentSalt });
+
+  // Auto-commit for house bot
   setTimeout(() => {
     const m = db.getMatch(matchId);
     if (!m || m.currentPhase !== "COMMIT" || m.currentRound !== roundNo) return;
-
     db.upsertCommit(matchId, roundNo, HOUSE_BOT_ID, commitHash);
+  }, 800);
 
-    // Check if opponent already committed
-    const otherCommit = db.getCommit(matchId, roundNo, opponentId);
-    if (otherCommit) {
+  // Auto-commit for opponent
+  setTimeout(() => {
+    const m = db.getMatch(matchId);
+    if (!m || m.currentPhase !== "COMMIT" || m.currentRound !== roundNo) return;
+    db.upsertCommit(matchId, roundNo, opponentId, opponentHash);
+
+    // Both committed now — transition
+    const botCommit = db.getCommit(matchId, roundNo, HOUSE_BOT_ID);
+    if (botCommit) {
       transitionToReveal(matchId, roundNo);
     }
-  }, 800);
+  }, 1200);
 }
 
 /**
@@ -129,23 +150,32 @@ export function houseBotAutoReveal(matchId: string, roundNo: number): void {
 
   const opponentId = match.agentA === HOUSE_BOT_ID ? match.agentB : match.agentA;
 
-  // Auto-reveal after small delay
+  const opponentStored = houseBotMoves.get(`${matchId}:${roundNo}:opponent`);
+
+  // Auto-reveal for house bot
   setTimeout(() => {
     const m = db.getMatch(matchId);
     if (!m || m.currentPhase !== "REVEAL" || m.currentRound !== roundNo) return;
-
     db.upsertReveal(matchId, roundNo, HOUSE_BOT_ID, stored.move, stored.salt);
     db.verifyRevealDirect(matchId, roundNo, HOUSE_BOT_ID);
+  }, 600);
 
-    // Check if opponent already revealed
-    const otherReveal = db.getReveal(matchId, roundNo, opponentId);
-    if (otherReveal) {
-      handleBothRevealed(matchId, roundNo);
+  // Auto-reveal for opponent
+  setTimeout(() => {
+    const m = db.getMatch(matchId);
+    if (!m || m.currentPhase !== "REVEAL" || m.currentRound !== roundNo) return;
+    if (opponentStored) {
+      db.upsertReveal(matchId, roundNo, opponentId, opponentStored.move, opponentStored.salt);
+      db.verifyRevealDirect(matchId, roundNo, opponentId);
     }
+
+    // Both revealed — resolve round
+    handleBothRevealed(matchId, roundNo);
 
     // Clean up
     houseBotMoves.delete(`${matchId}:${roundNo}`);
-  }, 600);
+    houseBotMoves.delete(`${matchId}:${roundNo}:opponent`);
+  }, 1000);
 }
 
 // Store move+salt for reveal phase
