@@ -14,6 +14,7 @@ interface ArenaStageProps {
   matchId: string | null;
   waitingCount: number;
   watchAgentId?: string | null;
+  onMatchSettled?: (matchId: string) => void;
 }
 
 interface MatchDetailRound {
@@ -71,7 +72,7 @@ function toRoundDTO(matchId: string, round: MatchDetailRound): RoundDTO {
   };
 }
 
-export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId }: ArenaStageProps): React.JSX.Element {
+export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId, onMatchSettled }: ArenaStageProps): React.JSX.Element {
   const [match, setMatch] = useState<MatchDTO | null>(null);
   const [rounds, setRounds] = useState<RoundDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,7 +80,7 @@ export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId }: A
 
   const [reloadKey, setReloadKey] = useState(0);
   const handleResync = useCallback(() => setReloadKey((k) => k + 1), []);
-  const { latestEvent, connected } = useMatchSSE(matchId, handleResync, match?.agentA ?? null, match?.agentB ?? null);
+  const { latestEvent, connected, ready } = useMatchSSE(matchId, handleResync, match?.agentA ?? null, match?.agentB ?? null);
   const animState = useRoundAnimation(latestEvent, match?.agentA ?? null, match?.agentB ?? null);
 
   useEffect(() => {
@@ -118,6 +119,20 @@ export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId }: A
 
     void loadDetail();
   }, [matchId, reloadKey]);
+
+  useEffect(() => {
+    if (!matchId || !match || match.status !== MatchStatus.FINISHED || !onMatchSettled) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      onMatchSettled(matchId);
+    }, 6000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [match, matchId, onMatchSettled]);
 
   useEffect(() => {
     if (!latestEvent || !matchId) {
@@ -202,7 +217,7 @@ export function ArenaStage({ matchId, waitingCount, playSound, watchAgentId }: A
       <div className={styles.liveHeader}>
         <h2>{headerText}</h2>
         <span className={`${styles.connection} ${connected ? styles.connected : styles.disconnected}`}>
-          {connected ? "SSE LIVE" : "RECONNECTING"}
+          {connected ? (ready ? "SSE LIVE" : "CATCHING UP") : "RECONNECTING"}
         </span>
       </div>
 

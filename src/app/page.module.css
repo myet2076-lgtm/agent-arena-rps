@@ -38,6 +38,36 @@
   padding: 1rem 1rem 1.4rem;
 }
 
+.transitionCard {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+  text-align: center;
+  border: 1px solid rgba(0, 240, 255, 0.18);
+  background: linear-gradient(180deg, rgba(6, 18, 34, 0.86), rgba(5, 10, 22, 0.94));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.transitionTitle {
+  margin: 0;
+  font-family: var(--font-arcade);
+  font-size: clamp(0.8rem, 2.3vw, 1.15rem);
+  color: var(--neon-cyan);
+  text-shadow:
+    0 0 10px var(--neon-cyan-glow),
+    0 0 24px var(--neon-cyan-dim);
+}
+
+.transitionMeta {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.04em;
+}
+
 .sideMenuWrap {
   position: fixed;
   top: 6rem;

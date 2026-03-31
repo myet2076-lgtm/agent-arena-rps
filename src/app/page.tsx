@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MatchStatus } from "@/types";
 import { NavBar } from "@/app/components/NavBar";
@@ -41,7 +41,12 @@ interface AgentRanking {
   matches: number;
 }
 
+interface HealthResponse {
+  persistent?: boolean;
+}
+
 type ModalType = "none" | "rules" | "register" | "rankings" | "docs" | "polymarket";
+const MATCH_TRANSITION_MS = 4000;
 
 const docsEndpoints = [
   { method: "POST", path: "/api/agents", auth: "None", desc: "Register a new agent" },
@@ -82,6 +87,10 @@ function HomePageInner(): React.JSX.Element {
   const [activeModal, setActiveModal] = useState<ModalType>("none");
   const [queueCount, setQueueCount] = useState(0);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
+  const [isPersistentServer, setIsPersistentServer] = useState<boolean | null>(null);
+  const [displayMatchId, setDisplayMatchId] = useState<string | null>(null);
+  const [transitionUntil, setTransitionUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [rankings, setRankings] = useState<AgentRanking[]>([]);
   const [rankingsLoading, setRankingsLoading] = useState(false);
   const [rankingsError, setRankingsError] = useState<string | null>(null);
@@ -94,6 +103,24 @@ function HomePageInner(): React.JSX.Element {
     return () => {
       window.clearTimeout(timer);
     };
+  }, []);
+
+  useEffect(() => {
+    async function loadHealth(): Promise<void> {
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error("Failed to load health");
+        }
+
+        const payload = (await res.json()) as HealthResponse;
+        setIsPersistentServer(payload.persistent ?? false);
+      } catch {
+        setIsPersistentServer(true);
+      }
+    }
+
+    void loadHealth();
   }, []);
 
   useEffect(() => {
@@ -123,7 +150,7 @@ function HomePageInner(): React.JSX.Element {
     void loadArenaData();
     const interval = window.setInterval(() => {
       void loadArenaData();
-    }, 4000);
+    }, 2000);
 
     return () => {
       window.clearInterval(interval);
@@ -175,6 +202,57 @@ function HomePageInner(): React.JSX.Element {
     return running.find((m) => !m.id.startsWith("demo-")) ?? running.find((m) => m.id.startsWith("demo-")) ?? null;
   }, [visibleMatches, watchAgentId]);
 
+  useEffect(() => {
+    if (!runningMatch) {
+      return;
+    }
+
+    setDisplayMatchId((current) => (current === runningMatch.id ? current : runningMatch.id));
+    setTransitionUntil(null);
+  }, [runningMatch]);
+
+  useEffect(() => {
+    if (!transitionUntil) {
+      return;
+    }
+
+    setNow(Date.now());
+    const timer = window.setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= transitionUntil) {
+        setTransitionUntil(null);
+      }
+    }, 250);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [transitionUntil]);
+
+  const handleArenaMatchSettled = useCallback((settledMatchId: string) => {
+    let shouldTransition = false;
+    setDisplayMatchId((current) => {
+      if (current !== settledMatchId) {
+        return current;
+      }
+      shouldTransition = true;
+      return null;
+    });
+    if (shouldTransition) {
+      setTransitionUntil(Date.now() + MATCH_TRANSITION_MS);
+    }
+  }, []);
+
+  const transitionSeconds = transitionUntil ? Math.max(1, Math.ceil((transitionUntil - now) / 1000)) : 0;
+  const shouldShowTransition = Boolean(
+    isPersistentServer !== false &&
+    !displayMatchId &&
+    !runningMatch &&
+    transitionUntil &&
+    transitionUntil > now,
+  );
+
   // Resolve watched agent name
   const watchedAgentName = useMemo(() => {
     if (!watchAgentId) return null;
@@ -185,6 +263,45 @@ function HomePageInner(): React.JSX.Element {
     return watchAgentId.replace(/^agent-/, "").replace(/[-_]/g, " ");
   }, [watchAgentId, matches]);
 
+  const stage = useMemo(() => {
+    if (isPersistentServer === false) {
+      return <ClientDemoStage waitingCount={queueCount} playSound={playSound} />;
+    }
+
+    if (displayMatchId) {
+      return (
+        <ArenaStage
+          matchId={displayMatchId}
+          waitingCount={queueCount}
+          playSound={playSound}
+          watchAgentId={watchAgentId}
+          onMatchSettled={handleArenaMatchSettled}
+        />
+      );
+    }
+
+    if (shouldShowTransition) {
+      return (
+        <section className={styles.transitionCard}>
+          <h2 className={styles.transitionTitle}>Next match starting soon...</h2>
+          <p className={styles.transitionMeta}>Arena feed resumes in {transitionSeconds}s</p>
+          <p className={styles.transitionMeta}>{queueCount} agents in queue</p>
+        </section>
+      );
+    }
+
+    return <ArenaStage matchId={null} waitingCount={queueCount} playSound={playSound} watchAgentId={watchAgentId} />;
+  }, [
+    displayMatchId,
+    handleArenaMatchSettled,
+    isPersistentServer,
+    playSound,
+    queueCount,
+    shouldShowTransition,
+    transitionSeconds,
+    watchAgentId,
+  ]);
+
   return (
     <main className={styles.page}>
       <IntroAnimation visible={showIntro} onSkip={() => setShowIntro(false)} />
@@ -194,11 +311,7 @@ function HomePageInner(): React.JSX.Element {
       <NavBar mode="arena" waitingCount={queueCount} onRulesClick={() => setActiveModal("rules")} onPredictClick={() => setActiveModal("register")} soundMuted={soundMuted} onToggleSound={toggleSound} watchAgentName={watchedAgentName} />
 
       <div className={styles.mainContent}>
-        {runningMatch ? (
-          <ArenaStage matchId={runningMatch.id} waitingCount={queueCount} playSound={playSound} watchAgentId={watchAgentId} />
-        ) : (
-          <ClientDemoStage waitingCount={queueCount} playSound={playSound} />
-        )}
+        {stage}
       </div>
 
       <div className={styles.sideMenuWrap}>

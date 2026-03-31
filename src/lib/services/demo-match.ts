@@ -92,6 +92,12 @@ function createDemoMatch(idA: string, idB: string): string {
     eloChangeB: null,
     eloUpdatedAt: null,
   });
+  db.appendEvents(mid, [{
+    type: "MATCH_STARTED",
+    matchId: mid,
+    agentA: idA,
+    agentB: idB,
+  }]);
   return mid;
 }
 
@@ -120,6 +126,7 @@ async function playDemoMatch(): Promise<void> {
   await sleep(800);
   markReady(mid, idB);
   // markReady triggers transitionToCommit(mid, 1) internally
+  await sleep(3000);
 
   for (let rnd = 1; rnd <= 12; rnd++) {
     try {
@@ -166,7 +173,7 @@ async function playDemoMatch(): Promise<void> {
       }
 
       // Dramatic pause
-      await sleep(3500);
+      await sleep(5000);
     } catch (err) {
       console.error(`[Demo] Round ${rnd} error:`, err);
       break;
@@ -205,7 +212,7 @@ export async function startDemoLoop(): Promise<void> {
     } catch (err) {
       console.error("[Demo] Match error:", err);
     }
-    await sleep(8000);
+    await sleep(10000);
   }
 }
 

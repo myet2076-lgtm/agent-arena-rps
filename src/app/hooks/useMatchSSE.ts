@@ -7,6 +7,7 @@ interface UseMatchSSEResult {
   events: GameEvent[];
   latestEvent: GameEvent | null;
   connected: boolean;
+  ready: boolean;
 }
 
 const MAX_EVENTS = 200;
@@ -130,11 +131,14 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [latestEvent, setLatestEvent] = useState<GameEvent | null>(null);
   const [connected, setConnected] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const retriesRef = useRef(0);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
   const matchIdRef = useRef<string | null>(null);
+  const readyRef = useRef(false);
+  const readyTimerRef = useRef<number | null>(null);
 
   // Fix #3: Reset state when matchId changes
   useEffect(() => {
@@ -143,6 +147,8 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
       setEvents([]);
       setLatestEvent(null);
       setConnected(false);
+      setReady(false);
+      readyRef.current = false;
     }
   }, [matchId]);
 
@@ -156,6 +162,23 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
         window.clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
       }
+    };
+
+    const clearReadyTimer = () => {
+      if (readyTimerRef.current !== null) {
+        window.clearTimeout(readyTimerRef.current);
+        readyTimerRef.current = null;
+      }
+    };
+
+    const markReady = (delay = 0) => {
+      clearReadyTimer();
+      readyTimerRef.current = window.setTimeout(() => {
+        if (cancelled) return;
+        readyRef.current = true;
+        setReady(true);
+        readyTimerRef.current = null;
+      }, delay);
     };
 
     const cleanupSource = () => {
@@ -179,11 +202,13 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
       try {
         const parsed = JSON.parse(raw.data) as Record<string, unknown>;
         const normalized = normalizeEvent(parsed, agentA, agentB);
-        setLatestEvent(normalized);
         setEvents((prev) => {
           const next = [...prev, normalized];
           return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next;
         });
+        if (readyRef.current) {
+          setLatestEvent(normalized);
+        }
       } catch {
         // Ignore malformed keepalive/misc payloads
       }
@@ -209,13 +234,13 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
           console.debug("[SSE] resync/snapshot", parsed);
         }
         const normalized = normalizeEvent(parsed, agentA, agentB);
-        setLatestEvent(normalized);
         setEvents((prev) => {
           const next = [...prev, normalized];
           return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next;
         });
         // Trigger re-fetch for RESYNC/STATE_SNAPSHOT
         onResync?.();
+        markReady();
       } catch {
         // ignore
       }
@@ -231,7 +256,10 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
       source.onopen = () => {
         if (cancelled) return;
         setConnected(true);
+        setReady(false);
+        readyRef.current = false;
         retriesRef.current = 0;
+        markReady(250);
       };
 
       source.onmessage = onEventMessage;
@@ -271,6 +299,9 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
       source.onerror = () => {
         if (cancelled) return;
         setConnected(false);
+        setReady(false);
+        readyRef.current = false;
+        clearReadyTimer();
         cleanupSource();
         scheduleReconnect();
       };
@@ -281,10 +312,13 @@ export function useMatchSSE(matchId: string | null, onResync?: () => void, agent
     return () => {
       cancelled = true;
       setConnected(false);
+      setReady(false);
+      readyRef.current = false;
       clearReconnect();
+      clearReadyTimer();
       cleanupSource();
     };
-  }, [matchId, onResync]);
+  }, [agentA, agentB, matchId, onResync]);
 
-  return { events, latestEvent, connected };
+  return { events, latestEvent, connected, ready };
 }

@@ -4,6 +4,11 @@ export async function GET(req: Request) {
   try {
     const { db } = await import("@/lib/server/in-memory-db");
     const { loadFromRedis } = await import("@/lib/server/redis");
+    const persistent = Boolean(
+      process.env.RAILWAY_PROJECT_ID ||
+      process.env.RAILWAY_ENVIRONMENT_NAME ||
+      process.env.RAILWAY_SERVICE_ID,
+    ) || !Boolean(process.env.VERCEL);
     
     await db.ensureLoaded();
     const agentCount = db.agentCount();
@@ -23,6 +28,7 @@ export async function GET(req: Request) {
     }
     
     return NextResponse.json({ 
+      persistent,
       memoryAgents: agentCount,
       redisAgents: redisAgentCount,
       redisAgentIds,
