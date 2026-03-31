@@ -37,7 +37,8 @@ interface MatchDetailResponse {
 function isQualificationMatch(match: { agentA: string; agentB: string }): boolean {
   const a = match.agentA.toLowerCase();
   const b = match.agentB.toLowerCase();
-  return a.includes("house-bot") || b.includes("house-bot") || a.startsWith("qual-") || b.startsWith("qual-");
+  // Only filter actual qualification matches (qual- prefix), NOT arena house-bot matches
+  return a.startsWith("qual-") || b.startsWith("qual-");
 }
 
 function winnerToOutcome(winner: "A" | "B" | null): RoundDTO["outcome"] {
